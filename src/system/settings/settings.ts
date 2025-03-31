@@ -107,7 +107,7 @@ export enum SettingType {
   GENERAL,
   DISPLAY,
   AUDIO,
-  MOD
+  MOD,
 }
 
 type SettingOption = {
@@ -239,29 +239,36 @@ export const Setting: Array<Setting> = [
   {
     key: SettingKeys.Damage_Display,
     label: "Damage Display",
-    options: [{
-      label: "Off",
-      value: "Off"
-    }, {
-      label: "Value",
-      value: "Value"
-    }, {
-      label: "Percent",
-      value: "Percent"
-    }],
+    options: [
+      {
+        label: "Off",
+        value: "Off",
+      },
+      {
+        label: "Value",
+        value: "Value",
+      },
+      {
+        label: "Percent",
+        value: "Percent",
+      },
+    ],
     default: 0,
     type: SettingType.GENERAL,
   },
   {
     key: SettingKeys.FancyBiome,
     label: "Fancy Title Screen",
-    options: [{
-      label: "Off",
-      value: "Off"
-    }, {
-      label: "On",
-      value: "On"
-    }],
+    options: [
+      {
+        label: "Off",
+        value: "Off",
+      },
+      {
+        label: "On",
+        value: "On",
+      },
+    ],
     default: 0,
     type: SettingType.GENERAL,
   },
@@ -275,29 +282,36 @@ export const Setting: Array<Setting> = [
   {
     key: SettingKeys.Damage_Display,
     label: "Damage Display",
-    options: [{
-      label: "Off",
-      value: "Off"
-    }, {
-      label: "Value",
-      value: "Value"
-    }, {
-      label: "Percent",
-      value: "Percent"
-    }],
+    options: [
+      {
+        label: "Off",
+        value: "Off",
+      },
+      {
+        label: "Value",
+        value: "Value",
+      },
+      {
+        label: "Percent",
+        value: "Percent",
+      },
+    ],
     default: 0,
     type: SettingType.GENERAL,
   },
   {
     key: SettingKeys.FancyBiome,
     label: "Fancy Title Screen",
-    options: [{
-      label: "Off",
-      value: "Off"
-    }, {
-      label: "On",
-      value: "On"
-    }],
+    options: [
+      {
+        label: "Off",
+        value: "Off",
+      },
+      {
+        label: "On",
+        value: "On",
+      },
+    ],
     default: 0,
     type: SettingType.GENERAL,
   },
@@ -630,16 +644,16 @@ export const Setting: Array<Setting> = [
     options: [
       {
         value: "Off",
-        label: i18next.t("settings:off")
+        label: i18next.t("settings:off"),
       },
       {
         value: "Ball",
-        label: i18next.t("settings:simple")
+        label: i18next.t("settings:simple"),
       },
       {
         value: "Sprite",
-        label: i18next.t("settings:fancy")
-      }
+        label: i18next.t("settings:fancy"),
+      },
     ],
     default: 1,
     type: SettingType.DISPLAY,
@@ -650,19 +664,19 @@ export const Setting: Array<Setting> = [
     options: [
       {
         value: "Off",
-        label: i18next.t("settings:off")
+        label: i18next.t("settings:off"),
       },
       {
         value: "Ball",
-        label: i18next.t("settings:simple")
+        label: i18next.t("settings:simple"),
       },
       {
         value: "Sprite",
-        label: i18next.t("settings:fancy")
-      }
+        label: i18next.t("settings:fancy"),
+      },
     ],
     default: 1,
-    type: SettingType.DISPLAY
+    type: SettingType.DISPLAY,
   },
   {
     key: SettingKeys.Show_Arena_Flyout,
@@ -752,52 +766,64 @@ export const Setting: Array<Setting> = [
   {
     key: SettingKeys.BiomePanels,
     label: "Biome Panels",
-    options: [{
-      label: "Off",
-      value: "Off"
-    }, {
-      label: "On",
-      value: "On"
-    }],
+    options: [
+      {
+        label: "Off",
+        value: "Off",
+      },
+      {
+        label: "On",
+        value: "On",
+      },
+    ],
     default: 0,
     type: SettingType.DISPLAY,
   },
   {
     key: SettingKeys.ShowAutosaves,
     label: "Show Autosaves",
-    options: [{
-      label: "Off",
-      value: "Off"
-    }, {
-      label: "On",
-      value: "On"
-    }],
+    options: [
+      {
+        label: "Off",
+        value: "Off",
+      },
+      {
+        label: "On",
+        value: "On",
+      },
+    ],
     default: 0,
     type: SettingType.DISPLAY,
   },
   {
     key: SettingKeys.BiomePanels,
     label: "Biome Panels",
-    options: [{
-      label: "Off",
-      value: "Off"
-    }, {
-      label: "On",
-      value: "On"
-    }],
+    options: [
+      {
+        label: "Off",
+        value: "Off",
+      },
+      {
+        label: "On",
+        value: "On",
+      },
+    ],
     default: 0,
     type: SettingType.DISPLAY,
   },
   {
     key: SettingKeys.ShowAutosaves,
     label: "Show Autosaves",
-    options: [{
-      label: "Off",
-      value: "Off"
-    }, {
-      label: "On",
-      value: "On"
-    }],
+    options: [
+      {
+        label: "Off",
+        value: "Off",
+      },
+      {
+        label: "On",
+        value: "On",
+      },
+    ],
     default: 0,
     type: SettingType.DISPLAY,
   },
@@ -1162,32 +1188,7 @@ export function setSetting(setting: string, value: number): boolean {
       globalScene.disableDailyShinies = Setting[index].options[value].value == "Off";
       break;
     case SettingKeys.TitleScreenContinueMode:
-      globalScene.quickloadDisplayMode  = Setting[index].options[value].value;
-      break;
-    case SettingKeys.Show_Pokemon_Teams:
-      globalScene.showTeams = Setting[index].options[value].value !== "Off";
-      globalScene.showTeamSprites = Setting[index].options[value].value === "Sprite";
-      break;
-    case SettingKeys.Damage_Display:
-      globalScene.damageDisplay = Setting[index].options[value].value;
-      break;
-    case SettingKeys.LazyReloads:
-      globalScene.lazyReloads = Setting[index].options[value].value == "On";
-      break;
-    case SettingKeys.FancyBiome:
-      globalScene.menuChangesBiome = Setting[index].options[value].value == "On";
-      break;
-    case SettingKeys.ShowAutosaves:
-      globalScene.showAutosaves = Setting[index].options[value].value == "On";
-      break;
-    case SettingKeys.BiomePanels:
-      globalScene.doBiomePanels = Setting[index].options[value].value == "On";
-      break;
-    case SettingKeys.DailyShinyLuck:
-      globalScene.disableDailyShinies = Setting[index].options[value].value == "Off";
-      break;
-    case SettingKeys.TitleScreenContinueMode:
-      globalScene.quickloadDisplayMode  = Setting[index].options[value].value;
+      globalScene.quickloadDisplayMode = Setting[index].options[value].value;
       break;
     case SettingKeys.Show_Pokemon_Teams:
       globalScene.showTeams = Setting[index].options[value].value !== "Off";

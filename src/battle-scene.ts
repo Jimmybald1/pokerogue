@@ -8,30 +8,31 @@ import { allSpecies, getPokemonSpecies } from "#app/data/pokemon-species";
 import type { Constructor } from "#app/utils";
 import { isNullOrUndefined, randSeedInt } from "#app/utils";
 import * as Utils from "#app/utils";
-import type {
-  Modifier,
-  ModifierPredicate,
-  TurnHeldItemTransferModifier } from "./modifier/modifier";
-import {
-  IvScannerModifier
-} from "./modifier/modifier";
+import type { Modifier, ModifierPredicate, TurnHeldItemTransferModifier } from "./modifier/modifier";
+import { IvScannerModifier } from "./modifier/modifier";
 import {
   ConsumableModifier,
   ConsumablePokemonModifier,
   DoubleBattleChanceBoosterModifier,
   ExpBalanceModifier,
   ExpShareModifier,
-  ExtraModifierModifier, FusePokemonModifier,
-  GigantamaxAccessModifier, HealingBoosterModifier,
-  HiddenAbilityRateBoosterModifier, LockModifierTiersModifier, MegaEvolutionAccessModifier, ModifierBar,
-  MoneyMultiplierModifier, MultipleParticipantExpBonusModifier,
+  ExtraModifierModifier,
+  FusePokemonModifier,
+  GigantamaxAccessModifier,
+  HealingBoosterModifier,
+  HiddenAbilityRateBoosterModifier,
+  LockModifierTiersModifier,
+  MegaEvolutionAccessModifier,
+  ModifierBar,
+  MultipleParticipantExpBonusModifier,
   PersistentModifier,
   PokemonExpBoosterModifier,
   PokemonFormChangeItemModifier,
   PokemonHeldItemModifier,
   PokemonHpRestoreModifier,
   PokemonIncrementingStatModifier,
-  RememberMoveModifier, TerastallizeAccessModifier, TerrastalizeModifier,
+  RememberMoveModifier,
+  TerastallizeAccessModifier,
 } from "./modifier/modifier";
 import { PokeballType } from "#enums/pokeball";
 import {
@@ -69,7 +70,6 @@ import {
   BlockItemTheftAbAttr,
   DoubleBattleChanceAbAttr,
   PostBattleAbAttr,
-  PostBattleInitAbAttr,
   PostItemLostAbAttr,
 } from "#app/data/ability";
 import type { FixedBattleConfig } from "#app/battle";
@@ -226,8 +226,8 @@ export default class BattleScene extends SceneBase {
   public commandCursorMemory = false;
   public dexForDevs = false;
   public showMovesetFlyout = true;
-  public showTeams: boolean = true;
-  public showTeamSprites: boolean = false;
+  public showTeams = true;
+  public showTeamSprites = false;
   public showArenaFlyout = true;
   public showTimeOfDayWidget = true;
   public timeOfDayAnimation: EaseType = EaseType.NONE;
@@ -235,16 +235,16 @@ export default class BattleScene extends SceneBase {
   public enableTutorials: boolean = import.meta.env.VITE_BYPASS_TUTORIAL === "1";
   public enableMoveInfo = true;
   public enableRetries = false;
-  public damageDisplay: string = "Off";
-  public lazyReloads: boolean = false;
-  public menuChangesBiome: boolean = false;
-  public showAutosaves: boolean = false;
-  public doBiomePanels: boolean = false;
-  public disableDailyShinies: boolean = true; // Disables shiny luck in Daily Runs to prevent affecting RNG
-  public quickloadDisplayMode: string = "Dailies";
-  public waveShinyFlag: boolean = false;
+  public damageDisplay = "Off";
+  public lazyReloads = false;
+  public menuChangesBiome = false;
+  public showAutosaves = false;
+  public doBiomePanels = false;
+  public disableDailyShinies = true; // Disables shiny luck in Daily Runs to prevent affecting RNG
+  public quickloadDisplayMode = "Dailies";
+  public waveShinyFlag = false;
   public waveShinyMinToBreak: integer = 0;
-  public waveShinyChecked: boolean = false;
+  public waveShinyChecked = false;
   public tempWaveSeed: string;
   public tempRngCounter: integer = 0;
   public hideIvs = false;
@@ -312,7 +312,7 @@ export default class BattleScene extends SceneBase {
 
   public disableMenu = false;
 
-  public pathingToolUI: boolean = true;
+  public pathingToolUI = true;
 
   public gameData: GameData;
   public sessionSlotId: number;
@@ -1243,7 +1243,17 @@ export default class BattleScene extends SceneBase {
 
     return container;
   }
-  addPkIcon(pokemon: PokemonSpecies, form: integer = 0, x: number, y: number, originX: number = 0.5, originY: number = 0.5, ignoreOverride: boolean = false, shiny?: boolean, variant?: integer): Phaser.GameObjects.Container {
+  addPkIcon(
+    pokemon: PokemonSpecies,
+    form: integer = 0,
+    x: number,
+    y: number,
+    originX = 0.5,
+    originY = 0.5,
+    ignoreOverride = false,
+    shiny?: boolean,
+    variant?: integer,
+  ): Phaser.GameObjects.Container {
     const container = this.add.container(x, y);
     container.setName(`${pokemon.name}-icon`);
 
@@ -1413,7 +1423,7 @@ export default class BattleScene extends SceneBase {
           this.children.removeAll(true);
           this.game.domContainer.innerHTML = "";
           this.launchBattle();
-        }
+        },
       });
     }
   }
@@ -1430,7 +1440,7 @@ export default class BattleScene extends SceneBase {
   }
 
   updateCatchRate() {
-    let txt = [ "Turn: " + this.currentBattle.turn ];
+    let txt = ["Turn: " + this.currentBattle.turn];
     if (!this.getEnemyField()[0].hasTrainer()) {
       this.getEnemyField().forEach((pk, i) => {
         if (pk.isActive() && pk.hp > 0) {
@@ -1439,7 +1449,7 @@ export default class BattleScene extends SceneBase {
       });
     }
     if (txt.length > 2) {
-      txt = [ "Turn: " + this.currentBattle.turn ];
+      txt = ["Turn: " + this.currentBattle.turn];
     }
     this.arenaFlyout.updateFieldText();
 
@@ -1457,17 +1467,26 @@ export default class BattleScene extends SceneBase {
 
   // TODO: ...this never actually returns `null`, right?
   InsertLure() {
-    const lure = modifierTypes.LURE().withIdFromFunc(modifierTypes.LURE).newModifier() as DoubleBattleChanceBoosterModifier;
+    const lure = modifierTypes
+      .LURE()
+      .withIdFromFunc(modifierTypes.LURE)
+      .newModifier() as DoubleBattleChanceBoosterModifier;
     this.addModifier(lure, true, false, false, true);
   }
 
   InsertSuperLure() {
-    const super_lure = modifierTypes.SUPER_LURE().withIdFromFunc(modifierTypes.SUPER_LURE).newModifier() as DoubleBattleChanceBoosterModifier;
+    const super_lure = modifierTypes
+      .SUPER_LURE()
+      .withIdFromFunc(modifierTypes.SUPER_LURE)
+      .newModifier() as DoubleBattleChanceBoosterModifier;
     this.addModifier(super_lure, true, false, false, true);
   }
 
   InsertMaxLure() {
-    const max_lure = modifierTypes.MAX_LURE().withIdFromFunc(modifierTypes.MAX_LURE).newModifier() as DoubleBattleChanceBoosterModifier;
+    const max_lure = modifierTypes
+      .MAX_LURE()
+      .withIdFromFunc(modifierTypes.MAX_LURE)
+      .newModifier() as DoubleBattleChanceBoosterModifier;
     this.addModifier(max_lure, true, false, false, true);
   }
 
@@ -1483,46 +1502,66 @@ export default class BattleScene extends SceneBase {
   }
 
   InsertAbilityCharm(amount: integer) {
-    const ability_charm = modifierTypes.ABILITY_CHARM().withIdFromFunc(modifierTypes.ABILITY_CHARM).newModifier() as HiddenAbilityRateBoosterModifier;
+    const ability_charm = modifierTypes
+      .ABILITY_CHARM()
+      .withIdFromFunc(modifierTypes.ABILITY_CHARM)
+      .newModifier() as HiddenAbilityRateBoosterModifier;
     ability_charm.stackCount = amount;
     this.addModifier(ability_charm, true, false, false, true);
   }
 
   InsertMegaBracelet() {
-    const modifier = modifierTypes.MEGA_BRACELET().withIdFromFunc(modifierTypes.MEGA_BRACELET).newModifier() as MegaEvolutionAccessModifier;
+    const modifier = modifierTypes
+      .MEGA_BRACELET()
+      .withIdFromFunc(modifierTypes.MEGA_BRACELET)
+      .newModifier() as MegaEvolutionAccessModifier;
     this.addModifier(modifier, true, false, false, true);
   }
 
   InsertDynamaxBand() {
-    const modifier = modifierTypes.DYNAMAX_BAND().withIdFromFunc(modifierTypes.DYNAMAX_BAND).newModifier() as GigantamaxAccessModifier;
+    const modifier = modifierTypes
+      .DYNAMAX_BAND()
+      .withIdFromFunc(modifierTypes.DYNAMAX_BAND)
+      .newModifier() as GigantamaxAccessModifier;
     this.addModifier(modifier, true, false, false, true);
   }
 
   InsertTeraOrb() {
-    const modifier = modifierTypes.TERA_ORB().withIdFromFunc(modifierTypes.TERA_ORB).newModifier() as TerastallizeAccessModifier;
+    const modifier = modifierTypes
+      .TERA_ORB()
+      .withIdFromFunc(modifierTypes.TERA_ORB)
+      .newModifier() as TerastallizeAccessModifier;
     this.addModifier(modifier, true, false, false, true);
   }
 
   InsertLockCapsule() {
-    const modifier = modifierTypes.LOCK_CAPSULE().withIdFromFunc(modifierTypes.LOCK_CAPSULE).newModifier() as LockModifierTiersModifier;
+    const modifier = modifierTypes
+      .LOCK_CAPSULE()
+      .withIdFromFunc(modifierTypes.LOCK_CAPSULE)
+      .newModifier() as LockModifierTiersModifier;
     this.addModifier(modifier, true, false, false, true);
   }
 
   InsertIVScanner() {
-    const modifier = modifierTypes.IV_SCANNER().withIdFromFunc(modifierTypes.IV_SCANNER).newModifier() as IvScannerModifier;
+    const modifier = modifierTypes
+      .IV_SCANNER()
+      .withIdFromFunc(modifierTypes.IV_SCANNER)
+      .newModifier() as IvScannerModifier;
     this.addModifier(modifier, true, false, false, true);
   }
 
   RemoveModifiers() {
-    const mods = this.modifiers.filter(m =>
-      m instanceof HiddenAbilityRateBoosterModifier
-      || m instanceof DoubleBattleChanceBoosterModifier
-      || m instanceof ExtraModifierModifier
-      || m instanceof MegaEvolutionAccessModifier
-      || m instanceof GigantamaxAccessModifier
-      || m instanceof TerastallizeAccessModifier
-      || m instanceof LockModifierTiersModifier
-      || m instanceof IvScannerModifier);
+    const mods = this.modifiers.filter(
+      m =>
+        m instanceof HiddenAbilityRateBoosterModifier ||
+        m instanceof DoubleBattleChanceBoosterModifier ||
+        m instanceof ExtraModifierModifier ||
+        m instanceof MegaEvolutionAccessModifier ||
+        m instanceof GigantamaxAccessModifier ||
+        m instanceof TerastallizeAccessModifier ||
+        m instanceof LockModifierTiersModifier ||
+        m instanceof IvScannerModifier,
+    );
     mods.forEach(m => {
       this.removeModifier(m);
     });
@@ -1535,7 +1574,13 @@ export default class BattleScene extends SceneBase {
     });
   }
 
-  newBattle(waveIndex?: integer, battleType?: BattleType, trainerData?: TrainerData, double?: boolean, mysteryEncounterType?: MysteryEncounterType): Battle | null {
+  newBattle(
+    waveIndex?: integer,
+    battleType?: BattleType,
+    trainerData?: TrainerData,
+    double?: boolean,
+    mysteryEncounterType?: MysteryEncounterType,
+  ): Battle | null {
     const _startingWave = Overrides.STARTING_WAVE_OVERRIDE || startingWave;
     const newWaveIndex = waveIndex || (this.currentBattle?.waveIndex || _startingWave - 1) + 1;
     let newDouble: boolean | undefined;
@@ -1579,7 +1624,11 @@ export default class BattleScene extends SceneBase {
         if (trainerConfigs[trainerType].doubleOnly) {
           doubleTrainer = true;
         } else if (trainerConfigs[trainerType].hasDouble) {
-          doubleTrainer = !Utils.randSeedInt(this.getDoubleBattleChance(newWaveIndex, playerField)  undefined, "Double battle roll");
+          doubleTrainer = !Utils.randSeedInt(
+            this.getDoubleBattleChance(newWaveIndex, playerField),
+            undefined,
+            "Double battle roll",
+          );
           // Add a check that special trainers can't be double except for tate and liza - they should use the normal double chance
           if (
             trainerConfigs[trainerType].trainerTypeDouble &&
@@ -1608,7 +1657,11 @@ export default class BattleScene extends SceneBase {
 
     if (double === undefined && newWaveIndex > 1) {
       if (newBattleType === BattleType.WILD && !this.gameMode.isWaveFinal(newWaveIndex)) {
-        newDouble = !Utils.randSeedInt(this.getDoubleBattleChance(newWaveIndex, playerField)  undefined, "Double battle roll");
+        newDouble = !Utils.randSeedInt(
+          this.getDoubleBattleChance(newWaveIndex, playerField),
+          undefined,
+          "Double battle roll",
+        );
       } else if (newBattleType === BattleType.TRAINER) {
         newDouble = newTrainer?.variant === TrainerVariant.DOUBLE;
       }
@@ -2021,7 +2074,8 @@ export default class BattleScene extends SceneBase {
         isBoss =
           waveIndex % 10 === 0 ||
           (this.gameMode.hasRandomBosses &&
-            Utils.randSeedInt(100, undefined, "Boss HP segments") < Math.min(Math.max(Math.ceil((waveIndex - 250) / 50), 0) * 2, 30));
+            Utils.randSeedInt(100, undefined, "Boss HP segments") <
+              Math.min(Math.max(Math.ceil((waveIndex - 250) / 50), 0) * 2, 30));
       }, waveIndex << 2);
     }
     if (!isBoss) {
@@ -2077,7 +2131,7 @@ export default class BattleScene extends SceneBase {
     this.tempWaveSeed = this.waveSeed;
     this.tempRngCounter = this.rngCounter;
     this.waveSeed = Utils.shiftCharCodes(this.seed, wave);
-    Phaser.Math.RND.sow([ this.waveSeed ]);
+    Phaser.Math.RND.sow([this.waveSeed]);
     console.log("Temporarily reset wave RNG");
     this.rngCounter = 0;
     //this.setScoreText("RNG: 0")
@@ -2085,7 +2139,7 @@ export default class BattleScene extends SceneBase {
   restoreSeed(waveIndex?: integer) {
     const wave = waveIndex || this.currentBattle?.waveIndex || 0;
     this.waveSeed = this.tempWaveSeed;
-    Phaser.Math.RND.sow([ this.waveSeed ]);
+    Phaser.Math.RND.sow([this.waveSeed]);
     console.log("Restored wave RNG");
     this.rngCounter = this.tempRngCounter;
     //this.setScoreText("RNG: 0")
