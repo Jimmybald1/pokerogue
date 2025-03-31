@@ -661,10 +661,10 @@ export class ConfusedTag extends BattlerTag {
       globalScene.unshiftPhase(new CommonAnimPhase(pokemon.getBattlerIndex(), undefined, CommonAnim.CONFUSION));
 
       // 1/3 chance of hitting self with a 40 base power move
-      if (pokemon.randSeedInt(3) === 0) {
+      if (pokemon.randSeedInt(3, undefined, "Confusion chance") === 0) {
         const atk = pokemon.getEffectiveStat(Stat.ATK);
         const def = pokemon.getEffectiveStat(Stat.DEF);
-        const damage = toDmgValue(((((2 * pokemon.level / 5 + 2) * 40 * atk / def) / 50) + 2) * (pokemon.randSeedIntRange(85, 100) / 100));
+        const damage = toDmgValue(((((2 * pokemon.level / 5 + 2) * 40 * atk / def) / 50) + 2) * (pokemon.randSeedIntRange(85, 100, "Damage roll for Confusion") / 100));
         globalScene.queueMessage(i18next.t("battlerTags:confusedLapseHurtItself"));
         pokemon.damageAndUpdate(damage);
         pokemon.battleData.hitCount++;
@@ -778,7 +778,7 @@ export class InfatuatedTag extends BattlerTag {
       );
       globalScene.unshiftPhase(new CommonAnimPhase(pokemon.getBattlerIndex(), undefined, CommonAnim.ATTRACT));
 
-      if (pokemon.randSeedInt(2)) {
+      if (pokemon.randSeedInt(2, undefined, "Chance to fail attack from Infatuation")) {
         globalScene.queueMessage(i18next.t("battlerTags:infatuatedLapseImmobilize", { pokemonNameWithAffix: getPokemonNameWithAffix(pokemon) }));
         (globalScene.getCurrentPhase() as MovePhase).cancel();
       }
@@ -961,7 +961,7 @@ export class FrenzyTag extends BattlerTag {
     super.onRemove(pokemon);
 
     if (this.turnCount < 2) { // Only add CONFUSED tag if a disruption occurs on the final confusion-inducing turn of FRENZY
-      pokemon.addTag(BattlerTagType.CONFUSED, pokemon.randSeedIntRange(2, 4));
+      pokemon.addTag(BattlerTagType.CONFUSED, pokemon.randSeedIntRange(2, 4, "Frenzy confusion effect"));
     }
   }
 }

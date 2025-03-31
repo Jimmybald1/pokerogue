@@ -1512,7 +1512,7 @@ export async function populateAnims() {
   }
 
   // used in commented code
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
   const animReplacer = (k, v) => {
     if (k === "id" && !v) {
       return undefined;
@@ -1531,7 +1531,7 @@ export async function populateAnims() {
   const propSets = [ animConfigProps, animFrameProps ];
 
   // used in commented code
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
   const animComparator = (a: Element, b: Element) => {
     let props: string[];
     for (let p = 0; p < propSets.length; p++) {

@@ -2,6 +2,7 @@ import { globalScene } from "#app/global-scene";
 import type { Biome } from "#app/enums/biome";
 import { getBiomeKey } from "#app/field/arena";
 import { BattlePhase } from "./battle-phase";
+import * as LoggerTools from "../logger";
 
 export class SwitchBiomePhase extends BattlePhase {
   private nextBiome: Biome;

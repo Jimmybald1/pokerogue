@@ -30,6 +30,7 @@ import type { Moves } from "#enums/moves";
 import { Species } from "#enums/species";
 import { TimeOfDay } from "#enums/time-of-day";
 import { TrainerType } from "#enums/trainer-type";
+import * as LoggerTools from "../logger";
 import { Abilities } from "#enums/abilities";
 import { SpeciesFormChangeRevertWeatherFormTrigger, SpeciesFormChangeWeatherTrigger } from "#app/data/pokemon-forms";
 import { CommonAnimPhase } from "#app/phases/common-anim-phase";
@@ -53,7 +54,7 @@ export class Arena {
 
   private lastTimeOfDay: TimeOfDay;
 
-  private pokemonPool: PokemonPools;
+  public pokemonPool: PokemonPools;
   private trainerPool: BiomeTierTrainerPools;
 
   public readonly eventTarget: EventTarget = new EventTarget();
@@ -107,22 +108,35 @@ export class Arena {
     if (typeof luckValue !== "undefined") {
       luckModifier = luckValue * (isBossSpecies ? 0.5 : 2);
     }
-    const tierValue = Utils.randSeedInt(randVal - luckModifier);
+    const tierValue = Utils.randSeedInt(randVal - luckModifier, undefined, "Selecting rarity tier for encounter");
     let tier = !isBossSpecies
       ? tierValue >= 156 ? BiomePoolTier.COMMON : tierValue >= 32 ? BiomePoolTier.UNCOMMON : tierValue >= 6 ? BiomePoolTier.RARE : tierValue >= 1 ? BiomePoolTier.SUPER_RARE : BiomePoolTier.ULTRA_RARE
       : tierValue >= 20 ? BiomePoolTier.BOSS : tierValue >= 6 ? BiomePoolTier.BOSS_RARE : tierValue >= 1 ? BiomePoolTier.BOSS_SUPER_RARE : BiomePoolTier.BOSS_ULTRA_RARE;
     console.log(BiomePoolTier[tier]);
+    const tiernames = [
+      "Common",
+      "Uncommon",
+      "Rare",
+      "Super Rare",
+      "Ultra Rare",
+      "Common",
+      "Rare",
+      "Super Rare",
+      "Ultra Rare",
+    ];
+    console.log(tiernames[tier]);
     while (!this.pokemonPool[tier].length) {
       console.log(`Downgraded rarity tier from ${BiomePoolTier[tier]} to ${BiomePoolTier[tier - 1]}`);
       tier--;
     }
+    LoggerTools.rarities[LoggerTools.rarityslot[0]] = tiernames[tier];
     const tierPool = this.pokemonPool[tier];
     let ret: PokemonSpecies;
     let regen = false;
     if (!tierPool.length) {
       ret = globalScene.randomSpecies(waveIndex, level);
     } else {
-      const entry = tierPool[Utils.randSeedInt(tierPool.length)];
+      const entry = tierPool[Utils.randSeedInt(tierPool.length, undefined, "Selecting rarity tier but for real this time")];
       let species: Species;
       if (typeof entry === "number") {
         species = entry as Species;
@@ -133,7 +147,7 @@ export class Arena {
           if (level >= levelThreshold) {
             const speciesIds = entry[levelThreshold];
             if (speciesIds.length > 1) {
-              species = speciesIds[Utils.randSeedInt(speciesIds.length)];
+              species = speciesIds[Utils.randSeedInt(speciesIds.length, undefined, "Randomly selecting encounter species")];
             } else {
               species = speciesIds[0];
             }
@@ -163,7 +177,7 @@ export class Arena {
     }
 
     if (regen && (attempt || 0) < 10) {
-      console.log("Incompatible level: regenerating...");
+      console.log(waveIndex, Biome[this.biomeType], ret.name, level, "Incompatible level: regenerating...");
       return this.randomSpecies(waveIndex, level, (attempt || 0) + 1);
     }
 
@@ -179,7 +193,7 @@ export class Arena {
     const isTrainerBoss = !!this.trainerPool[BiomePoolTier.BOSS].length
       && (globalScene.gameMode.isTrainerBoss(waveIndex, this.biomeType, globalScene.offsetGym) || isBoss);
     console.log(isBoss, this.trainerPool);
-    const tierValue = Utils.randSeedInt(!isTrainerBoss ? 512 : 64);
+    const tierValue = Utils.randSeedInt(!isTrainerBoss ? 512 : 64, undefined, "Selecting random trainer");
     let tier = !isTrainerBoss
       ? tierValue >= 156 ? BiomePoolTier.COMMON : tierValue >= 32 ? BiomePoolTier.UNCOMMON : tierValue >= 6 ? BiomePoolTier.RARE : tierValue >= 1 ? BiomePoolTier.SUPER_RARE : BiomePoolTier.ULTRA_RARE
       : tierValue >= 20 ? BiomePoolTier.BOSS : tierValue >= 6 ? BiomePoolTier.BOSS_RARE : tierValue >= 1 ? BiomePoolTier.BOSS_SUPER_RARE : BiomePoolTier.BOSS_ULTRA_RARE;
@@ -189,7 +203,7 @@ export class Arena {
       tier--;
     }
     const tierPool = this.trainerPool[tier] || [];
-    return !tierPool.length ? TrainerType.BREEDER : tierPool[Utils.randSeedInt(tierPool.length)];
+    return !tierPool.length ? TrainerType.BREEDER : tierPool[Utils.randSeedInt(tierPool.length, undefined, "Selecting trainer type")];
   }
 
   getSpeciesFormIndex(species: PokemonSpecies): number {
@@ -247,7 +261,7 @@ export class Arena {
 
   /**
    * Sets weather to the override specified in overrides.ts
-   * @param weather new {@linkcode WeatherType} to set
+   * @param weather new weather to set of type WeatherType
    * @returns true to force trySetWeather to return true
    */
   trySetWeatherOverride(weather: WeatherType): boolean {
@@ -259,8 +273,8 @@ export class Arena {
 
   /**
    * Attempts to set a new weather to the battle
-   * @param weather {@linkcode WeatherType} new {@linkcode WeatherType} to set
-   * @param hasPokemonSource boolean if the new weather is from a pokemon
+   * @param weather new weather to set of type WeatherType
+   * @param hasPokemonSource is the new weather from a pokemon
    * @returns true if new weather set, false if no weather provided or attempting to set the same weather as currently in use
    */
   trySetWeather(weather: WeatherType, hasPokemonSource: boolean): boolean {
@@ -561,18 +575,7 @@ export class Arena {
     this.applyTagsForSide(tagType, ArenaTagSide.BOTH, simulated, ...args);
   }
 
-  /**
-   * Adds a new tag to the arena
-   * @param tagType {@linkcode ArenaTagType} the tag being added
-   * @param turnCount How many turns the tag lasts
-   * @param sourceMove {@linkcode Moves} the move the tag came from, or `undefined` if not from a move
-   * @param sourceId The ID of the pokemon in play the tag came from (see {@linkcode BattleScene.getPokemonById})
-   * @param side {@linkcode ArenaTagSide} which side(s) the tag applies to
-   * @param quiet If a message should be queued on screen to announce the tag being added
-   * @param targetIndex The {@linkcode BattlerIndex} of the target pokemon
-   * @returns `false` if there already exists a tag of this type in the Arena
-   */
-  addTag(tagType: ArenaTagType, turnCount: number, sourceMove: Moves | undefined, sourceId: number, side: ArenaTagSide = ArenaTagSide.BOTH, quiet: boolean = false, targetIndex?: BattlerIndex): boolean {
+  addTag(tagType: ArenaTagType, turnCount: integer, sourceMove: Moves | undefined, sourceId: integer, side: ArenaTagSide = ArenaTagSide.BOTH, quiet: boolean = false, targetIndex?: BattlerIndex): boolean {
     const existingTag = this.getTagOnSide(tagType, side);
     if (existingTag) {
       existingTag.onOverlap(this);
@@ -585,7 +588,6 @@ export class Arena {
       return false;
     }
 
-    // creates a new tag object
     const newTag = getArenaTag(tagType, turnCount || 0, sourceMove, sourceId, targetIndex, side);
     if (newTag) {
       newTag.onAdd(this, quiet);
@@ -599,11 +601,6 @@ export class Arena {
     return true;
   }
 
-  /**
-   * Attempts to get a tag from the Arena via {@linkcode getTagOnSide} that applies to both sides
-   * @param tagType The {@linkcode ArenaTagType} or {@linkcode ArenaTag} to get
-   * @returns either the {@linkcode ArenaTag}, or `undefined` if it isn't there
-   */
   getTag(tagType: ArenaTagType | Constructor<ArenaTag>): ArenaTag | undefined {
     return this.getTagOnSide(tagType, ArenaTagSide.BOTH);
   }
@@ -612,35 +609,16 @@ export class Arena {
     return !!this.getTag(tagType);
   }
 
-  /**
-   * Attempts to get a tag from the Arena from a specific side (the tag passed in has to either apply to both sides, or the specific side only)
-   *
-   * eg: `MIST` only applies to the user's side, while `MUD_SPORT` applies to both user and enemy side
-   * @param tagType The {@linkcode ArenaTagType} or {@linkcode ArenaTag} to get
-   * @param side The {@linkcode ArenaTagSide} to look at
-   * @returns either the {@linkcode ArenaTag}, or `undefined` if it isn't there
-   */
   getTagOnSide(tagType: ArenaTagType | Constructor<ArenaTag>, side: ArenaTagSide): ArenaTag | undefined {
     return typeof(tagType) === "string"
       ? this.tags.find(t => t.tagType === tagType && (side === ArenaTagSide.BOTH || t.side === ArenaTagSide.BOTH || t.side === side))
       : this.tags.find(t => t instanceof tagType && (side === ArenaTagSide.BOTH || t.side === ArenaTagSide.BOTH || t.side === side));
   }
 
-  /**
-   * Uses {@linkcode findTagsOnSide} to filter (using the parameter function) for specific tags that apply to both sides
-   * @param tagPredicate a function mapping {@linkcode ArenaTag}s to `boolean`s
-   * @returns array of {@linkcode ArenaTag}s from which the Arena's tags return true and apply to both sides
-   */
   findTags(tagPredicate: (t: ArenaTag) => boolean): ArenaTag[] {
     return this.findTagsOnSide(tagPredicate, ArenaTagSide.BOTH);
   }
 
-  /**
-   * Returns specific tags from the arena that pass the `tagPredicate` function passed in as a parameter, and apply to the given side
-   * @param tagPredicate a function mapping {@linkcode ArenaTag}s to `boolean`s
-   * @param side The {@linkcode ArenaTagSide} to look at
-   * @returns array of {@linkcode ArenaTag}s from which the Arena's tags return `true` and apply to the given side
-   */
   findTagsOnSide(tagPredicate: (t: ArenaTag) => boolean, side: ArenaTagSide): ArenaTag[] {
     return this.tags.filter(t => tagPredicate(t) && (side === ArenaTagSide.BOTH || t.side === ArenaTagSide.BOTH || t.side === side));
   }
@@ -878,7 +856,7 @@ export class ArenaBase extends Phaser.GameObjects.Container {
     if (!this.player) {
       globalScene.executeWithSeedOffset(() => {
         this.propValue = propValue === undefined
-          ? hasProps ? Utils.randSeedInt(8) : 0
+          ? hasProps ? Utils.randSeedInt(8, undefined, "Selecting biome prop(?)") : 0
           : propValue;
         this.props.forEach((prop, p) => {
           const propKey = `${biomeKey}_b${hasProps ? `_${p + 1}` : ""}`;

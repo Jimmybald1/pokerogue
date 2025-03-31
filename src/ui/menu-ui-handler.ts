@@ -17,23 +17,40 @@ import { SelectModifierPhase } from "#app/phases/select-modifier-phase";
 import { AdminMode, getAdminModeName } from "./admin-ui-handler";
 import { pokerogueApi } from "#app/plugins/api/pokerogue-api";
 
+// TODO: Probably should fix this UI stuff
+
 enum MenuOptions {
   GAME_SETTINGS,
-  ACHIEVEMENTS,
   STATS,
+  ACHIEVEMENTS,
   EGG_LIST,
   EGG_GACHA,
   POKEDEX,
   MANAGE_DATA,
   COMMUNITY,
   SAVE_AND_QUIT,
-  LOG_OUT,
+  SAVE_AND_REFRESH,
+  LOG_OUT
 }
 
 let wikiUrl = "https://wiki.pokerogue.net/start";
 const discordUrl = "https://discord.gg/uWpTfdKG49";
 const githubUrl = "https://github.com/pagefaultgames/pokerogue";
 const redditUrl = "https://www.reddit.com/r/pokerogue";
+const links = [
+  [ "Privacy Policy", "https://app.termly.io/policy-viewer/policy.html?policyUUID=bc96778b-3f04-4d25-bafc-0deba53e8bec" ],
+  [ "Cookie Disclaimer", "https://app.termly.io/policy-viewer/policy.html?policyUUID=8b523c05-7ec2-4646-9534-5bd61b386e2a" ],
+  [ "Terms & Conditions", "https://app.termly.io/policy-viewer/policy.html?policyUUID=b01e092a-9721-477f-8356-45576702ff9e" ],
+  [ "Acceptable Use Policy", "https://app.termly.io/policy-viewer/policy.html?policyUUID=3b5d1928-3f5b-4ee1-b8df-2d6c276b0bcc" ]
+];
+function goToWebpage(urlIndex: integer) {
+  const link = document.createElement("a");
+  link.href = links[urlIndex][1];
+  link.target = "_blank";
+  link.rel = "noreferrer noopener";
+  link.click();
+  link.remove();
+}
 const donateUrl = "https://github.com/sponsors/pagefaultgames";
 
 export default class MenuUiHandler extends MessageUiHandler {
@@ -55,6 +72,8 @@ export default class MenuUiHandler extends MessageUiHandler {
 
   protected manageDataConfig: OptionSelectConfig;
   protected communityConfig: OptionSelectConfig;
+  protected accountStatsConfig: OptionSelectConfig;
+  protected legalLinksConfig: OptionSelectConfig;
 
   // Windows for the default message box and the message box for testing dialogue
   private menuMessageBox: Phaser.GameObjects.NineSlice;
@@ -68,7 +87,7 @@ export default class MenuUiHandler extends MessageUiHandler {
     super(mode);
 
     this.excludedMenus = () => [
-      { condition: [ Mode.COMMAND, Mode.TITLE ].includes(mode ?? Mode.TITLE), options: [ MenuOptions.EGG_GACHA, MenuOptions.EGG_LIST ]},
+      { condition: [ Mode.COMMAND, Mode.TITLE ].includes(mode ?? Mode.TITLE), options: [ MenuOptions.EGG_GACHA ]},
       { condition: bypassLogin, options: [ MenuOptions.LOG_OUT ]}
     ];
 
@@ -342,6 +361,79 @@ export default class MenuUiHandler extends MessageUiHandler {
       xOffset: 98,
       options: manageDataOptions,
       maxOptions: 7
+    };
+
+    const accountOptions: OptionSelectItem[] = [
+      {
+        label: "Stats",
+        handler: () => {
+          ui.revertMode();
+          ui.setOverlayMode(Mode.GAME_STATS);
+          return true;
+        }
+      },
+      {
+        label: "Achievements",
+        handler: () => {
+          ui.revertMode();
+          ui.setOverlayMode(Mode.ACHIEVEMENTS);
+          return true;
+        }
+      },
+      {
+        label: i18next.t("menuUiHandler:cancel"),
+        handler: () => {
+          globalScene.ui.revertMode();
+          return true;
+        },
+        keepOpen: true
+      }
+    ];
+
+    this.accountStatsConfig = {
+      xOffset: 98,
+      options: accountOptions
+    };
+
+    const siteOptions: OptionSelectItem[] = [
+      {
+        label: "Consent Preferences",
+        handler: () => {
+          const consentLink = document.querySelector(".termly-display-preferences") as HTMLInputElement;
+          const clickEvent = new MouseEvent("click", {
+            view: window,
+            bubbles: true,
+            cancelable: true
+          });
+          consentLink.dispatchEvent(clickEvent);
+          consentLink.focus();
+          return true;
+        },
+        keepOpen: true
+      }
+    ];
+    for (var i = 0; i < links.length; i++) {
+      siteOptions.push({
+        label: links[i][0],
+        handler: () => {
+          window.open(links[i][1], "_blank")!.focus();
+          return true;
+        },
+        keepOpen: true
+      });
+    }
+    siteOptions.push({
+      label: i18next.t("menuUiHandler:cancel"),
+      handler: () => {
+        globalScene.ui.revertMode();
+        return true;
+      },
+      keepOpen: true
+    });
+
+    this.legalLinksConfig = {
+      xOffset: 98,
+      options: siteOptions
     };
 
     const communityOptions: OptionSelectItem[] = [

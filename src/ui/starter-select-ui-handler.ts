@@ -2068,6 +2068,7 @@ export default class StarterSelectUiHandler extends MessageUiHandler {
                   }
                 } while (newVariant !== props.variant);
                 starterAttributes.variant = newVariant; // store the selected variant
+                // If going to a higher variant, display that
                 if ((this.speciesStarterDexEntry!.caughtAttr & DexAttr.NON_SHINY) && (newVariant <= props.variant)) {
                   // If we have run out of variants, go back to non shiny
                   this.setSpeciesDetails(this.lastSpecies, { shiny: false, variant: 0 });

@@ -8,6 +8,7 @@ import i18next, { t } from "i18next";
 import * as Utils from "#app/utils";
 import { SelectGenderPhase } from "./select-gender-phase";
 import { UnavailablePhase } from "./unavailable-phase";
+import * as LoggerTools from "../logger";
 
 export class LoginPhase extends Phase {
   private showText: boolean;

@@ -25,7 +25,7 @@ const namespace = "mysteryEncounters/departmentStoreSale";
 export const DepartmentStoreSaleEncounter: MysteryEncounter =
   MysteryEncounterBuilder.withEncounterType(MysteryEncounterType.DEPARTMENT_STORE_SALE)
     .withEncounterTier(MysteryEncounterTier.COMMON)
-    .withSceneWaveRangeRequirement(CLASSIC_MODE_MYSTERY_ENCOUNTER_WAVES[0], 100)
+    .withSceneWaveRangeRequirement(-1, 100)
     .withIntroSpriteConfigs([
       {
         spriteKey: "department_store_sale_lady",

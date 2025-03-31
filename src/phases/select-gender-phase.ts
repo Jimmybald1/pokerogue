@@ -4,6 +4,7 @@ import { Phase } from "#app/phase";
 import { SettingKeys } from "#app/system/settings/settings";
 import { Mode } from "#app/ui/ui";
 import i18next from "i18next";
+import * as LoggerTools from "../logger";
 
 export class SelectGenderPhase extends Phase {
   constructor() {

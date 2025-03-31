@@ -33,7 +33,7 @@ const VITAMIN_DEALER_EXPENSIVE_PRICE_MULTIPLIER = 5;
 export const ShadyVitaminDealerEncounter: MysteryEncounter =
   MysteryEncounterBuilder.withEncounterType(MysteryEncounterType.SHADY_VITAMIN_DEALER)
     .withEncounterTier(MysteryEncounterTier.COMMON)
-    .withSceneWaveRangeRequirement(...CLASSIC_MODE_MYSTERY_ENCOUNTER_WAVES)
+    .withSceneWaveRangeRequirement(-1, -1)
     .withSceneRequirement(new MoneyRequirement(0, VITAMIN_DEALER_CHEAP_PRICE_MULTIPLIER)) // Must have the money for at least the cheap deal
     .withPrimaryPokemonHealthRatioRequirement([ 0.51, 1 ]) // At least 1 Pokemon must have above half HP
     .withIntroSpriteConfigs([

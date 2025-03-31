@@ -8,6 +8,7 @@ import { BattlePhase } from "./battle-phase";
 import * as Utils from "#app/utils";
 import { PartyHealPhase } from "./party-heal-phase";
 import { SwitchBiomePhase } from "./switch-biome-phase";
+import * as LoggerTools from "../logger";
 
 export class SelectBiomePhase extends BattlePhase {
   constructor() {
@@ -29,8 +30,8 @@ export class SelectBiomePhase extends BattlePhase {
     };
 
     if ((globalScene.gameMode.isClassic && globalScene.gameMode.isWaveFinal(globalScene.currentBattle.waveIndex + 9))
-        || (globalScene.gameMode.isDaily && globalScene.gameMode.isWaveFinal(globalScene.currentBattle.waveIndex))
-        || (globalScene.gameMode.hasShortBiomes && !(globalScene.currentBattle.waveIndex % 50))) {
+      || (globalScene.gameMode.isDaily && globalScene.gameMode.isWaveFinal(globalScene.currentBattle.waveIndex))
+      || (globalScene.gameMode.hasShortBiomes && !(globalScene.currentBattle.waveIndex % 50))) {
       setNextBiome(Biome.END);
     } else if (globalScene.gameMode.hasRandomBiomes) {
       setNextBiome(this.generateNextBiome());
@@ -38,7 +39,7 @@ export class SelectBiomePhase extends BattlePhase {
       let biomes: Biome[] = [];
       globalScene.executeWithSeedOffset(() => {
         biomes = (biomeLinks[currentBiome] as (Biome | [Biome, number])[])
-          .filter(b => !Array.isArray(b) || !Utils.randSeedInt(b[1]))
+          .filter(b => !Array.isArray(b) || !Utils.randSeedInt(b[1], undefined, "Choosing next biome"))
           .map(b => !Array.isArray(b) ? b : b[0]);
       }, globalScene.currentBattle.waveIndex);
       if (biomes.length > 1 && globalScene.findModifier(m => m instanceof MapModifier)) {
@@ -47,7 +48,7 @@ export class SelectBiomePhase extends BattlePhase {
           biomeChoices = (!Array.isArray(biomeLinks[currentBiome])
             ? [ biomeLinks[currentBiome] as Biome ]
             : biomeLinks[currentBiome] as (Biome | [Biome, number])[])
-            .filter((b, i) => !Array.isArray(b) || !Utils.randSeedInt(b[1]))
+            .filter((b, i) => !Array.isArray(b) || !Utils.randSeedInt(b[1], undefined, "Choosing next biome for map"))
             .map(b => Array.isArray(b) ? b[0] : b);
         }, globalScene.currentBattle.waveIndex);
         const biomeSelectItems = biomeChoices.map(b => {
@@ -55,6 +56,9 @@ export class SelectBiomePhase extends BattlePhase {
             label: getBiomeName(b),
             handler: () => {
               globalScene.ui.setMode(Mode.MESSAGE);
+              if (biomeChoices.length > 1 && b != Biome.END) {
+                LoggerTools.logActions(globalScene.currentBattle.waveIndex - 1, `Go to ${getBiomeName(b)}`);
+              }
               setNextBiome(b);
               return true;
             }
@@ -66,7 +70,7 @@ export class SelectBiomePhase extends BattlePhase {
           delay: 1000
         });
       } else {
-        setNextBiome(biomes[Utils.randSeedInt(biomes.length)]);
+        setNextBiome(biomes[Utils.randSeedInt(biomes.length, undefined, "Choosing biome randomly")]);
       }
     } else if (biomeLinks.hasOwnProperty(currentBiome)) {
       setNextBiome(biomeLinks[currentBiome] as Biome);

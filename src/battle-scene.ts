@@ -11,7 +11,9 @@ import * as Utils from "#app/utils";
 import type {
   Modifier,
   ModifierPredicate,
-  TurnHeldItemTransferModifier,
+  TurnHeldItemTransferModifier } from "./modifier/modifier";
+import {
+  IvScannerModifier
 } from "./modifier/modifier";
 import {
   ConsumableModifier,
@@ -19,17 +21,17 @@ import {
   DoubleBattleChanceBoosterModifier,
   ExpBalanceModifier,
   ExpShareModifier,
-  FusePokemonModifier,
-  HealingBoosterModifier,
-  ModifierBar,
-  MultipleParticipantExpBonusModifier,
+  ExtraModifierModifier, FusePokemonModifier,
+  GigantamaxAccessModifier, HealingBoosterModifier,
+  HiddenAbilityRateBoosterModifier, LockModifierTiersModifier, MegaEvolutionAccessModifier, ModifierBar,
+  MoneyMultiplierModifier, MultipleParticipantExpBonusModifier,
   PersistentModifier,
   PokemonExpBoosterModifier,
   PokemonFormChangeItemModifier,
   PokemonHeldItemModifier,
   PokemonHpRestoreModifier,
   PokemonIncrementingStatModifier,
-  RememberMoveModifier,
+  RememberMoveModifier, TerastallizeAccessModifier, TerrastalizeModifier,
 } from "./modifier/modifier";
 import { PokeballType } from "#enums/pokeball";
 import {
@@ -62,10 +64,11 @@ import AbilityBar from "#app/ui/ability-bar";
 import {
   allAbilities,
   applyAbAttrs,
-  applyPostBattleInitAbAttrs,
+  applyPostBattleAbAttrs,
   applyPostItemLostAbAttrs,
   BlockItemTheftAbAttr,
   DoubleBattleChanceAbAttr,
+  PostBattleAbAttr,
   PostBattleInitAbAttr,
   PostItemLostAbAttr,
 } from "#app/data/ability";
@@ -173,8 +176,9 @@ import { MysteryEncounterMode } from "#enums/mystery-encounter-mode";
 import { ExpGainsSpeed } from "#enums/exp-gains-speed";
 import { BattlerTagType } from "#enums/battler-tag-type";
 import { FRIENDSHIP_GAIN_FROM_BATTLE } from "#app/data/balance/starters";
+import * as LoggerTools from "./logger";
 import { StatusEffect } from "#enums/status-effect";
-import { initGlobalScene } from "#app/global-scene";
+import { globalScene, initGlobalScene } from "#app/global-scene";
 
 export const bypassLogin = import.meta.env.VITE_BYPASS_LOGIN === "1";
 
@@ -228,6 +232,8 @@ export default class BattleScene extends SceneBase {
   public commandCursorMemory: boolean = false;
   public dexForDevs: boolean = false;
   public showMovesetFlyout: boolean = true;
+  public showTeams: boolean = true;
+  public showTeamSprites: boolean = false;
   public showArenaFlyout: boolean = true;
   public showTimeOfDayWidget: boolean = true;
   public timeOfDayAnimation: EaseType = EaseType.NONE;
@@ -236,6 +242,18 @@ export default class BattleScene extends SceneBase {
     import.meta.env.VITE_BYPASS_TUTORIAL === "1";
   public enableMoveInfo: boolean = true;
   public enableRetries: boolean = false;
+  public damageDisplay: string = "Off";
+  public lazyReloads: boolean = false;
+  public menuChangesBiome: boolean = false;
+  public showAutosaves: boolean = false;
+  public doBiomePanels: boolean = false;
+  public disableDailyShinies: boolean = true; // Disables shiny luck in Daily Runs to prevent affecting RNG
+  public quickloadDisplayMode: string = "Dailies";
+  public waveShinyFlag: boolean = false;
+  public waveShinyMinToBreak: integer = 0;
+  public waveShinyChecked: boolean = false;
+  public tempWaveSeed: string;
+  public tempRngCounter: integer = 0;
   public hideIvs: boolean = false;
   /**
    * Determines the condition for a notification should be shown for Candy Upgrades
@@ -301,6 +319,8 @@ export default class BattleScene extends SceneBase {
 
   public disableMenu: boolean = false;
 
+  public pathingToolUI: boolean = true;
+
   public gameData: GameData;
   public sessionSlotId: number;
 
@@ -314,7 +334,7 @@ export default class BattleScene extends SceneBase {
   private phaseQueuePrependSpliceIndex: number;
   private nextCommandPhaseQueue: Phase[];
 
-  private currentPhase: Phase | null;
+  public currentPhase: Phase | null;
   private standbyPhase: Phase | null;
   public field: Phaser.GameObjects.Container;
   public fieldUI: Phaser.GameObjects.Container;
@@ -356,13 +376,16 @@ export default class BattleScene extends SceneBase {
   private enemyModifierBar: ModifierBar;
   public arenaFlyout: ArenaFlyout;
 
+  public battleRNGState: string;
+  public battleBaseRNGState: string;
+
   private fieldOverlay: Phaser.GameObjects.Rectangle;
   private shopOverlay: Phaser.GameObjects.Rectangle;
   private shopOverlayShown: boolean = false;
   private shopOverlayOpacity: number = 0.8;
 
   public modifiers: PersistentModifier[];
-  private enemyModifiers: PersistentModifier[];
+  public enemyModifiers: PersistentModifier[];
   public uiContainer: Phaser.GameObjects.Container;
   public ui: UI;
 
@@ -482,6 +505,7 @@ export default class BattleScene extends SceneBase {
           ret / (max - min),
           `min: ${min} / max: ${max}`,
         ];
+        globalScene.setScoreText("RNG: " + this.rngCounter + ")");
         args.push(
           `seed: ${this.rngSeedOverride || this.waveSeed || this.seed}`,
         );
@@ -555,6 +579,7 @@ export default class BattleScene extends SceneBase {
 
     this.fieldUI = fieldUI;
 
+    /*
     const transition = this.make.rexTransitionImagePack(
       {
         x: 0,
@@ -577,6 +602,7 @@ export default class BattleScene extends SceneBase {
     });
 
     this.add.existing(transition);
+    */
 
     const uiContainer = this.add.container(0, 0);
     uiContainer.setName("ui");
@@ -1205,7 +1231,7 @@ export default class BattleScene extends SceneBase {
     }
 
     if (boss && !dataSource) {
-      const secondaryIvs = Utils.getIvsFromId(Utils.randSeedInt(4294967296));
+      const secondaryIvs = Utils.getIvsFromId(Utils.randSeedInt(4294967296, undefined, "IVs"));
 
       for (let s = 0; s < pokemon.ivs.length; s++) {
         pokemon.ivs[s] = Math.round(
@@ -1364,6 +1390,32 @@ export default class BattleScene extends SceneBase {
 
     return container;
   }
+  addPkIcon(pokemon: PokemonSpecies, form: integer = 0, x: number, y: number, originX: number = 0.5, originY: number = 0.5, ignoreOverride: boolean = false, shiny?: boolean, variant?: integer): Phaser.GameObjects.Container {
+    const container = this.add.container(x, y);
+    container.setName(`${pokemon.name}-icon`);
+
+    const icon = this.add.sprite(0, 0, pokemon.getIconAtlasKey(form, shiny, variant));
+    icon.setName(`sprite-${pokemon.name}-icon`);
+    icon.setFrame(pokemon.getIconId(true, form, shiny, variant));
+    // Temporary fix to show pokemon's default icon if variant icon doesn't exist
+    if (icon.frame.name !== pokemon.getIconId(true, form, shiny, variant)) {
+      console.log(`${pokemon.name}'s variant icon does not exist. Replacing with default.`);
+      icon.setTexture(pokemon.getIconAtlasKey(0));
+      icon.setFrame(pokemon.getIconId(true));
+    }
+    icon.setOrigin(0.5, 0);
+
+    container.add(icon);
+
+    if (originX !== 0.5) {
+      container.x -= icon.width * (originX - 0.5);
+    }
+    if (originY !== 0) {
+      container.y -= icon.height * originY;
+    }
+
+    return container;
+  }
 
   setSeed(seed: string): void {
     this.seed = seed;
@@ -1382,8 +1434,8 @@ export default class BattleScene extends SceneBase {
    * @param min The minimum integer to pick, default `0`
    * @returns A random integer between {@linkcode min} and ({@linkcode min} + {@linkcode range} - 1)
    */
-  randBattleSeedInt(range: number, min: number = 0): number {
-    return this.currentBattle?.randSeedInt(range, min);
+  randBattleSeedInt(range: number, min: number = 0, reason?: string): number {
+    return this.currentBattle?.randSeedInt(range, min, reason);
   }
 
   reset(
@@ -1519,9 +1571,37 @@ export default class BattleScene extends SceneBase {
           this.children.removeAll(true);
           this.game.domContainer.innerHTML = "";
           this.launchBattle();
-        },
+        }
       });
     }
+  }
+
+  doShinyCheck() {
+    this.waveShinyChecked = true;
+    const r = LoggerTools.runShinyCheck(1, this.currentBattle.waveIndex);
+    this.waveShinyFlag = r[0] as boolean;
+    this.waveShinyMinToBreak = r[1] as integer;
+    if (this.waveShinyFlag) {
+      this.arenaFlyout.display2();
+    }
+    LoggerTools.logLuck();
+  }
+
+  updateCatchRate() {
+    let txt = [ "Turn: " + this.currentBattle.turn ];
+    if (!this.getEnemyField()[0].hasTrainer()) {
+      this.getEnemyField().forEach((pk, i) => {
+        if (pk.isActive() && pk.hp > 0) {
+          txt = txt.concat(LoggerTools.findBest(pk));
+        }
+      });
+    }
+    if (txt.length > 2) {
+      txt = [ "Turn: " + this.currentBattle.turn ];
+    }
+    this.arenaFlyout.updateFieldText();
+
+    this.setScoreText(txt.join(" / "));
   }
 
   getDoubleBattleChance(newWaveIndex: number, playerField: PlayerPokemon[]) {
@@ -1535,13 +1615,86 @@ export default class BattleScene extends SceneBase {
     return Math.max(doubleChance.value, 1);
   }
 
-  newBattle(
-    waveIndex?: number,
-    battleType?: BattleType,
-    trainerData?: TrainerData,
-    double?: boolean,
-    mysteryEncounterType?: MysteryEncounterType,
-  ): Battle | null {
+  InsertLure() {
+    const lure = modifierTypes.LURE().withIdFromFunc(modifierTypes.LURE).newModifier() as DoubleBattleChanceBoosterModifier;
+    this.addModifier(lure, true, false, false, true);
+  }
+
+  InsertSuperLure() {
+    const super_lure = modifierTypes.SUPER_LURE().withIdFromFunc(modifierTypes.SUPER_LURE).newModifier() as DoubleBattleChanceBoosterModifier;
+    this.addModifier(super_lure, true, false, false, true);
+  }
+
+  InsertMaxLure() {
+    const max_lure = modifierTypes.MAX_LURE().withIdFromFunc(modifierTypes.MAX_LURE).newModifier() as DoubleBattleChanceBoosterModifier;
+    this.addModifier(max_lure, true, false, false, true);
+  }
+
+  InsertTwoLures() {
+    this.InsertLure();
+    this.InsertSuperLure();
+  }
+
+  InsertThreeLures() {
+    this.InsertLure();
+    this.InsertSuperLure();
+    this.InsertMaxLure();
+  }
+
+  InsertAbilityCharm(amount: integer) {
+    const ability_charm = modifierTypes.ABILITY_CHARM().withIdFromFunc(modifierTypes.ABILITY_CHARM).newModifier() as HiddenAbilityRateBoosterModifier;
+    ability_charm.stackCount = amount;
+    this.addModifier(ability_charm, true, false, false, true);
+  }
+
+  InsertMegaBracelet() {
+    const modifier = modifierTypes.MEGA_BRACELET().withIdFromFunc(modifierTypes.MEGA_BRACELET).newModifier() as MegaEvolutionAccessModifier;
+    this.addModifier(modifier, true, false, false, true);
+  }
+
+  InsertDynamaxBand() {
+    const modifier = modifierTypes.DYNAMAX_BAND().withIdFromFunc(modifierTypes.DYNAMAX_BAND).newModifier() as GigantamaxAccessModifier;
+    this.addModifier(modifier, true, false, false, true);
+  }
+
+  InsertTeraOrb() {
+    const modifier = modifierTypes.TERA_ORB().withIdFromFunc(modifierTypes.TERA_ORB).newModifier() as TerastallizeAccessModifier;
+    this.addModifier(modifier, true, false, false, true);
+  }
+
+  InsertLockCapsule() {
+    const modifier = modifierTypes.LOCK_CAPSULE().withIdFromFunc(modifierTypes.LOCK_CAPSULE).newModifier() as LockModifierTiersModifier;
+    this.addModifier(modifier, true, false, false, true);
+  }
+
+  InsertIVScanner() {
+    const modifier = modifierTypes.IV_SCANNER().withIdFromFunc(modifierTypes.IV_SCANNER).newModifier() as IvScannerModifier;
+    this.addModifier(modifier, true, false, false, true);
+  }
+
+  RemoveModifiers() {
+    const mods = this.modifiers.filter(m =>
+      m instanceof HiddenAbilityRateBoosterModifier
+      || m instanceof DoubleBattleChanceBoosterModifier
+      || m instanceof ExtraModifierModifier
+      || m instanceof MegaEvolutionAccessModifier
+      || m instanceof GigantamaxAccessModifier
+      || m instanceof TerastallizeAccessModifier
+      || m instanceof LockModifierTiersModifier
+      || m instanceof IvScannerModifier);
+    mods.forEach(m => {
+      this.removeModifier(m);
+    });
+  }
+
+  RemoveLures() {
+    const mods = this.modifiers.filter(m => m instanceof DoubleBattleChanceBoosterModifier);
+    mods.forEach(m => {
+      this.removeModifier(m);
+    });
+  }
+
+  newBattle(waveIndex?: integer, battleType?: BattleType, trainerData?: TrainerData, double?: boolean, mysteryEncounterType?: MysteryEncounterType): Battle | null {
     const _startingWave = Overrides.STARTING_WAVE_OVERRIDE || startingWave;
     const newWaveIndex =
       waveIndex || (this.currentBattle?.waveIndex || _startingWave - 1) + 1;
@@ -1552,6 +1705,8 @@ export default class BattleScene extends SceneBase {
     let battleConfig: FixedBattleConfig | null = null;
 
     this.resetSeed(newWaveIndex);
+    this.waveShinyChecked = false;
+    this.waveShinyFlag = false;
 
     const playerField = this.getPlayerField();
 
@@ -1588,7 +1743,7 @@ export default class BattleScene extends SceneBase {
         } else if (trainerConfigs[trainerType].hasDouble) {
           doubleTrainer = !Utils.randSeedInt(
             this.getDoubleBattleChance(newWaveIndex, playerField),
-          );
+            undefined, "Double battle roll");
           // Add a check that special trainers can't be double except for tate and liza - they should use the normal double chance
           if (
             trainerConfigs[trainerType].trainerTypeDouble &&
@@ -1599,7 +1754,7 @@ export default class BattleScene extends SceneBase {
         }
         const variant = doubleTrainer
           ? TrainerVariant.DOUBLE
-          : Utils.randSeedInt(2)
+          : Utils.randSeedInt(2, undefined, "Trainer gender")
             ? TrainerVariant.FEMALE
             : TrainerVariant.DEFAULT;
         newTrainer =
@@ -1629,7 +1784,7 @@ export default class BattleScene extends SceneBase {
       ) {
         newDouble = !Utils.randSeedInt(
           this.getDoubleBattleChance(newWaveIndex, playerField),
-        );
+          undefined, "Double battle roll");
       } else if (newBattleType === BattleType.TRAINER) {
         newDouble = newTrainer?.variant === TrainerVariant.DOUBLE;
       }
@@ -1755,7 +1910,7 @@ export default class BattleScene extends SceneBase {
         for (const pokemon of this.getPlayerParty()) {
           pokemon.resetBattleData();
           pokemon.resetTera();
-          applyPostBattleInitAbAttrs(PostBattleInitAbAttr, pokemon);
+          applyPostBattleAbAttrs(PostBattleAbAttr, pokemon);
           if (
             pokemon.hasSpecies(Species.TERAPAGOS) ||
             (this.gameMode.isClassic &&
@@ -1790,6 +1945,10 @@ export default class BattleScene extends SceneBase {
         }
       }
     }
+
+    this.battleRNGState = Phaser.Math.RND.state();
+
+    console.log(this.battleBaseRNGState, this.battleRNGState);
 
     return this.currentBattle;
   }
@@ -1939,7 +2098,7 @@ export default class BattleScene extends SceneBase {
       case Species.SQUAWKABILLY:
       case Species.TATSUGIRI:
       case Species.PALDEA_TAUROS:
-        return Utils.randSeedInt(species.forms.length);
+        return Utils.randSeedInt(species.forms.length, 0, "Species Form Default");
       case Species.PIKACHU:
         if (
           this.currentBattle?.battleType === BattleType.TRAINER &&
@@ -1947,7 +2106,7 @@ export default class BattleScene extends SceneBase {
         ) {
           return 0; // Ban Cosplay and Partner Pika from Trainers before wave 30
         }
-        return Utils.randSeedInt(8);
+        return Utils.randSeedInt(8, 0, "Species Form Pikachu");
       case Species.EEVEE:
         if (
           this.currentBattle?.battleType === BattleType.TRAINER &&
@@ -1956,7 +2115,7 @@ export default class BattleScene extends SceneBase {
         ) {
           return 0; // No Partner Eevee for Wave 12 Preschoolers
         }
-        return Utils.randSeedInt(2);
+        return Utils.randSeedInt(2, 0, "Species Form Eevee");
       case Species.FROAKIE:
       case Species.FROGADIER:
       case Species.GRENINJA:
@@ -1966,15 +2125,15 @@ export default class BattleScene extends SceneBase {
         ) {
           return 0; // Don't give trainers Battle Bond Greninja, Froakie or Frogadier
         }
-        return Utils.randSeedInt(2);
+        return Utils.randSeedInt(2, 0, "Species Form Greninja");
       case Species.URSHIFU:
-        return Utils.randSeedInt(2);
+        return Utils.randSeedInt(2, 0, "Species Form Urshifu");
       case Species.ZYGARDE:
-        return Utils.randSeedInt(4);
+        return Utils.randSeedInt(4, 0, "Species Form Zygarde");
       case Species.MINIOR:
-        return Utils.randSeedInt(7);
+        return Utils.randSeedInt(7, 0, "Species Form Minior");
       case Species.ALCREMIE:
-        return Utils.randSeedInt(9);
+        return Utils.randSeedInt(9, 0, "Species Form Alcremie");
       case Species.MEOWSTIC:
       case Species.INDEEDEE:
       case Species.BASCULEGION:
@@ -2004,7 +2163,7 @@ export default class BattleScene extends SceneBase {
         if (this.gameMode.hasMysteryEncounters && !isEggPhase) {
           return 1; // Wandering form
         } else {
-          return Utils.randSeedInt(species.forms.length);
+          return Utils.randSeedInt(species.forms.length, 0, "Species Form Gimmighoul");
         }
     }
 
@@ -2014,7 +2173,7 @@ export default class BattleScene extends SceneBase {
         case Species.WORMADAM:
         case Species.ROTOM:
         case Species.LYCANROC:
-          return Utils.randSeedInt(species.forms.length);
+          return Utils.randSeedInt(species.forms.length, undefined, "Non-area-specific form selection");
       }
       return 0;
     }
@@ -2026,7 +2185,7 @@ export default class BattleScene extends SceneBase {
     let ret = false;
     this.executeWithSeedOffset(
       () => {
-        ret = !Utils.randSeedInt(2);
+        ret = !Utils.randSeedInt(2, undefined, "Random gym offset");
       },
       0,
       this.seed.toString(),
@@ -2038,7 +2197,7 @@ export default class BattleScene extends SceneBase {
     let ret = 0;
     this.executeWithSeedOffset(
       () => {
-        ret = Utils.randSeedInt(8) * 5;
+        ret = Utils.randSeedInt(8, undefined, "Random day/night cycle offset  5 x") * 5;
       },
       0,
       this.seed.toString(),
@@ -2075,7 +2234,7 @@ export default class BattleScene extends SceneBase {
         isBoss =
           waveIndex % 10 === 0 ||
           (this.gameMode.hasRandomBosses &&
-            Utils.randSeedInt(100) <
+            Utils.randSeedInt(100, undefined, "Boss HP segments") <
               Math.min(Math.max(Math.ceil((waveIndex - 250) / 50), 0) * 2, 30));
       }, waveIndex << 2);
     }
@@ -2103,7 +2262,7 @@ export default class BattleScene extends SceneBase {
     const infectedIndexes: number[] = [];
     const spread = (index: number, spreadTo: number) => {
       const partyMember = party[index + spreadTo];
-      if (!partyMember.pokerus && !Utils.randSeedInt(10)) {
+      if (!partyMember.pokerus && !Utils.randSeedInt(10, undefined, "Pokerus spread chance")) {
         partyMember.pokerus = true;
         infectedIndexes.push(index + spreadTo);
       }
@@ -2127,12 +2286,33 @@ export default class BattleScene extends SceneBase {
     });
   }
 
-  resetSeed(waveIndex?: number): void {
+  emulateReset(waveIndex?: integer) {
+    const wave = waveIndex || this.currentBattle?.waveIndex || 0;
+    this.tempWaveSeed = this.waveSeed;
+    this.tempRngCounter = this.rngCounter;
+    this.waveSeed = Utils.shiftCharCodes(this.seed, wave);
+    Phaser.Math.RND.sow([ this.waveSeed ]);
+    console.log("Temporarily reset wave RNG");
+    this.rngCounter = 0;
+    //this.setScoreText("RNG: 0")
+  }
+  restoreSeed(waveIndex?: integer) {
+    const wave = waveIndex || this.currentBattle?.waveIndex || 0;
+    this.waveSeed = this.tempWaveSeed;
+    Phaser.Math.RND.sow([ this.waveSeed ]);
+    console.log("Restored wave RNG");
+    this.rngCounter = this.tempRngCounter;
+    //this.setScoreText("RNG: 0")
+  }
+
+  resetSeed(waveIndex?: integer): void {
     const wave = waveIndex || this.currentBattle?.waveIndex || 0;
     this.waveSeed = Utils.shiftCharCodes(this.seed, wave);
     Phaser.Math.RND.sow([ this.waveSeed ]);
     console.log("Wave Seed:", this.waveSeed, wave);
     this.rngCounter = 0;
+    this.battleRNGState = Phaser.Math.RND.state();
+    this.battleBaseRNGState = Phaser.Math.RND.state();
   }
 
   executeWithSeedOffset(
@@ -2210,11 +2390,21 @@ export default class BattleScene extends SceneBase {
   moveBelowOverlay<T extends Phaser.GameObjects.GameObject>(gameObject: T) {
     this.fieldUI.moveBelow<any>(gameObject, this.fieldOverlay);
   }
+
   processInfoButton(pressed: boolean): void {
     this.arenaFlyout.toggleFlyout(pressed);
   }
 
-  showFieldOverlay(duration: number): Promise<void> {
+  togglePathingToolUI(): void {
+    this.pathingToolUI = !this.pathingToolUI;
+    if (this.pathingToolUI) {
+      this.updateCatchRate();
+    } else {
+      this.updateScoreText();
+    }
+  }
+
+  showFieldOverlay(duration: integer): Promise<void> {
     return new Promise((resolve) => {
       this.tweens.add({
         targets: this.fieldOverlay,
@@ -2324,8 +2514,27 @@ export default class BattleScene extends SceneBase {
   }
 
   updateScoreText(): void {
-    this.scoreText.setText(`Score: ${this.score.toString()}`);
-    this.scoreText.setVisible(this.gameMode.isDaily);
+    if (!this.pathingToolUI) {
+      this.scoreText.setText(`Score: ${this.score.toString()}`);
+      this.scoreText.setVisible(this.gameMode.isDaily);
+    }
+  }
+
+  setScoreText(text: string): void {
+    if (!this.pathingToolUI) {
+      return;
+    }
+    if (this.scoreText == undefined) {
+      return;
+    }
+    if (this.scoreText.setText == undefined) {
+      return;
+    }
+    if (this.scoreText.setVisible == undefined) {
+      return;
+    }
+    this.scoreText.setText(text);
+    this.scoreText.setVisible(true);
   }
 
   /**
@@ -2452,6 +2661,7 @@ export default class BattleScene extends SceneBase {
         getPartyLuckValue(this.party),
       );
     }
+    LoggerTools.rarities[LoggerTools.rarityslot[0]] = "";
     const filteredSpecies = speciesFilter
       ? [
         ...new Set(
@@ -2469,7 +2679,7 @@ export default class BattleScene extends SceneBase {
         ),
       ]
       : allSpecies.filter((s) => s.isCatchable());
-    return filteredSpecies[Utils.randSeedInt(filteredSpecies.length)];
+    return filteredSpecies[Utils.randSeedInt(filteredSpecies.length, undefined, "Random Species")];
   }
 
   generateRandomBiome(waveIndex: number): Biome {
@@ -2496,7 +2706,7 @@ export default class BattleScene extends SceneBase {
       biomeThresholds.push(totalWeight);
     }
 
-    const randInt = Utils.randSeedInt(totalWeight);
+    const randInt = Utils.randSeedInt(totalWeight, undefined, "Random biome");
 
     for (let i = 0; i < biomes.length; i++) {
       if (randInt < biomeThresholds[i]) {
@@ -2504,7 +2714,7 @@ export default class BattleScene extends SceneBase {
       }
     }
 
-    return biomes[Utils.randSeedInt(biomes.length)];
+    return biomes[Utils.randSeedInt(biomes.length, undefined, "Random biome (initial roll failed)")];
   }
 
   isBgmPlaying(): boolean {
@@ -3538,7 +3748,7 @@ export default class BattleScene extends SceneBase {
           }
           let count = 0;
           for (let c = 0; c < chances; c++) {
-            if (!Utils.randSeedInt(this.gameMode.getEnemyModifierChance(isBoss))) {
+            if (!Utils.randSeedInt(this.gameMode.getEnemyModifierChance(isBoss), undefined, "Modifier roll")) {
               count++;
             }
           }
@@ -3740,7 +3950,7 @@ export default class BattleScene extends SceneBase {
           if (mods.length < 1) {
             return mods;
           }
-          const rand = Utils.randSeedInt(mods.length);
+          const rand = Utils.randSeedInt(mods.length, undefined, "Apply shuffled modifiers");
           return [
             mods[rand],
             ...shuffleModifiers(mods.filter((_, i) => i !== rand)),
@@ -3781,7 +3991,7 @@ export default class BattleScene extends SceneBase {
     const appliedModifiers: T[] = [];
     for (const modifier of modifiers) {
       if (modifier.apply(...args)) {
-        console.log("Applied", modifier.type.name, !player ? "(enemy)" : "");
+        // console.log("Applied", modifier.type.name, !player ? "(enemy)" : "");
         appliedModifiers.push(modifier);
       }
     }
@@ -3806,7 +4016,7 @@ export default class BattleScene extends SceneBase {
     );
     for (const modifier of modifiers) {
       if (modifier.apply(...args)) {
-        console.log("Applied", modifier.type.name, !player ? "(enemy)" : "");
+        // console.log("Applied", modifier.type.name, !player ? "(enemy)" : "");
         return modifier;
       }
     }

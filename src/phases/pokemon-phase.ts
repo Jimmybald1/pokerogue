@@ -2,6 +2,7 @@ import { globalScene } from "#app/global-scene";
 import { BattlerIndex } from "#app/battle";
 import type Pokemon from "#app/field/pokemon";
 import { FieldPhase } from "./field-phase";
+import * as LoggerTools from "../logger";
 
 export abstract class PokemonPhase extends FieldPhase {
   protected battlerIndex: BattlerIndex | number;

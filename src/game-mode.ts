@@ -171,7 +171,7 @@ export class GameMode implements GameModeConfig {
           } else if (w < waveIndex) {
             globalScene.executeWithSeedOffset(() => {
               const waveTrainerChance = arena.getTrainerChance();
-              if (!Utils.randSeedInt(waveTrainerChance)) {
+              if (!Utils.randSeedInt(waveTrainerChance, undefined, "Random chance of wave being a Trainer Battle")) {
                 allowTrainerBattle = false;
               }
             }, w);
@@ -181,7 +181,7 @@ export class GameMode implements GameModeConfig {
           }
         }
       }
-      return Boolean(allowTrainerBattle && trainerChance && !Utils.randSeedInt(trainerChance));
+      return Boolean(allowTrainerBattle && trainerChance && !Utils.randSeedInt(trainerChance, undefined, "Random chance of wave being a Trainer Battle"));
     }
     return false;
   }
@@ -199,7 +199,7 @@ export class GameMode implements GameModeConfig {
     if (this.isDaily && this.isWaveFinal(waveIndex)) {
       const allFinalBossSpecies = allSpecies.filter(s => (s.subLegendary || s.legendary || s.mythical)
         && s.baseTotal >= 600 && s.speciesId !== Species.ETERNATUS && s.speciesId !== Species.ARCEUS);
-      return Utils.randSeedItem(allFinalBossSpecies);
+      return Utils.randSeedItem(allFinalBossSpecies, "Final Boss override");
     }
 
     return null;

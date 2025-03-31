@@ -106,6 +106,7 @@ import { ObtainStatusEffectPhase } from "#app/phases/obtain-status-effect-phase"
 import { StatStageChangePhase } from "#app/phases/stat-stage-change-phase";
 import { SwitchSummonPhase } from "#app/phases/switch-summon-phase";
 import { Challenges } from "#enums/challenges";
+import type BattleFlyout from "#app/ui/battle-flyout";
 import { PokemonAnimType } from "#enums/pokemon-anim-type";
 import { PLAYER_PARTY_MAX_SIZE } from "#app/constants";
 import { CustomPokemonData } from "#app/data/custom-pokemon-data";
@@ -115,6 +116,8 @@ import { BASE_HIDDEN_ABILITY_CHANCE, BASE_SHINY_CHANCE, SHINY_EPIC_CHANCE, SHINY
 import { Nature } from "#enums/nature";
 import { StatusEffect } from "#enums/status-effect";
 import { doShinySparkleAnim } from "#app/field/anims";
+
+const doMoveLogging: boolean = false;
 
 export enum LearnMoveSituation {
   MISC,
@@ -129,6 +132,13 @@ export enum FieldPosition {
   CENTER,
   LEFT,
   RIGHT
+}
+
+export interface AttackData {
+  hitResult: HitResult,
+  damageLow: number,
+  damageHigh: number,
+  effectiveness?: number
 }
 
 export default abstract class Pokemon extends Phaser.GameObjects.Container {
@@ -166,6 +176,8 @@ export default abstract class Pokemon extends Phaser.GameObjects.Container {
   public teraType: Type;
   public isTerastallized: boolean;
   public stellarTypesBoosted: Type[];
+
+  public flyout: BattleFlyout;
 
   public fusionSpecies: PokemonSpecies | null;
   public fusionFormIndex: number;
@@ -219,8 +231,8 @@ export default abstract class Pokemon extends Phaser.GameObjects.Container {
       this.abilityIndex = abilityIndex; // Use the provided ability index if it is defined
     } else {
       // If abilityIndex is not provided, determine it based on species and hidden ability
-      const hasHiddenAbility = !Utils.randSeedInt(hiddenAbilityChance.value);
-      const randAbilityIndex = Utils.randSeedInt(2);
+      const hasHiddenAbility = !Utils.randSeedInt(hiddenAbilityChance.value, undefined, "Hidden Ability chance");
+      const randAbilityIndex = Utils.randSeedInt(2, undefined, "Selecting ability index");
       if (species.abilityHidden && hasHiddenAbility) {
         // If the species has a hidden ability and the hidden ability is present
         this.abilityIndex = 2;
@@ -280,7 +292,7 @@ export default abstract class Pokemon extends Phaser.GameObjects.Container {
       this.isTerastallized = dataSource.isTerastallized;
       this.stellarTypesBoosted = dataSource.stellarTypesBoosted ?? [];
     } else {
-      this.id = Utils.randSeedInt(4294967296);
+      this.id = Utils.randSeedInt(4294967296, undefined, "Generating a Pokemon ID to create Pokemon's IVs");
       this.ivs = ivs || Utils.getIvsFromId(this.id);
 
       if (this.gender === undefined) {
@@ -1148,7 +1160,7 @@ export default abstract class Pokemon extends Phaser.GameObjects.Container {
     if (naturePool === undefined) {
       naturePool = Utils.getEnumValues(Nature);
     }
-    const nature = naturePool[Utils.randSeedInt(naturePool.length)];
+    const nature = naturePool[Utils.randSeedInt(naturePool.length, undefined, "Random nature")];
     this.setNature(nature);
   }
 
@@ -2141,7 +2153,7 @@ export default abstract class Pokemon extends Phaser.GameObjects.Container {
     }
     const rand = new Utils.NumberHolder(0);
     globalScene.executeWithSeedOffset(() => {
-      rand.value = Utils.randSeedInt(10);
+      rand.value = Utils.randSeedInt(10, undefined, "Random variant selection");
     }, this.id, globalScene.waveSeed);
     if (rand.value >= SHINY_VARIANT_CHANCE) {
       return 0;             // 6/10
@@ -2190,8 +2202,8 @@ export default abstract class Pokemon extends Phaser.GameObjects.Container {
       globalScene.applyModifiers(HiddenAbilityRateBoosterModifier, true, hiddenAbilityChance);
     }
 
-    const hasHiddenAbility = !Utils.randSeedInt(hiddenAbilityChance.value);
-    const randAbilityIndex = Utils.randSeedInt(2);
+    const hasHiddenAbility = !Utils.randSeedInt(hiddenAbilityChance.value, undefined, "Whether the Pokemon has its HA or not");
+    const randAbilityIndex = Utils.randSeedInt(2, undefined, "Ability slot (if no HA)");
 
     const filter = !forStarter ?
       this.species.getCompatibleFusionSpeciesFilter()
@@ -2384,7 +2396,7 @@ export default abstract class Pokemon extends Phaser.GameObjects.Container {
 
       if (stabMovePool.length) {
         const totalWeight = stabMovePool.reduce((v, m) => v + m[1], 0);
-        let rand = Utils.randSeedInt(totalWeight);
+        let rand = Utils.randSeedInt(totalWeight, undefined, "Selecting a STAB move to include");
         let index = 0;
         while (rand > stabMovePool[index][1]) {
           rand -= stabMovePool[index++][1];
@@ -2395,7 +2407,7 @@ export default abstract class Pokemon extends Phaser.GameObjects.Container {
       const attackMovePool = baseWeights.filter(m => allMoves[m[0]].category !== MoveCategory.STATUS);
       if (attackMovePool.length) {
         const totalWeight = attackMovePool.reduce((v, m) => v + m[1], 0);
-        let rand = Utils.randSeedInt(totalWeight);
+        let rand = Utils.randSeedInt(totalWeight, undefined, "Selecting a damage dealing move to include");
         let index = 0;
         while (rand > attackMovePool[index][1]) {
           rand -= attackMovePool[index++][1];
@@ -2425,7 +2437,7 @@ export default abstract class Pokemon extends Phaser.GameObjects.Container {
         movePool = baseWeights.filter(m => !this.moveset.some(mo => m[0] === mo?.moveId));
       }
       const totalWeight = movePool.reduce((v, m) => v + m[1], 0);
-      let rand = Utils.randSeedInt(totalWeight);
+      let rand = Utils.randSeedInt(totalWeight, undefined, "Selecting moves");
       let index = 0;
       while (rand > movePool[index][1]) {
         rand -= movePool[index++][1];
@@ -2518,6 +2530,10 @@ export default abstract class Pokemon extends Phaser.GameObjects.Container {
 
   toggleFlyout(visible: boolean): void {
     this.battleInfo.toggleFlyout(visible);
+  }
+
+  toggleTeamTray(visible: boolean): void {
+    this.battleInfo.toggleTeamTray(visible);
   }
 
   /**
@@ -2690,6 +2706,8 @@ export default abstract class Pokemon extends Phaser.GameObjects.Container {
    * @param ignoreSourceAbility if `true`, ignore's the attacking Pokemon's ability effects (defaults to `false`).
    * @param isCritical if `true`, calculates effective stats as if the hit were critical (defaults to `false`).
    * @param simulated if `true`, suppresses changes to game state during calculation (defaults to `true`).
+   * @param isMin if `true`, returns the minimum damage (random power returns lowest possible, crits fail unless guaranteed) (defaults to `false`, overrides `isMax`).
+   * @param isMax if `true`, returns the maximum damage (random power returns highest possible, crits guaranteed unless immune) (defaults to `false`).
    * @returns The move's base damage against this Pokemon when used by the source Pokemon.
    */
   getBaseDamage(source: Pokemon, move: Move, moveCategory: MoveCategory, ignoreAbility: boolean = false, ignoreSourceAbility: boolean = false, isCritical: boolean = false, simulated: boolean = true): number {
@@ -2730,6 +2748,41 @@ export default abstract class Pokemon extends Phaser.GameObjects.Container {
   }
 
   /**
+   * Checks if a move can be a critical hit.
+   */
+  canBeCrit(): boolean {
+    const defendingSide = this.isPlayer() ? ArenaTagSide.PLAYER : ArenaTagSide.ENEMY;
+
+    const noCritTag = globalScene.arena.getTagOnSide(NoCritTag, defendingSide);
+    const blockCrit = new Utils.BooleanHolder(false);
+    applyAbAttrs(BlockCritAbAttr, this, null, false, blockCrit);
+    if (noCritTag || blockCrit.value || Overrides.NEVER_CRIT_OVERRIDE) {
+      return false;
+    }
+    return true;
+  }
+  /**
+   * Checks if a move can be a critical hit.
+   */
+  isGuaranteedCrit(source: Pokemon, move: Move, simulated: boolean = false): boolean {
+    const defendingSide = this.isPlayer() ? ArenaTagSide.PLAYER : ArenaTagSide.ENEMY;
+
+    if (!this.canBeCrit()) {
+      return false;
+    }
+
+    // Calculates whether the move was a Critical Hit or not
+    const critOnly = new Utils.BooleanHolder(false);
+    const critAlways = source.getTag(BattlerTagType.ALWAYS_CRIT);
+    applyMoveAttrs(CritOnlyAttr, source, this, move, critOnly);
+    applyAbAttrs(ConditionalCritAbAttr, source, null, false, critOnly, this, move);
+    if (critOnly.value || critAlways) {
+      return true;
+    }
+    return false;
+  }
+
+  /**
    * Calculates the damage of an attack made by another Pokemon against this Pokemon
    * @param source {@linkcode Pokemon} the attacking Pokemon
    * @param move {@linkcode Pokemon} the move used in the attack
@@ -2742,12 +2795,12 @@ export default abstract class Pokemon extends Phaser.GameObjects.Container {
    * - `result`: {@linkcode HitResult} indicates the attack's type effectiveness.
    * - `damage`: `number` the attack's final damage output.
    */
-  getAttackDamage(source: Pokemon, move: Move, ignoreAbility: boolean = false, ignoreSourceAbility: boolean = false, isCritical: boolean = false, simulated: boolean = true): DamageCalculationResult {
+  getAttackDamage(source: Pokemon, move: Move, ignoreAbility: boolean = false, ignoreSourceAbility: boolean = false, isCritical: boolean = false, simulated: boolean = true, config: 0 | 1 | 2 = 0): DamageCalculationResult {
     const damage = new Utils.NumberHolder(0);
     const defendingSide = this.isPlayer() ? ArenaTagSide.PLAYER : ArenaTagSide.ENEMY;
 
     const variableCategory = new Utils.NumberHolder(move.category);
-    applyMoveAttrs(VariableMoveCategoryAttr, source, this, move, variableCategory);
+    applyMoveAttrs(VariableMoveCategoryAttr, source, this, move, variableCategory, config && config > 0 ? "SIM" : undefined);
     const moveCategory = variableCategory.value as MoveCategory;
 
     /** The move's type after type-changing effects are applied */
@@ -2839,7 +2892,7 @@ export default abstract class Pokemon extends Phaser.GameObjects.Container {
      * A multiplier for random damage spread in the range [0.85, 1]
      * This is always 1 for simulated calls.
      */
-    const randomMultiplier = simulated ? 1 : ((this.randSeedIntRange(85, 100)) / 100);
+    const randomMultiplier = simulated ? 1 : (config === 0 ? ((this.randSeedIntRange(85, 100, "Attack damage")) / 100) : (config === 1 ? 0.85 : 1));
 
     const sourceTypes = source.getTypes();
     const sourceTeraType = source.getTeraType();
@@ -2906,7 +2959,7 @@ export default abstract class Pokemon extends Phaser.GameObjects.Container {
       ? 0.5
       : 1;
 
-    damage.value = Utils.toDmgValue(
+    const calculatedDamage =
       baseDamage
       * targetMultiplier
       * multiStrikeEnhancementMultiplier.value
@@ -2919,8 +2972,8 @@ export default abstract class Pokemon extends Phaser.GameObjects.Container {
       * burnMultiplier.value
       * screenMultiplier.value
       * hitsTagMultiplier.value
-      * mistyTerrainMultiplier
-    );
+      * mistyTerrainMultiplier;
+    damage.value = simulated ? calculatedDamage : Utils.toDmgValue(calculatedDamage);
 
     /** Doubles damage if the attacker has Tinted Lens and is using a resisted move */
     if (!ignoreSourceAbility) {
@@ -2950,12 +3003,12 @@ export default abstract class Pokemon extends Phaser.GameObjects.Container {
     applyMoveAttrs(ModifiedDamageAttr, source, this, move, damage);
 
     if (this.isFullHp() && !ignoreAbility) {
-      applyPreDefendAbAttrs(PreDefendFullHpEndureAbAttr, this, source, move, cancelled, false, damage);
+      applyPreDefendAbAttrs(PreDefendFullHpEndureAbAttr, this, source, move, cancelled, simulated, damage);
     }
 
     // debug message for when damage is applied (i.e. not simulated)
     if (!simulated) {
-      console.log("damage", damage.value, move.name);
+      console.log("damage" + (config === 0 ? "" : (config === 1 ? " (min)" : " (max)")), damage.value, move.name);
     }
 
     let hitResult: HitResult;
@@ -3003,7 +3056,7 @@ export default abstract class Pokemon extends Phaser.GameObjects.Container {
         isCritical = true;
       } else {
         const critChance = [ 24, 8, 2, 1 ][Math.max(0, Math.min(this.getCritStage(source, move), 3))];
-        isCritical = critChance === 1 || !globalScene.randBattleSeedInt(critChance);
+        isCritical = critChance === 1 || !globalScene.randBattleSeedInt(critChance, undefined, "Crit chance (1 in " + critChance + ")");
       }
 
       const noCritTag = globalScene.arena.getTagOnSide(NoCritTag, defendingSide);
@@ -3784,7 +3837,7 @@ export default abstract class Pokemon extends Phaser.GameObjects.Container {
     let sleepTurnsRemaining: Utils.NumberHolder;
 
     if (effect === StatusEffect.SLEEP) {
-      sleepTurnsRemaining = new Utils.NumberHolder(this.randSeedIntRange(2, 4));
+      sleepTurnsRemaining = new Utils.NumberHolder(this.randSeedIntRange(2, 4, "Random sleep turns"));
 
       this.setFrameRate(4);
 
@@ -4271,10 +4324,10 @@ export default abstract class Pokemon extends Phaser.GameObjects.Container {
    * @param min The minimum integer to pick, default `0`
    * @returns A random integer between {@linkcode min} and ({@linkcode min} + {@linkcode range} - 1)
    */
-  randSeedInt(range: number, min: number = 0): number {
+  randSeedInt(range: number, min: number = 0, reason?: string): number {
     return globalScene.currentBattle
-      ? globalScene.randBattleSeedInt(range, min)
-      : Utils.randSeedInt(range, min);
+      ? globalScene.randBattleSeedInt(range, min, reason)
+      : Utils.randSeedInt(range, min, reason);
   }
 
   /**
@@ -4283,8 +4336,8 @@ export default abstract class Pokemon extends Phaser.GameObjects.Container {
    * @param max The maximum integer to generate
    * @returns a random integer between {@linkcode min} and {@linkcode max} inclusive
    */
-  randSeedIntRange(min: number, max: number): number {
-    return this.randSeedInt((max - min) + 1, min);
+  randSeedIntRange(min: number, max: number, reason?: string): number {
+    return this.randSeedInt((max - min) + 1, min, reason);
   }
 
   /**
@@ -4933,6 +4986,9 @@ export class EnemyPokemon extends Pokemon {
    * @returns this Pokemon's next move in the format {move, moveTargets}
    */
   getNextMove(): TurnMove {
+    if (doMoveLogging) {
+      console.log("Starting getNextMove() for " + this.name);
+    }
     // If this Pokemon has a move already queued, return it.
     const moveQueue = this.getMoveQueue();
     if (moveQueue.length !== 0) {
@@ -4940,9 +4996,21 @@ export class EnemyPokemon extends Pokemon {
       if (queuedMove) {
         const moveIndex = this.getMoveset().findIndex(m => m?.moveId === queuedMove.move);
         if ((moveIndex > -1 && this.getMoveset()[moveIndex]!.isUsable(this, queuedMove.ignorePP)) || queuedMove.virtual) {
+          this.flyout.setText();
+          for (var i = 0; i < this.moveset.length; i++) {
+            if (this.moveset[i]?.moveId == queuedMove.move) {
+              this.flyout.setText(i);
+            }
+          }
+          if (doMoveLogging) {
+            console.log("  Move was already selected");
+          }
           return queuedMove;
         } else {
           this.getMoveQueue().shift();
+          if (doMoveLogging) {
+            console.log("  Selected move cannot be used");
+          }
           return this.getNextMove();
         }
       }
@@ -4954,6 +5022,10 @@ export class EnemyPokemon extends Pokemon {
     if (movePool.length) {
       // If there's only 1 move in the move pool, use it.
       if (movePool.length === 1) {
+        this.flyout.setText(this.getMoveset().indexOf(movePool[0]));
+        if (doMoveLogging) {
+          console.log("  Only one move to select");
+        }
         return { move: movePool[0]!.moveId, targets: this.getNextTargets(movePool[0]!.moveId) }; // TODO: are the bangs correct?
       }
       // If a move is forced because of Encore, use it.
@@ -4961,12 +5033,18 @@ export class EnemyPokemon extends Pokemon {
       if (encoreTag) {
         const encoreMove = movePool.find(m => m?.moveId === encoreTag.moveId);
         if (encoreMove) {
+          this.flyout.setText(this.getMoveset().indexOf(encoreMove));
+          if (doMoveLogging) {
+            console.log("  Locked into Encore");
+          }
           return { move: encoreMove.moveId, targets: this.getNextTargets(encoreMove.moveId) };
         }
       }
       switch (this.aiType) {
         case AiType.RANDOM: // No enemy should spawn with this AI type in-game
-          const moveId = movePool[globalScene.randBattleSeedInt(movePool.length)]!.moveId; // TODO: is the bang correct?
+          var i = globalScene.randBattleSeedInt(movePool.length, undefined, "Move selection roll (RANDOM)");
+          const moveId = movePool[i]!.moveId;
+          this.flyout.setText(i);
           return { move: moveId, targets: this.getNextTargets(moveId) };
         case AiType.SMART_RANDOM:
         case AiType.SMART:
@@ -5030,7 +5108,9 @@ export class EnemyPokemon extends Pokemon {
              */
               let targetScore = move.getUserBenefitScore(this, target, move) + move.getTargetBenefitScore(this, target, move) * (mt < BattlerIndex.ENEMY === this.isPlayer() ? 1 : -1);
               if (Number.isNaN(targetScore)) {
-                console.error(`Move ${move.name} returned score of NaN`);
+                if (doMoveLogging) {
+                  console.error(`Move ${move.name} returned score of NaN`);
+                }
                 targetScore = 0;
               }
               /**
@@ -5070,7 +5150,9 @@ export class EnemyPokemon extends Pokemon {
             moveScores[m] = moveScore;
           }
 
-          console.log(moveScores);
+          if (doMoveLogging) {
+            console.log(moveScores);
+          }
 
           // Sort the move pool in decreasing order of move score
           const sortedMovePool = movePool.slice(0);
@@ -5082,13 +5164,13 @@ export class EnemyPokemon extends Pokemon {
           let r = 0;
           if (this.aiType === AiType.SMART_RANDOM) {
           // Has a 5/8 chance to select the best move, and a 3/8 chance to advance to the next best move (and repeat this roll)
-            while (r < sortedMovePool.length - 1 && globalScene.randBattleSeedInt(8) >= 5) {
+            while (r < sortedMovePool.length - 1 && globalScene.randBattleSeedInt(8, undefined, "Smart-Random AI Move Selection") >= 5) {
               r++;
             }
           } else if (this.aiType === AiType.SMART) {
           // The chance to advance to the next best move increases when the compared moves' scores are closer to each other.
             while (r < sortedMovePool.length - 1 && (moveScores[movePool.indexOf(sortedMovePool[r + 1])] / moveScores[movePool.indexOf(sortedMovePool[r])]) >= 0
-              && globalScene.randBattleSeedInt(100) < Math.round((moveScores[movePool.indexOf(sortedMovePool[r + 1])] / moveScores[movePool.indexOf(sortedMovePool[r])]) * 50)) {
+              && globalScene.randBattleSeedInt(100, undefined, "Smart AI Move Selection") < Math.round((moveScores[movePool.indexOf(sortedMovePool[r + 1])] / moveScores[movePool.indexOf(sortedMovePool[r])]) * 50)) {
               r++;
             }
           }
@@ -5096,7 +5178,8 @@ export class EnemyPokemon extends Pokemon {
           return { move: sortedMovePool[r]!.moveId, targets: moveTargets[sortedMovePool[r]!.moveId] };
       }
     }
-
+    this.flyout.setText();
+    console.log("  Selected Struggle");
     return { move: Moves.STRUGGLE, targets: this.getNextTargets(Moves.STRUGGLE) };
   }
 
@@ -5106,10 +5189,16 @@ export class EnemyPokemon extends Pokemon {
    * @returns The indexes of the Pokemon the given move would target
    */
   getNextTargets(moveId: Moves): BattlerIndex[] {
+    if (doMoveLogging) {
+      console.log("Starting getNextTargets() for " + this.name + " with move " + Utils.getEnumKeys(Moves)[moveId]);
+    }
     const moveTargets = getMoveTargets(this, moveId);
     const targets = globalScene.getField(true).filter(p => moveTargets.targets.indexOf(p.getBattlerIndex()) > -1);
     // If the move is multi-target, return all targets' indexes
     if (moveTargets.multiple) {
+      if (doMoveLogging) {
+        console.log("  Multi-target move");
+      }
       return targets.map(p => p.getBattlerIndex());
     }
 
@@ -5133,9 +5222,14 @@ export class EnemyPokemon extends Pokemon {
       // Set target to BattlerIndex.ATTACKER when using a counter move
       // This is the same as when the player does so
       if (move.hasAttr(CounterDamageAttr)) {
+        if (doMoveLogging) {
+          console.log("  Counter move");
+        }
         return [ BattlerIndex.ATTACKER ];
       }
-
+      if (doMoveLogging) {
+        console.log("  No targets available");
+      }
       return [];
     }
 
@@ -5169,7 +5263,7 @@ export class EnemyPokemon extends Pokemon {
      * then select the first target whose cumulative weight (with all previous targets' weights)
      * is greater than that random number.
      */
-    const randValue = globalScene.randBattleSeedInt(totalWeight);
+    const randValue = globalScene.randBattleSeedInt(totalWeight, undefined, "Random move target");
     let targetIndex: number = 0;
 
     thresholds.every((t, i) => {
@@ -5180,6 +5274,12 @@ export class EnemyPokemon extends Pokemon {
       targetIndex = i;
       return false;
     });
+    if (doMoveLogging) {
+      console.log("Target selection thresholds", thresholds);
+    }
+    if (doMoveLogging) {
+      console.log("  Randomly selected position " + sortedBenefitScores[targetIndex][0] + " as target");
+    }
 
     return [ sortedBenefitScores[targetIndex][0] ];
   }
@@ -5207,6 +5307,33 @@ export class EnemyPokemon extends Pokemon {
     }
 
     return 0;
+  }
+
+  calculateBossShieldRequirements(): integer[] {
+    if (this.isFainted()) {
+      return [];
+    }
+
+    const segmentRequirements: integer[] = [];
+
+    if (this.isBoss()) {
+      const segmentSize = this.getMaxHp() / this.bossSegments;
+      const hpThreshold = segmentSize * this.bossSegmentIndex;
+      const roundedHpThreshold = Math.round(hpThreshold);
+      if (this.hp >= roundedHpThreshold) {
+        const hpRemainder = this.hp - roundedHpThreshold;
+        segmentRequirements.push(hpRemainder); // hp until next shield
+        let segmentsBypassed = 0;
+        while (segmentsBypassed < this.bossSegmentIndex && this.canBypassBossSegments(segmentsBypassed + 1)) {
+          const damage = segmentSize * Math.pow(2, segmentsBypassed + 1) + hpRemainder;
+          segmentsBypassed++;
+          segmentRequirements.push(damage); // damage needed to bypass each following shield
+          // console.log('damage', damage, 'segment', segmentsBypassed, 'segment size', segmentSize);
+        }
+      }
+    }
+
+    return segmentRequirements;
   }
 
   damage(damage: number, ignoreSegments: boolean = false, preventEndure: boolean = false, ignoreFaintPhase: boolean = false): number {
@@ -5296,7 +5423,7 @@ export class EnemyPokemon extends Pokemon {
       }
 
       // Pick a random stat from the leftover stats to increase its stages
-      const randInt = Utils.randSeedInt(totalWeight);
+      const randInt = Utils.randSeedInt(totalWeight, undefined, "Random stat to raise from breaking a segment");
       for (const i in statThresholds) {
         if (randInt < statThresholds[i]) {
           boostedStat = leftoverStats[i];
@@ -5489,6 +5616,8 @@ export interface DamageCalculationResult {
   result: HitResult;
   /** The damage dealt by the move */
   damage: number;
+  damageLow?: number;
+  damageHigh?: number;
 }
 
 /**
@@ -5555,6 +5684,10 @@ export class PokemonMove {
    */
   usePp(count: number = 1) {
     this.ppUsed = Math.min(this.ppUsed + count, this.getMovePp());
+  }
+
+  setFullPp() {
+    this.ppUsed = 0;
   }
 
   getMovePp(): number {

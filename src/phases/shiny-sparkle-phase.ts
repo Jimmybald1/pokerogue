@@ -1,6 +1,7 @@
 import { globalScene } from "#app/global-scene";
 import type { BattlerIndex } from "#app/battle";
 import { PokemonPhase } from "./pokemon-phase";
+import * as LoggerTools from "../logger";
 
 export class ShinySparklePhase extends PokemonPhase {
   constructor(battlerIndex: BattlerIndex) {

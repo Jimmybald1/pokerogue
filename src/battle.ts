@@ -23,6 +23,8 @@ import type { CustomModifierSettings } from "#app/modifier/modifier-type";
 import { ModifierTier } from "#app/modifier/modifier-tier";
 import type { MysteryEncounterType } from "#enums/mystery-encounter-type";
 
+const doCatchLogging: boolean = false;
+
 export enum ClassicFixedBossWaves {
   TOWN_YOUNGSTER = 5,
   RIVAL_1 = 8,
@@ -428,13 +430,7 @@ export default class Battle {
     return null;
   }
 
-  /**
-   * Generates a random number using the current battle's seed. Calls {@linkcode Utils.randSeedInt}
-   * @param range How large of a range of random numbers to choose from. If {@linkcode range} <= 1, returns {@linkcode min}
-   * @param min The minimum integer to pick, default `0`
-   * @returns A random integer between {@linkcode min} and ({@linkcode min} + {@linkcode range} - 1)
-   */
-  randSeedInt(range: number, min: number = 0): number {
+  multiInt(out: number[], count: number, range: number, min: number = 0, reason: string = "Unlabeled randSeedInt", offset: number = 0) {
     if (range <= 1) {
       return min;
     }
@@ -445,13 +441,53 @@ export default class Battle {
       Phaser.Math.RND.state(this.battleSeedState);
     } else {
       Phaser.Math.RND.sow([ Utils.shiftCharCodes(this.battleSeed, this.turn << 6) ]);
-      console.log("Battle Seed:", this.battleSeed);
+      if (doCatchLogging) {
+        console.log("Battle Seed:", this.battleSeed);
+      }
+    }
+    for (var i = 0; i < offset; i++) {
+      // Perform useless rolls to offset RNG counter
+      Utils.randSeedInt(5, undefined, "[RNG offset]");
+    }
+    for (var i = 0; i < count; i++) {
+      out.push(Utils.randSeedInt(range, min, `[${i + 1}/${count}] ${reason}`));
+    }
+    if (doCatchLogging) {
+      console.log("[SIMULATED] " + reason + " (x" + count + (offset ? " + offset " + offset : "") + ")", out);
+    }
+    Phaser.Math.RND.state(state);
+    //globalScene.setScoreText("RNG: " + tempRngCounter + " (Last sim: " + this.rngCounter + ")")
+    globalScene.rngCounter = tempRngCounter;
+    globalScene.rngSeedOverride = tempSeedOverride;
+  }
+
+  /**
+   * Generates a random number using the current battle's seed. Calls {@linkcode Utils.randSeedInt}
+   * @param range How large of a range of random numbers to choose from. If {@linkcode range} <= 1, returns {@linkcode min}
+   * @param min The minimum integer to pick, default `0`
+   * @returns A random integer between {@linkcode min} and ({@linkcode min} + {@linkcode range} - 1)
+   */
+  randSeedInt(range: number, min: number = 0, reason?: string): number {
+    if (range <= 1) {
+      return min;
+    }
+    const tempRngCounter = globalScene.rngCounter;
+    const tempSeedOverride = globalScene.rngSeedOverride;
+    const state = Phaser.Math.RND.state();
+    if (this.battleSeedState) {
+      Phaser.Math.RND.state(this.battleSeedState);
+    } else {
+      Phaser.Math.RND.sow([ Utils.shiftCharCodes(this.battleSeed, this.turn << 6) ]);
+      if (doCatchLogging) {
+        console.log("Battle Seed:", this.battleSeed);
+      }
     }
     globalScene.rngCounter = this.rngCounter++;
     globalScene.rngSeedOverride = this.battleSeed;
-    const ret = Utils.randSeedInt(range, min);
+    const ret = Utils.randSeedInt(range, min, reason);
     this.battleSeedState = Phaser.Math.RND.state();
     Phaser.Math.RND.state(state);
+    //scene.setScoreText("RNG: " + tempRngCounter + " (Last sim: " + this.rngCounter + ")")
     globalScene.rngCounter = tempRngCounter;
     globalScene.rngSeedOverride = tempSeedOverride;
     return ret;
@@ -532,7 +568,7 @@ export function getRandomTrainerFunc(trainerPool: (TrainerType | TrainerType[])[
     globalScene.executeWithSeedOffset(() => {
       for (const trainerPoolEntry of trainerPool) {
         const trainerType = Array.isArray(trainerPoolEntry)
-          ? Utils.randSeedItem(trainerPoolEntry)
+          ? Utils.randSeedItem(trainerPoolEntry, "Random trainer helper function")
           : trainerPoolEntry;
         trainerTypes.push(trainerType);
       }
@@ -540,7 +576,7 @@ export function getRandomTrainerFunc(trainerPool: (TrainerType | TrainerType[])[
 
     let trainerGender = TrainerVariant.DEFAULT;
     if (randomGender) {
-      trainerGender = (Utils.randInt(2) === 0) ? TrainerVariant.FEMALE : TrainerVariant.DEFAULT;
+      trainerGender = (Utils.randInt(2, undefined, "Random trainer helper function") === 0) ? TrainerVariant.FEMALE : TrainerVariant.DEFAULT;
     }
 
     /* 1/3 chance for evil team grunts to be double battles */
@@ -548,7 +584,7 @@ export function getRandomTrainerFunc(trainerPool: (TrainerType | TrainerType[])[
     const isEvilTeamGrunt = evilTeamGrunts.includes(trainerTypes[rand]);
 
     if (trainerConfigs[trainerTypes[rand]].hasDouble && isEvilTeamGrunt) {
-      return new Trainer(trainerTypes[rand], (Utils.randInt(3) === 0) ? TrainerVariant.DOUBLE : trainerGender);
+      return new Trainer(trainerTypes[rand], (Utils.randInt(3, undefined, "Evil grunt selection") === 0) ? TrainerVariant.DOUBLE : trainerGender);
     }
 
     return new Trainer(trainerTypes[rand], trainerGender);
@@ -569,7 +605,7 @@ export interface FixedBattleConfigs {
  */
 export const classicFixedBattles: FixedBattleConfigs = {
   [ClassicFixedBossWaves.TOWN_YOUNGSTER]: new FixedBattleConfig().setBattleType(BattleType.TRAINER)
-    .setGetTrainerFunc(() => new Trainer(TrainerType.YOUNGSTER, Utils.randSeedInt(2) ? TrainerVariant.FEMALE : TrainerVariant.DEFAULT)),
+    .setGetTrainerFunc(() => new Trainer(TrainerType.YOUNGSTER, Utils.randSeedInt(2, undefined, "Youngster gender") ? TrainerVariant.FEMALE : TrainerVariant.DEFAULT)),
   [ClassicFixedBossWaves.RIVAL_1]: new FixedBattleConfig().setBattleType(BattleType.TRAINER)
     .setGetTrainerFunc(() => new Trainer(TrainerType.RIVAL, globalScene.gameData.gender === PlayerGender.MALE ? TrainerVariant.FEMALE : TrainerVariant.DEFAULT)),
   [ClassicFixedBossWaves.RIVAL_2]: new FixedBattleConfig().setBattleType(BattleType.TRAINER)

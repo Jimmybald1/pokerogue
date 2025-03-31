@@ -19,13 +19,13 @@ import { Type } from "#enums/type";
 import { TypeColor, TypeShadow } from "#app/enums/color";
 import { getNatureStatMultiplier, getNatureName } from "../data/nature";
 import { getVariantTint } from "#app/data/variant";
-import * as Modifier from "../modifier/modifier";
 import type { Species } from "#enums/species";
 import { PlayerGender } from "#enums/player-gender";
 import { SettingKeyboard } from "#app/system/settings/settings-keyboard";
 import { getBiomeName } from "#app/data/balance/biomes";
 import type { MysteryEncounterType } from "#enums/mystery-encounter-type";
 import { globalScene } from "#app/global-scene";
+import { modifierSortFunc, PokemonHeldItemModifier } from "../modifier/modifier";
 
 /**
  * RunInfoUiMode indicates possible overlays of RunInfoUiHandler.
@@ -74,7 +74,7 @@ export default class RunInfoUiHandler extends UiHandler {
   override async setup() {
  		this.runContainer = globalScene.add.container(1, -(globalScene.game.canvas.height / 6) + 1);
     // The import of the modifiersModule is loaded here to sidestep async/await issues.
-    this.modifiersModule = Modifier;
+    this.modifiersModule = await import("../modifier/modifier");
     this.runContainer.setVisible(false);
     globalScene.loadImage("encounter_exclaim", "mystery-encounters");
  	}
@@ -531,7 +531,7 @@ export default class RunInfoUiHandler extends UiHandler {
       modifierIconsContainer.setScale(0.45);
       for (const m of this.runInfo.modifiers) {
         const modifier = m.toModifier(this.modifiersModule[m.className]);
-        if (modifier instanceof Modifier.PokemonHeldItemModifier) {
+        if (modifier instanceof PokemonHeldItemModifier) {
           continue;
         }
         const icon = modifier?.getIcon(false);
@@ -734,17 +734,17 @@ export default class RunInfoUiHandler extends UiHandler {
       // Endless/Endless Spliced have a different scale because Pokemon tend to accumulate more items in these runs.
       const heldItemsScale = (this.runInfo.gameMode === GameModes.SPLICED_ENDLESS || this.runInfo.gameMode === GameModes.ENDLESS) ? 0.25 : 0.5;
       const heldItemsContainer = globalScene.add.container(-82, 2);
-      const heldItemsList : Modifier.PokemonHeldItemModifier[] = [];
+      const heldItemsList : PokemonHeldItemModifier[] = [];
       if (this.runInfo.modifiers.length) {
         for (const m of this.runInfo.modifiers) {
           const modifier = m.toModifier(this.modifiersModule[m.className]);
-          if (modifier instanceof Modifier.PokemonHeldItemModifier && modifier.pokemonId === pokemon.id) {
+          if (modifier instanceof PokemonHeldItemModifier && modifier.pokemonId === pokemon.id) {
             modifier.stackCount = m["stackCount"];
             heldItemsList.push(modifier);
           }
         }
         if (heldItemsList.length > 0) {
-          (heldItemsList as Modifier.PokemonHeldItemModifier[]).sort(Modifier.modifierSortFunc);
+          (heldItemsList as PokemonHeldItemModifier[]).sort(modifierSortFunc);
           let row = 0;
           for (const [ index, item ] of heldItemsList.entries()) {
             if ( index > 36 ) {

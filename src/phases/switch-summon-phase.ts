@@ -11,6 +11,7 @@ import { Command } from "#app/ui/command-ui-handler";
 import i18next from "i18next";
 import { PostSummonPhase } from "./post-summon-phase";
 import { SummonPhase } from "./summon-phase";
+import * as LoggerTools from "../logger";
 import { SubstituteTag } from "#app/data/battler-tags";
 import { SwitchType } from "#enums/switch-type";
 
@@ -104,12 +105,16 @@ export class SwitchSummonPhase extends SummonPhase {
     const party = this.player ? this.getParty() : globalScene.getEnemyParty();
     const switchedInPokemon = party[this.slotIndex];
     this.lastPokemon = this.getPokemon();
+    if (this.player && this.switchType === SwitchType.INITIAL_SWITCH) {
+      LoggerTools.logActions(globalScene.currentBattle.waveIndex, `Pre-Switch ${this.lastPokemon.name} to ${switchedInPokemon.name}`);
+    }
+
     applyPreSwitchOutAbAttrs(PreSwitchOutAbAttr, this.lastPokemon);
-    if (this.switchType === SwitchType.BATON_PASS && switchedInPokemon) {
+    if ((this.switchType === SwitchType.BATON_PASS) && switchedInPokemon) {
       (this.player ? globalScene.getEnemyField() : globalScene.getPlayerField()).forEach(enemyPokemon => enemyPokemon.transferTagsBySourceId(this.lastPokemon.id, switchedInPokemon.id));
       if (!globalScene.findModifier(m => m instanceof SwitchEffectTransferModifier && (m as SwitchEffectTransferModifier).pokemonId === switchedInPokemon.id)) {
         const batonPassModifier = globalScene.findModifier(m => m instanceof SwitchEffectTransferModifier
-            && (m as SwitchEffectTransferModifier).pokemonId === this.lastPokemon.id) as SwitchEffectTransferModifier;
+          && (m as SwitchEffectTransferModifier).pokemonId === this.lastPokemon.id) as SwitchEffectTransferModifier;
         if (batonPassModifier && !globalScene.findModifier(m => m instanceof SwitchEffectTransferModifier && (m as SwitchEffectTransferModifier).pokemonId === switchedInPokemon.id)) {
           globalScene.tryTransferHeldItemModifier(batonPassModifier, switchedInPokemon, false, undefined, undefined, undefined, false);
         }
@@ -175,7 +180,7 @@ export class SwitchSummonPhase extends SummonPhase {
       pokemon.battleSummonData.waveTurnCount--;
     }
 
-    if (this.switchType === SwitchType.BATON_PASS && pokemon) {
+    if ((this.switchType === SwitchType.BATON_PASS) && pokemon) {
       pokemon.transferSummon(this.lastPokemon);
     } else if (this.switchType === SwitchType.SHED_TAIL && pokemon) {
       const subTag = this.lastPokemon.getTag(SubstituteTag);

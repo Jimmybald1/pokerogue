@@ -74,9 +74,10 @@ export class StatsContainer extends Phaser.GameObjects.Container {
     }
   }
 
-  updateIvs(ivs: number[], originalIvs?: number[]): void {
+  updateIvs(ivs: number[], originalIvs?: number[], max?: integer): void {
     if (ivs) {
-      const ivChartData = new Array(6).fill(null).map((_, i) => [ (ivs[ivChartStatIndexes[i]] / 31) * ivChartSize * ivChartStatCoordMultipliers[ivChartStatIndexes[i]][0], (ivs[ivChartStatIndexes[i]] / 31) * ivChartSize * ivChartStatCoordMultipliers[ivChartStatIndexes[i]][1] ] ).flat();
+      const maxIV = max || 31;
+      const ivChartData = new Array(6).fill(null).map((_, i) => [ (ivs[ivChartStatIndexes[i]] / maxIV) * ivChartSize * ivChartStatCoordMultipliers[ivChartStatIndexes[i]][0], (ivs[ivChartStatIndexes[i]] / maxIV) * ivChartSize * ivChartStatCoordMultipliers[ivChartStatIndexes[i]][1] ] ).flat();
       const lastIvChartData = this.statsIvsCache || defaultIvChartData;
       const perfectIVColor: string = getTextColor(TextStyle.SUMMARY_GOLD, false, globalScene.uiTheme);
       this.statsIvsCache = ivChartData.slice(0);

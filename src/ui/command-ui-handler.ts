@@ -130,7 +130,7 @@ export default class CommandUiHandler extends UiHandler {
             break;
           // Run
           case Command.RUN:
-            (globalScene.getCurrentPhase() as CommandPhase).handleCommand(Command.RUN, 0);
+            (globalScene.getCurrentPhase() as CommandPhase).handleCommand(Command.RUN, true, 0);
             success = true;
             break;
           case Command.TERA:

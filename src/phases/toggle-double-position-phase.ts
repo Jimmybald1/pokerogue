@@ -1,6 +1,7 @@
 import { globalScene } from "#app/global-scene";
 import { FieldPosition } from "#app/field/pokemon";
 import { BattlePhase } from "./battle-phase";
+import * as LoggerTools from "../logger";
 
 export class ToggleDoublePositionPhase extends BattlePhase {
   private double: boolean;

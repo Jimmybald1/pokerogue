@@ -1,4 +1,5 @@
 import { MoneyFormat } from "#enums/money-format";
+import * as LoggerTools from "./logger";
 import { Moves } from "#enums/moves";
 import i18next from "i18next";
 import { pokerogueApi } from "#app/plugins/api/pokerogue-api";
@@ -6,6 +7,15 @@ import { pokerogueApi } from "#app/plugins/api/pokerogue-api";
 export type nil = null | undefined;
 
 export const MissingTextureKey = "__MISSING";
+
+/** If enabled, the mod will push Log messages to the console when an RNG roll is performed. */
+const doRNGLogging = false;
+/** If enabled, the mod will not log simulated RNG rolls. */
+export const hideSimRNGLogging = false;
+/** If enabled, the mod will push Error messages to the console when an RNG roll is performed without being assigned a label. */
+const doUnlabeledRNGLogging = false;
+/** If enabled, the mod will push Log messages to the console when an RNG roll is performed that the Battle Seed does not influence. */
+const doUnseededRNGLogging = false;
 
 export function toReadableString(str: string): string {
   return str.replace(/\_/g, " ").split(" ").map(s => `${s.slice(0, 1)}${s.slice(1).toLowerCase()}`).join(" ");
@@ -16,7 +26,7 @@ export function randomString(length: number, seeded: boolean = false) {
   let result = "";
 
   for (let i = 0; i < length; i++) {
-    const randomIndex = seeded ? randSeedInt(characters.length) : Math.floor(Math.random() * characters.length);
+    const randomIndex = seeded ? randSeedInt(characters.length, undefined, "%HIDE") : Math.floor(Math.random() * characters.length);
     result += characters[randomIndex];
   }
 
@@ -39,7 +49,15 @@ export function shiftCharCodes(str: string, shiftCount: number) {
   return newStr;
 }
 
-export function randGauss(stdev: number, mean: number = 0): number {
+export function clampInt(value: integer, min: integer, max: integer): integer {
+  return Math.min(Math.max(value, min), max);
+}
+
+export function rangemap(value: integer, min: integer, max: integer) {
+  return (max - value) / (max - min);
+}
+
+export function randGauss(stdev: number, mean: number = 0, reason?: string): number {
   if (!stdev) {
     return 0;
   }
@@ -49,14 +67,22 @@ export function randGauss(stdev: number, mean: number = 0): number {
   return z * stdev + mean;
 }
 
-export function randSeedGauss(stdev: number, mean: number = 0): number {
+export function randSeedGauss(stdev: number, mean: number = 0, reason?: string): number {
   if (!stdev) {
     return 0;
   }
   const u = 1 - Phaser.Math.RND.realInRange(0, 1);
   const v = Phaser.Math.RND.realInRange(0, 1);
   const z = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
-  return z * stdev + mean;
+  const result = z * stdev + mean;
+  if (reason != "%HIDE" && doRNGLogging) {
+    if (reason) {
+      console.log(reason, result);
+    } else if (doUnlabeledRNGLogging) {
+      console.error("unlabeled randSeedInt", result);
+    }
+  }
+  return result;
 }
 
 export function padInt(value: number, length: number, padWith?: string): string {
@@ -75,11 +101,15 @@ export function padInt(value: number, length: number, padWith?: string): string 
 * @param range The amount of possible numbers
 * @param min The starting number
 */
-export function randInt(range: number, min: number = 0): number {
+export function randInt(range: number, min: number = 0, reason?: string): number {
   if (range === 1) {
     return min;
   }
-  return Math.floor(Math.random() * range) + min;
+  const V = Math.floor(Math.random() * range) + min;
+  if (reason != "%HIDE" && doRNGLogging && doUnseededRNGLogging) {
+    console.log("[unseeded] " + (reason ? reason : "randInt"), V);
+  }
+  return V;
 }
 
 /**
@@ -88,11 +118,19 @@ export function randInt(range: number, min: number = 0): number {
  * @param min The minimum integer to pick, default `0`
  * @returns A random integer between {@linkcode min} and ({@linkcode min} + {@linkcode range} - 1)
  */
-export function randSeedInt(range: number, min: number = 0): number {
+export function randSeedInt(range: number, min: number = 0, reason?: string): number {
   if (range <= 1) {
     return min;
   }
-  return Phaser.Math.RND.integerInRange(min, (range - 1) + min);
+  const V = Phaser.Math.RND.integerInRange(min, (range - 1) + min);
+  if (reason != "%HIDE" && doRNGLogging) {
+    if (reason) {
+      console.log(reason, V);
+    } else if (doUnlabeledRNGLogging) {
+      console.error("unlabeled randSeedInt", V);
+    }
+  }
+  return V;
 }
 
 /**
@@ -100,26 +138,38 @@ export function randSeedInt(range: number, min: number = 0): number {
 * @param min The lowest number
 * @param max The highest number
 */
-export function randIntRange(min: number, max: number): number {
-  return randInt(max - min, min);
+export function randIntRange(min: number, max: number, reason?: string): number {
+  return randInt(max - min, min, reason ? reason : "randIntRange");
 }
 
-export function randItem<T>(items: T[]): T {
+export function randItem<T>(items: T[], reason?: string): T {
   return items.length === 1
     ? items[0]
-    : items[randInt(items.length)];
+    : items[randInt(items.length, undefined, reason ? reason : "randItem")];
 }
 
-export function randSeedItem<T>(items: T[]): T {
+export function randSeedItem<T>(items: T[], reason?: string): T {
+  function rpick() {
+    const V = Phaser.Math.RND.pick(items);
+    if (doRNGLogging) {
+      console.log(reason ? reason : "randSeedItem");
+    }
+    return V;
+  }
   return items.length === 1
     ? items[0]
-    : Phaser.Math.RND.pick(items);
+    : rpick();
 }
 
-export function randSeedWeightedItem<T>(items: T[]): T {
+export function randSeedWeightedItem<T>(items: T[], reason?: string): T {
+  function rpick() {
+    const V = Phaser.Math.RND.weightedPick(items);
+    console.log(reason ? reason : "randSeedWeightedItem");
+    return V;
+  }
   return items.length === 1
     ? items[0]
-    : Phaser.Math.RND.weightedPick(items);
+    : rpick();
 }
 
 /**
@@ -134,6 +184,7 @@ export function randSeedShuffle<T>(items: T[]): T[] {
   const newArray = items.slice(0);
   for (let i = items.length - 1; i > 0; i--) {
     const j = Phaser.Math.RND.integerInRange(0, i);
+    console.log("randSeedShuffle", j);
     [ newArray[i], newArray[j] ] = [ newArray[j], newArray[i] ];
   }
   return newArray;

@@ -9,6 +9,7 @@ import { ModifierRewardPhase } from "./modifier-reward-phase";
 import { MoneyRewardPhase } from "./money-reward-phase";
 import { TrainerSlot } from "#app/data/trainer-config";
 import { globalScene } from "#app/global-scene";
+import * as LoggerTools from "../logger";
 import { Biome } from "#app/enums/biome";
 import { achvs } from "#app/system/achv";
 
@@ -57,7 +58,7 @@ export class TrainerVictoryPhase extends BattlePhase {
     globalScene.ui.showText(i18next.t("battle:trainerDefeated", { trainerName: globalScene.currentBattle.trainer?.getName(TrainerSlot.NONE, true) }), null, () => {
       const victoryMessages = globalScene.currentBattle.trainer?.getVictoryMessages()!; // TODO: is this bang correct?
       let message: string;
-      globalScene.executeWithSeedOffset(() => message = Utils.randSeedItem(victoryMessages), globalScene.currentBattle.waveIndex);
+      globalScene.executeWithSeedOffset(() => message = Utils.randSeedItem(victoryMessages, "Victory message"), globalScene.currentBattle.waveIndex);
       message = message!; // tell TS compiler it's defined now
 
       const showMessage = () => {

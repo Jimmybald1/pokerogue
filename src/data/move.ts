@@ -226,6 +226,7 @@ export default class Move implements Localizable {
   /** The move's {@linkcode MoveFlags} */
   private flags: number = 0;
   private nameAppend: string = "";
+  public implementationTag: string = "";
 
   constructor(id: Moves, type: Type, category: MoveCategory, defaultMoveTarget: MoveTarget, power: number, accuracy: number, pp: number, chance: number, priority: number, generation: number) {
     this.id = id;
@@ -455,6 +456,22 @@ export default class Move implements Localizable {
     return this;
   }
 
+  isFullyImplemented(): boolean {
+    return this.implementationTag == "" || this.implementationTag == undefined;
+  }
+  isPartiallyImplemented(): boolean {
+    return this.implementationTag == "P";
+  }
+  isPartial(): boolean {
+    return this.implementationTag == "P";
+  }
+  isUnimplemented(): boolean {
+    return this.implementationTag == "N";
+  }
+  isNotImplemented(): boolean {
+    return this.implementationTag == "N";
+  }
+
   /**
    * Internal dev flag for documenting edge cases. When using this, please document the known edge case.
    * @returns the called object {@linkcode Move}
@@ -469,6 +486,7 @@ export default class Move implements Localizable {
    */
   partial(): this {
     this.nameAppend += " (P)";
+    this.implementationTag = "P";
     return this;
   }
 
@@ -478,6 +496,7 @@ export default class Move implements Localizable {
    */
   unimplemented(): this {
     this.nameAppend += " (N)";
+    this.implementationTag = "N";
     return this;
   }
 
@@ -852,7 +871,7 @@ export default class Move implements Localizable {
    * @param target {@linkcode Pokemon} The Pokémon being targeted by the move.
    * @returns The calculated power of the move.
    */
-  calculateBattlePower(source: Pokemon, target: Pokemon, simulated: boolean = false): number {
+  calculateBattlePower(source: Pokemon, target: Pokemon, simulated: boolean = false, isMin: boolean = false, isMax: boolean = false): number {
     if (this.category === MoveCategory.STATUS) {
       return -1;
     }
@@ -867,7 +886,7 @@ export default class Move implements Localizable {
       power.value = 60;
     }
 
-    applyPreAttackAbAttrs(VariableMovePowerAbAttr, source, target, this, simulated, power);
+    applyPreAttackAbAttrs(VariableMovePowerAbAttr, source, target, this, simulated, power, isMin, isMax);
 
     if (source.getAlly()) {
       applyPreAttackAbAttrs(AllyMoveCategoryPowerBoostAbAttr, source.getAlly(), target, this, simulated, power);
@@ -895,7 +914,7 @@ export default class Move implements Localizable {
       power.value *= typeBoost.boostValue;
     }
 
-    applyMoveAttrs(VariablePowerAttr, source, target, this, power);
+    applyMoveAttrs(VariablePowerAttr, source, target, this, power, isMin, isMax);
 
     if (!this.hasAttr(TypelessAttr)) {
       globalScene.arena.applyTags(WeakenMoveTypeTag, simulated, this.type, power);
@@ -1518,12 +1537,12 @@ export class FixedDamageAttr extends MoveAttr {
   }
 
   apply(user: Pokemon, target: Pokemon, move: Move, args: any[]): boolean {
-    (args[0] as Utils.NumberHolder).value = this.getDamage(user, target, move);
+    (args[0] as Utils.NumberHolder).value = this.getDamage(user, target, move, args);
 
     return true;
   }
 
-  getDamage(user: Pokemon, target: Pokemon, move: Move): number {
+  getDamage(user: Pokemon, target: Pokemon, move: Move, args: any[]): number {
     return this.damage;
   }
 }
@@ -1631,7 +1650,7 @@ export class LevelDamageAttr extends FixedDamageAttr {
     super(0);
   }
 
-  getDamage(user: Pokemon, target: Pokemon, move: Move): number {
+  getDamage(user: Pokemon, target: Pokemon, move: Move, args?: any[]): number {
     return user.level;
   }
 }
@@ -1641,8 +1660,14 @@ export class RandomLevelDamageAttr extends FixedDamageAttr {
     super(0);
   }
 
-  getDamage(user: Pokemon, target: Pokemon, move: Move): number {
-    return Utils.toDmgValue(user.level * (user.randSeedIntRange(50, 150) * 0.01));
+  getDamage(user: Pokemon, target: Pokemon, move: Move, args: any[]): number {
+    if (args[1] == "LOW") {
+      return Utils.toDmgValue(user.level * 0.5);
+    }
+    if (args[1] == "HIGH") {
+      return Utils.toDmgValue(user.level * 1.5);
+    }
+    return Utils.toDmgValue(user.level * (user.randSeedIntRange(50, 150, "Random Damage") * 0.01));
   }
 }
 
@@ -2408,7 +2433,7 @@ export class MultiHitAttr extends MoveAttr {
     switch (this.multiHitType) {
       case MultiHitType._2_TO_5:
       {
-        const rand = user.randSeedInt(20);
+        const rand = user.randSeedInt(20, undefined, "Random number of hits for a 2-to-5-hits move");
         const hitValue = new Utils.NumberHolder(rand);
         applyAbAttrs(MaxMultiHitAbAttr, user, null, false, hitValue);
         if (hitValue.value >= 13) {
@@ -2513,7 +2538,7 @@ export class StatusEffectAttr extends MoveEffectAttr {
     }
 
     const moveChance = this.getMoveChance(user, target, move, this.selfTarget, true);
-    const statusCheck = moveChance < 0 || moveChance === 100 || user.randSeedInt(100) < moveChance;
+    const statusCheck = moveChance < 0 || moveChance === 100 || user.randSeedInt(100, undefined, "Chance to apply " + Utils.getEnumKeys(StatusEffect)[this.effect]) < moveChance;
     if (statusCheck) {
       const pokemon = this.selfTarget ? user : target;
       if (pokemon.status) {
@@ -2557,7 +2582,7 @@ export class MultiStatusEffectAttr extends StatusEffectAttr {
   }
 
   apply(user: Pokemon, target: Pokemon, move: Move, args: any[]): boolean {
-    this.effect = Utils.randSeedItem(this.effects);
+    this.effect = Utils.randSeedItem(this.effects,  "Selecting status effect to apply");
     const result = super.apply(user, target, move, args);
     return result;
   }
@@ -2622,6 +2647,25 @@ export class StealHeldItemChanceAttr extends MoveEffectAttr {
     }
 
     const rand = Phaser.Math.RND.realInRange(0, 1);
+    // Swap to RNG state for a reload
+    /*
+      const tempState = Phaser.Math.RND.state()
+      Phaser.Math.RND.state(globalScene.battleRNGState)
+      const rand_reload = Phaser.Math.RND.realInRange(0, 1);
+      globalScene.battleRNGState = Phaser.Math.RND.state()
+      Phaser.Math.RND.state(tempState)
+      console.log("Phaser.Math.RND.realInRange(0, 1)", rand)
+      if (rand >= this.chance && rand_reload < this.chance) {
+        console.error("Reload discrepancy: Fails now, but succeeds after reload")
+        LoggerTools.flagReset(globalScene.currentBattle.waveIndex)
+      }
+      if (rand_reload >= this.chance && rand < this.chance) {
+        console.error("Reload discrepancy: Succeeds now, but fails after reload")
+        LoggerTools.flagReset(globalScene.currentBattle.waveIndex)
+      }
+      //*/
+
+    console.log("realInRange direct call @ StealHeldItemChanceAttr: " + rand);
     if (rand >= this.chance) {
       return false;
     }
@@ -2630,7 +2674,7 @@ export class StealHeldItemChanceAttr extends MoveEffectAttr {
       const poolType = target.isPlayer() ? ModifierPoolType.PLAYER : target.hasTrainer() ? ModifierPoolType.TRAINER : ModifierPoolType.WILD;
       const highestItemTier = heldItems.map((m) => m.type.getOrInferTier(poolType)).reduce((highestTier, tier) => Math.max(tier!, highestTier), 0); // TODO: is the bang after tier correct?
       const tierHeldItems = heldItems.filter((m) => m.type.getOrInferTier(poolType) === highestItemTier);
-      const stolenItem = tierHeldItems[user.randSeedInt(tierHeldItems.length)];
+      const stolenItem = tierHeldItems[user.randSeedInt(tierHeldItems.length, undefined, "Selecting an item to steal")];
       if (globalScene.tryTransferHeldItemModifier(stolenItem, user, false)) {
         globalScene.queueMessage(i18next.t("moveTriggers:stoleItem", { pokemonName: getPokemonNameWithAffix(user), targetName: getPokemonNameWithAffix(target), itemName: stolenItem.type.name }));
         return true;
@@ -2704,7 +2748,7 @@ export class RemoveHeldItemAttr extends MoveEffectAttr {
     }
 
     if (heldItems.length) {
-      const removedItem = heldItems[user.randSeedInt(heldItems.length)];
+      const removedItem = heldItems[user.randSeedInt(heldItems.length, undefined, "Selecting item to remove")];
 
       // Decrease item amount and update icon
       target.loseHeldItem(removedItem);
@@ -2762,7 +2806,7 @@ export class EatBerryAttr extends MoveEffectAttr {
     if (heldBerries.length <= 0) {
       return false;
     }
-    this.chosenBerry = heldBerries[user.randSeedInt(heldBerries.length)];
+    this.chosenBerry = heldBerries[user.randSeedInt(heldBerries.length, undefined, "Selecting a berry to eat")];
     const preserve = new Utils.BooleanHolder(false);
     globalScene.applyModifiers(PreserveBerryModifier, target.isPlayer(), target, preserve); // check for berry pouch preservation
     if (!preserve.value) {
@@ -2821,7 +2865,7 @@ export class StealEatBerryAttr extends EatBerryAttr {
       return false;
     }
     // if the target has berries, pick a random berry and steal it
-    this.chosenBerry = heldBerries[user.randSeedInt(heldBerries.length)];
+    this.chosenBerry = heldBerries[user.randSeedInt(heldBerries.length, undefined, "Selecting a berry to steal")];
     applyPostItemLostAbAttrs(PostItemLostAbAttr, target, false);
     const message = i18next.t("battle:stealEatBerry", { pokemonName: user.name, targetName: target.name, berryName: this.chosenBerry.type.name });
     globalScene.queueMessage(message);
@@ -3267,7 +3311,7 @@ export class StatStageChangeAttr extends MoveEffectAttr {
     }
 
     const moveChance = this.getMoveChance(user, target, move, this.selfTarget, true);
-    if (moveChance < 0 || moveChance === 100 || user.randSeedInt(100) < moveChance) {
+    if (moveChance < 0 || moveChance === 100 || user.randSeedInt(100, undefined, "Random chance to raise stat") < moveChance) {
       const stages = this.getLevels(user);
       globalScene.unshiftPhase(new StatStageChangePhase((this.selfTarget ? user : target).getBattlerIndex(), this.selfTarget, this.stats, stages, this.showMessage));
       return true;
@@ -3493,7 +3537,7 @@ export class AcupressureStatStageChangeAttr extends MoveEffectAttr {
   override apply(user: Pokemon, target: Pokemon, move: Move, args: any[]): boolean {
     const randStats = BATTLE_STATS.filter((s) => target.getStatStage(s) < 6);
     if (randStats.length > 0) {
-      const boostStat = [ randStats[user.randSeedInt(randStats.length)] ];
+      const boostStat = [ randStats[user.randSeedInt(randStats.length, undefined, "Choosing stat to raise")] ];
       globalScene.unshiftPhase(new StatStageChangePhase(target.getBattlerIndex(), this.selfTarget, boostStat, 2));
       return true;
     }
@@ -3842,7 +3886,7 @@ export class BeatUpAttr extends VariablePowerAttr {
 const doublePowerChanceMessageFunc = (user: Pokemon, target: Pokemon, move: Move) => {
   let message: string = "";
   globalScene.executeWithSeedOffset(() => {
-    const rand = Utils.randSeedInt(100);
+    const rand = Utils.randSeedInt(100, undefined, "Doubled power chance (applying message)");
     if (rand < move.chance) {
       message = i18next.t("moveTriggers:goingAllOutForAttack", { pokemonName: getPokemonNameWithAffix(user) });
     }
@@ -3853,7 +3897,7 @@ const doublePowerChanceMessageFunc = (user: Pokemon, target: Pokemon, move: Move
 export class DoublePowerChanceAttr extends VariablePowerAttr {
   apply(user: Pokemon, target: Pokemon, move: Move, args: any[]): boolean {
     let rand: number;
-    globalScene.executeWithSeedOffset(() => rand = Utils.randSeedInt(100), globalScene.currentBattle.turn << 6, globalScene.waveSeed);
+    globalScene.executeWithSeedOffset(() => rand = Utils.randSeedInt(100, undefined, "Doubled power chance (applying move)"), globalScene.currentBattle.turn << 6, globalScene.waveSeed);
     if (rand! < move.chance) {
       const power = args[0] as Utils.NumberHolder;
       power.value *= 2;
@@ -4114,7 +4158,7 @@ const magnitudeMessageFunc = (user: Pokemon, target: Pokemon, move: Move) => {
   globalScene.executeWithSeedOffset(() => {
     const magnitudeThresholds = [ 5, 15, 35, 65, 75, 95 ];
 
-    const rand = Utils.randSeedInt(100);
+    const rand = Utils.randSeedInt(100, undefined, "Magnitude selection (message)");
 
     let m = 0;
     for (; m < magnitudeThresholds.length; m++) {
@@ -4137,7 +4181,7 @@ export class MagnitudePowerAttr extends VariablePowerAttr {
 
     let rand: number;
 
-    globalScene.executeWithSeedOffset(() => rand = Utils.randSeedInt(100), globalScene.currentBattle.turn << 6, globalScene.waveSeed);
+    globalScene.executeWithSeedOffset(() => rand = Utils.randSeedInt(100, undefined, "Magnitude selection (move)"), globalScene.currentBattle.turn << 6, globalScene.waveSeed);
 
     let m = 0;
     for (; m < magnitudeThresholds.length; m++) {
@@ -4282,7 +4326,7 @@ export class PresentPowerAttr extends VariablePowerAttr {
      */
     const firstHit = (user.turnData.hitCount === user.turnData.hitsLeft);
 
-    const powerSeed = Utils.randSeedInt(firstHit ? 100 : 80);
+    const powerSeed = Utils.randSeedInt(firstHit ? 100 : 80, undefined, "Present healing chance");
     if (powerSeed <= 40) {
       (args[0] as Utils.NumberHolder).value = 40;
     } else if (40 < powerSeed && powerSeed <= 70) {
@@ -4482,7 +4526,7 @@ export class CombinedPledgePowerAttr extends VariablePowerAttr {
     if (!(power instanceof Utils.NumberHolder)) {
       return false;
     }
-    const combinedPledgeMove = user.turnData.combiningPledge;
+    const combinedPledgeMove = user?.turnData?.combiningPledge;
 
     if (combinedPledgeMove && combinedPledgeMove !== move.id) {
       power.value *= 150 / 80;
@@ -4891,7 +4935,7 @@ export class ShellSideArmCategoryAttr extends VariableMoveCategoryAttr {
     if (predictedPhysDmg > predictedSpecDmg) {
       category.value = MoveCategory.PHYSICAL;
       return true;
-    } else if (predictedPhysDmg === predictedSpecDmg && user.randSeedInt(2) === 0) {
+    } else if (predictedPhysDmg === predictedSpecDmg && (args[1] == "SIM" || user.randSeedInt(2, undefined, "Random category for Shell Side Arm") === 0)) {
       category.value = MoveCategory.PHYSICAL;
       return true;
     }
@@ -5236,7 +5280,7 @@ export class CombinedPledgeTypeAttr extends VariableMoveTypeAttr {
       return false;
     }
 
-    const combinedPledgeMove = user?.turnData?.combiningPledge;
+    const combinedPledgeMove = user.turnData.combiningPledge;
     if (!combinedPledgeMove) {
       return false;
     }
@@ -5458,7 +5502,7 @@ export class FrenzyAttr extends MoveEffectAttr {
     }
 
     if (!user.getTag(BattlerTagType.FRENZY) && !user.getMoveQueue().length) {
-      const turnCount = user.randSeedIntRange(1, 2);
+      const turnCount = user.randSeedIntRange(1, 2, "Frenzy duration");
       new Array(turnCount).fill(null).map(() => user.getMoveQueue().push({ move: move.id, targets: [ target.getBattlerIndex() ], ignorePP: true }));
       user.addTag(BattlerTagType.FRENZY, turnCount, move.id, user.id);
     } else {
@@ -5541,8 +5585,8 @@ export class AddBattlerTagAttr extends MoveEffectAttr {
     }
 
     const moveChance = this.getMoveChance(user, target, move, this.selfTarget, true);
-    if (moveChance < 0 || moveChance === 100 || user.randSeedInt(100) < moveChance) {
-      return (this.selfTarget ? user : target).addTag(this.tagType,  user.randSeedIntRange(this.turnCountMin, this.turnCountMax), move.id, user.id);
+    if (moveChance < 0 || moveChance === 100 || user.randSeedInt(100, undefined, "Chance to add Battler Tag") < moveChance) {
+      return (this.selfTarget ? user : target).addTag(this.tagType,  user.randSeedIntRange(this.turnCountMin, this.turnCountMax, "Battler Tag duration"), move.id, user.id);
     }
 
     return false;
@@ -5695,7 +5739,7 @@ export class JawLockAttr extends AddBattlerTagAttr {
     }
 
     const moveChance = this.getMoveChance(user, target, move, this.selfTarget);
-    if (moveChance < 0 || moveChance === 100 || user.randSeedInt(100) < moveChance) {
+    if (moveChance < 0 || moveChance === 100 || user.randSeedInt(100, undefined, "Chance to apply Trap tag (Jaw Lock)") < moveChance) {
       /**
        * Add the tag to both the user and the target.
        * The target's tag source is considered to be the user and vice versa
@@ -5843,7 +5887,7 @@ export class ProtectAttr extends AddBattlerTagAttr {
         timesUsed++;
       }
       if (timesUsed) {
-        return !user.randSeedInt(Math.pow(3, timesUsed));
+        return !user.randSeedInt(Math.pow(3, timesUsed), undefined, "Chance for Protection move to succeed");
       }
       return true;
     });
@@ -5967,7 +6011,7 @@ export class AddArenaTagAttr extends MoveEffectAttr {
       return false;
     }
 
-    if ((move.chance < 0 || move.chance === 100 || user.randSeedInt(100) < move.chance) && user.getLastXMoves(1)[0]?.result === MoveResult.SUCCESS) {
+    if ((move.chance < 0 || move.chance === 100 || user.randSeedInt(100, undefined, "Chance to add arena tag") < move.chance) && user.getLastXMoves(1)[0]?.result === MoveResult.SUCCESS) {
       const side = (this.selfSideTarget ? user : target).isPlayer() ? ArenaTagSide.PLAYER : ArenaTagSide.ENEMY;
       globalScene.arena.addTag(this.tagType, this.turnCount, move.id, user.id, side);
       return true;
@@ -6043,7 +6087,7 @@ export class AddArenaTrapTagHitAttr extends AddArenaTagAttr {
     const moveChance = this.getMoveChance(user, target, move, this.selfTarget, true);
     const side = (this.selfSideTarget ? user : target).isPlayer() ? ArenaTagSide.PLAYER : ArenaTagSide.ENEMY;
     const tag = globalScene.arena.getTagOnSide(this.tagType, side) as ArenaTrapTag;
-    if ((moveChance < 0 || moveChance === 100 || user.randSeedInt(100) < moveChance) && user.getLastXMoves(1)[0]?.result === MoveResult.SUCCESS) {
+    if ((moveChance < 0 || moveChance === 100 || user.randSeedInt(100, undefined, "Chance to add arena tag on hit") < moveChance) && user.getLastXMoves(1)[0]?.result === MoveResult.SUCCESS) {
       globalScene.arena.addTag(this.tagType, 0, move.id, user.id, side);
       if (!tag) {
         return true;
@@ -6218,7 +6262,7 @@ export class RevivalBlessingAttr extends MoveEffectAttr {
       // If used by an enemy trainer with at least one fainted non-boss Pokemon, this
       // revives one of said Pokemon selected at random.
       const faintedPokemon = globalScene.getEnemyParty().filter((p) => p.isFainted() && !p.isBoss());
-      const pokemon = faintedPokemon[user.randSeedInt(faintedPokemon.length)];
+      const pokemon = faintedPokemon[user.randSeedInt(faintedPokemon.length, undefined, "Choosing Pokemon to revive")];
       const slotIndex = globalScene.getEnemyParty().findIndex((p) => pokemon.id === p.id);
       pokemon.resetStatus();
       pokemon.heal(Math.min(Utils.toDmgValue(0.5 * pokemon.getMaxHp()), pokemon.getMaxHp()));
@@ -6774,7 +6818,7 @@ class CallMoveAttr extends OverrideMoveEffectAttr {
     }
     const targets = moveTargets.multiple || moveTargets.targets.length === 1
       ? moveTargets.targets
-      : [ this.hasTarget ? target.getBattlerIndex() : moveTargets.targets[user.randSeedInt(moveTargets.targets.length)] ]; // account for Mirror Move having a target already
+      : [ this.hasTarget ? target.getBattlerIndex() : moveTargets.targets[user.randSeedInt(moveTargets.targets.length, undefined, "Randomly selecting a target")] ]; // account for Mirror Move having a target already
     user.getMoveQueue().push({ move: move.id, targets: targets, virtual: true, ignorePP: true });
     globalScene.unshiftPhase(new LoadMoveAnimPhase(move.id));
     globalScene.unshiftPhase(new MovePhase(user, targets, new PokemonMove(move.id, 0, 0, true), true, true));
@@ -6814,7 +6858,7 @@ export class RandomMoveAttr extends CallMoveAttr {
     const moveIds = Utils.getEnumValues(Moves).map(m => !this.invalidMoves.includes(m) && !allMoves[m].name.endsWith(" (N)") ? m : Moves.NONE);
     let moveId: Moves = Moves.NONE;
     do {
-      moveId = this.getMoveOverride() ?? moveIds[user.randSeedInt(moveIds.length)];
+      moveId = this.getMoveOverride() ?? moveIds[user.randSeedInt(moveIds.length, undefined, "Randomly selecting any valid move")];
     }
     while (moveId === Moves.NONE);
     return super.apply(user, target, allMoves[moveId], args);
@@ -6866,7 +6910,7 @@ export class RandomMovesetMoveAttr extends CallMoveAttr {
         return false;
       }
 
-      this.moveId = moves[user.randSeedInt(moves.length)]!.moveId;
+      this.moveId = moves[user.randSeedInt(moves.length, undefined, "Randomly selecting a valid move")]!.moveId;
       return true;
     };
   }
@@ -8422,7 +8466,7 @@ export class ResistLastMoveTypeAttr extends MoveEffectAttr {
     if (!validTypes.length) {
       return false;
     }
-    const type = validTypes[user.randSeedInt(validTypes.length)];
+    const type = validTypes[user.randSeedInt(validTypes.length, undefined, "Choosing type to transform into (Conversion2)")];
     user.summonData.types = [ type ];
     globalScene.queueMessage(i18next.t("battle:transformedIntoType", { pokemonName: getPokemonNameWithAffix(user), type: Utils.toReadableString(Type[type]) }));
     user.updateInfo();
@@ -8536,7 +8580,7 @@ export function getMoveTargets(user: Pokemon, move: Moves, replaceTarget?: MoveT
       multiple = moveTarget !== MoveTarget.NEAR_ENEMY;
       break;
     case MoveTarget.RANDOM_NEAR_ENEMY:
-      set = [ opponents[user.randSeedInt(opponents.length)] ];
+      set = [ opponents[user.randSeedInt(opponents.length, undefined, "Randomly selecting an opponent to attack")] ];
       break;
     case MoveTarget.ATTACKER:
       return { targets: [ -1 as BattlerIndex ], multiple: false };

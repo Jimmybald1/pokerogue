@@ -4,6 +4,7 @@ import type { ModifierTypeFunc } from "#app/modifier/modifier-type";
 import { Mode } from "#app/ui/ui";
 import i18next from "i18next";
 import { ModifierRewardPhase } from "./modifier-reward-phase";
+import * as LoggerTools from "../logger";
 
 export class RibbonModifierRewardPhase extends ModifierRewardPhase {
   private species: PokemonSpecies;

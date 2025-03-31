@@ -1,6 +1,7 @@
 import { globalScene } from "#app/global-scene";
 import { TrainerSlot } from "#app/data/trainer-config";
 import { Phase } from "#app/phase";
+import * as LoggerTools from "../logger";
 
 export class BattlePhase extends Phase {
   constructor() {

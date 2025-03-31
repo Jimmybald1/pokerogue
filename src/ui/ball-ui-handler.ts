@@ -76,7 +76,7 @@ export default class BallUiHandler extends UiHandler {
       success = true;
       if (button === Button.ACTION && this.cursor < pokeballTypeCount) {
         if (globalScene.pokeballCounts[this.cursor]) {
-          if (commandPhase.handleCommand(Command.BALL, this.cursor)) {
+          if (commandPhase.handleCommand(Command.BALL, false, this.cursor)) {
             globalScene.ui.setMode(Mode.COMMAND, commandPhase.getFieldIndex());
             globalScene.ui.setMode(Mode.MESSAGE);
             success = true;

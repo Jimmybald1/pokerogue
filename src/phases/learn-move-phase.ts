@@ -13,6 +13,7 @@ import i18next from "i18next";
 import { PlayerPartyMemberPokemonPhase } from "#app/phases/player-party-member-pokemon-phase";
 import type Pokemon from "#app/field/pokemon";
 import { SelectModifierPhase } from "#app/phases/select-modifier-phase";
+import * as LoggerTools from "../logger";
 
 export enum LearnMoveType {
   /** For learning a move via level-up, evolution, or other non-item-based event */
@@ -124,6 +125,7 @@ export class LearnMovePhase extends PlayerPartyMemberPokemonPhase {
     await globalScene.ui.showTextPromise(i18next.t("battle:learnMoveStopTeaching", { moveName: move.name }), undefined, false);
     globalScene.ui.setModeWithoutClear(Mode.CONFIRM,
       () => {
+        LoggerTools.logActions(globalScene.currentBattle.waveIndex, `Skip ${move.name}`);
         globalScene.ui.setMode(this.messageMode);
         globalScene.ui.showTextPromise(i18next.t("battle:learnMoveNotLearned", { pokemonName: getPokemonNameWithAffix(pokemon), moveName: move.name }), undefined, true).then(() => this.end());
       },
@@ -168,6 +170,11 @@ export class LearnMovePhase extends PlayerPartyMemberPokemonPhase {
         globalScene.tryRemovePhase((phase) => phase instanceof SelectModifierPhase);
       }
     }
+
+    if (pokemon.moveset[index] !== undefined) {
+      LoggerTools.logActions(globalScene.currentBattle.waveIndex, `${pokemon.name} | ${move.name} > ${pokemon.moveset[index]?.getName()}`);
+    }
+
     pokemon.setMove(index, this.moveId);
     initMoveAnim(this.moveId).then(() => {
       loadMoveAnimAssets([ this.moveId ], true);

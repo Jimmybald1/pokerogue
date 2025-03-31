@@ -3,6 +3,7 @@ import { PlayerGender } from "#app/enums/player-gender";
 import { Phase } from "#app/phase";
 import { addTextObject, TextStyle } from "#app/ui/text";
 import i18next from "i18next";
+import * as LoggerTools from "../logger";
 
 export class EndCardPhase extends Phase {
   public endCard: Phaser.GameObjects.Image;

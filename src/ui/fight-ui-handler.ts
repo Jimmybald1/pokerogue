@@ -7,17 +7,21 @@ import { Command } from "./command-ui-handler";
 import { Mode } from "./ui";
 import UiHandler from "./ui-handler";
 import * as Utils from "../utils";
-import { MoveCategory } from "#app/data/move";
+import * as MoveData from "#app/data/move";
 import i18next from "i18next";
 import { Button } from "#enums/buttons";
-import type { PokemonMove } from "#app/field/pokemon";
+import type { EnemyPokemon, PlayerPokemon, PokemonMove } from "#app/field/pokemon";
 import type Pokemon from "#app/field/pokemon";
 import type { CommandPhase } from "#app/phases/command-phase";
+import { PokemonMultiHitModifierType } from "#app/modifier/modifier-type";
+import { StatusEffect } from "#app/enums/status-effect";
 import MoveInfoOverlay from "./move-info-overlay";
 import { BattleType } from "#app/battle";
 
 export default class FightUiHandler extends UiHandler implements InfoToggle {
   public static readonly MOVES_CONTAINER_NAME = "moves";
+
+  private readonly logDamagePrediction: Boolean = false;
 
   private movesContainer: Phaser.GameObjects.Container;
   private moveInfoContainer: Phaser.GameObjects.Container;
@@ -142,7 +146,7 @@ export default class FightUiHandler extends UiHandler implements InfoToggle {
 
     if (button === Button.CANCEL || button === Button.ACTION) {
       if (button === Button.ACTION) {
-        if ((globalScene.getCurrentPhase() as CommandPhase).handleCommand(this.fromCommand, cursor, false)) {
+        if ((globalScene.getCurrentPhase() as CommandPhase).handleCommand(this.fromCommand, true, cursor, false)) {
           success = true;
         } else {
           ui.playError();
@@ -244,7 +248,7 @@ export default class FightUiHandler extends UiHandler implements InfoToggle {
       this.typeIcon.setTexture(textureKey, Type[moveType].toLowerCase()).setScale(0.8);
 
       const moveCategory = pokemonMove.getMove().category;
-      this.moveCategoryIcon.setTexture("categories", MoveCategory[moveCategory].toLowerCase()).setScale(1.0);
+      this.moveCategoryIcon.setTexture("categories", MoveData.MoveCategory[moveCategory].toLowerCase()).setScale(1.0);
       const power = pokemonMove.getMove().power;
       const accuracy = pokemonMove.getMove().accuracy;
       const maxPP = pokemonMove.getMovePp();
@@ -293,8 +297,14 @@ export default class FightUiHandler extends UiHandler implements InfoToggle {
   }
 
   /**
-   * Gets multiplier text for a pokemon's move against a specific opponent
-   * Returns undefined if it's a status move
+   * Gets multiplier text for a pokemon's move against a specific opponent.
+   * Returns undefined if it's a status move.
+   *
+   * If Type Hints is enabled, shows the move's type effectiveness.
+   *
+   * If Damage Calculation is enabled, shows the move's expected damage range.
+   *
+   * If Type Hints and Damage Calculation are both off, the type effectiveness multiplier is hidden.
    */
   private getEffectivenessText(pokemon: Pokemon, opponent: Pokemon, pokemonMove: PokemonMove): string | undefined {
     const effectiveness = opponent.getMoveEffectiveness(pokemon, pokemonMove.getMove(), !opponent.battleData?.abilityRevealed);
@@ -302,7 +312,17 @@ export default class FightUiHandler extends UiHandler implements InfoToggle {
       return undefined;
     }
 
-    return `${effectiveness}x`;
+    const calc = this.calcDamage(pokemon as PlayerPokemon, opponent, pokemonMove);
+    if (calc != "") {
+      if (globalScene.typeHints) {
+        return `${effectiveness}x - ${calc}`;
+      }
+      return calc;
+    }
+    if (globalScene.typeHints) {
+      return `${effectiveness}x`;
+    }
+    return "";
   }
 
   displayMoves() {
@@ -379,5 +399,190 @@ export default class FightUiHandler extends UiHandler implements InfoToggle {
       this.cursorObj.destroy();
     }
     this.cursorObj = null;
+  }
+
+  calcDamage(user: PlayerPokemon, target: Pokemon, move: PokemonMove) {
+    const moveObj = move.getMove();
+    if (moveObj.category == MoveData.MoveCategory.STATUS) {
+      return ""; // Don't give a damage estimate for status moves
+    }
+
+    if (target.getMoveEffectiveness(user, moveObj, false, true) == undefined) {
+      return ""; // Target is immune
+    }
+
+    let dmgRange = 0.85;
+    const fixedDamage = new Utils.NumberHolder(0);
+    MoveData.applyMoveAttrs(MoveData.FixedDamageAttr, user, target, moveObj, fixedDamage);
+    if (fixedDamage.value > 0) {
+      dmgRange = 1;
+    }
+
+    const isGuaranteedCrit = target.isGuaranteedCrit(user, moveObj, true);
+    const isTera = user.isTerastallized;
+    user.isTerastallized = isTera ? isTera : this.fromCommand === Command.TERA; // If not yet terastallized, check if command wants to terastallize
+    let dmgLow = target.getAttackDamage(user, moveObj, false, false, isGuaranteedCrit, true).damage * dmgRange;
+    let dmgHigh = target.getAttackDamage(user, moveObj, false, false, isGuaranteedCrit, true).damage;
+    user.isTerastallized = isTera; // Revert to whatever the terastallize state was before
+
+    if (this.logDamagePrediction) {
+      console.log(`Damage min: ${dmgLow} | Damage max: ${dmgHigh}`);
+    }
+
+    let minHits = 1;
+    let maxHits = -1; // If nothing changes this value, it is set to minHits
+    const mh = moveObj.getAttrs(MoveData.MultiHitAttr);
+    for (var i = 0; i < mh.length; i++) {
+      const mh2 = mh[i] as MoveData.MultiHitAttr;
+      switch (mh2.getMultiHitType()) {
+        case MoveData.MultiHitType._2:
+          minHits = 2;
+        case MoveData.MultiHitType._2_TO_5:
+          minHits = 2;
+          maxHits = 5;
+        case MoveData.MultiHitType._3:
+          minHits = 3;
+        case MoveData.MultiHitType._10:
+          minHits = 1;
+          maxHits = 10;
+        case MoveData.MultiHitType.BEAT_UP:
+          const party = user.isPlayer() ? globalScene.getPlayerParty() : globalScene.getEnemyParty();
+          // No status means the ally pokemon can contribute to Beat Up
+          minHits = party.reduce((total, pokemon) => {
+            return total + (pokemon.id === user.id ? 1 : pokemon?.status && pokemon.status.effect !== StatusEffect.NONE ? 0 : 1);
+          }, 0);
+      }
+    }
+
+    if (maxHits == -1) {
+      maxHits = minHits;
+    }
+
+    // Add Multi Lens if its not a multi-hit move
+    if (minHits == 1) {
+      const h = user.getHeldItems();
+      for (var i = 0; i < h.length; i++) {
+        if (h[i].type instanceof PokemonMultiHitModifierType) {
+          minHits *= h[i].getStackCount();
+          maxHits *= h[i].getStackCount();
+        }
+      }
+    }
+
+    if (this.logDamagePrediction) {
+      console.log(`MinHits: ${minHits} | MaxHits: ${maxHits}`);
+    }
+
+    if (false) {
+      dmgLow = dmgLow * minHits;
+      dmgHigh = dmgHigh * maxHits;
+    }
+
+    // Actual damage dealt
+    let dmgLowF = Math.floor(dmgLow);
+    let dmgHighF = Math.floor(dmgHigh);
+
+    let maxEHP = target.getMaxHp();
+
+    let koText = "";
+    if (dmgLowF >= maxEHP) {
+      koText = " KO";
+    } else if (dmgHighF >= target.hp) {
+      var percentChance = Utils.rangemap(maxEHP, dmgLow, dmgHigh);
+      koText = " " + Math.floor(percentChance * 100) + "% KO";
+    }
+
+    // Calculate boss shield segments cleared
+    let qSuffix = "";
+    if (target.isBoss()) {
+      const segmentRequirements = (target as EnemyPokemon).calculateBossShieldRequirements();
+      if (this.logDamagePrediction) {
+        console.log(`Segments: ${segmentRequirements}`);
+      }
+
+      maxEHP = segmentRequirements[segmentRequirements.length - 1];
+
+      // Count amount of segments cleared.
+      const segmentClearedLow = segmentRequirements.reduce((total, req) => {
+        return total + (dmgLowF >= req ? 1 : 0);
+      }, 0);
+      const segmentClearedHigh = segmentRequirements.reduce((total, req) => {
+        return total + (dmgHighF >= req ? 1 : 0);
+      }, 0);
+
+      // Set info suffix text
+      qSuffix = ` (${segmentClearedLow}-${segmentClearedHigh})`;
+      if (segmentClearedLow == segmentClearedHigh) {
+        qSuffix = ` (${segmentClearedLow})`;
+      }
+
+      if (this.logDamagePrediction) {
+        console.log(`Segments min: ${segmentClearedLow} | Segments max: ${segmentClearedHigh}`);
+      }
+
+      if (segmentClearedLow == segmentRequirements.length) {
+        // Same segment, Guaranteed kill
+        // 100% KO
+        // show damage ranges
+        koText = " KO";
+      } else if (segmentClearedHigh == segmentRequirements.length) {
+        // Different segment, only high is a kill
+        // ~% KO
+        // show segment damage for low and damage range for high
+        var percentChance = Utils.rangemap(maxEHP, dmgLow, dmgHigh);
+        koText = " " + Math.floor(percentChance * 100) + "% KO";
+
+        dmgLow = segmentClearedLow > 0 ? segmentRequirements[0] * segmentClearedLow : dmgLow;
+      } else if (segmentClearedLow == segmentClearedHigh) {
+        // Same segment
+        // no KO
+        // show segment damage for both
+        koText = "";
+
+        dmgLow = segmentClearedLow > 0 ? segmentRequirements[0] * segmentClearedLow : dmgLow;
+        dmgHigh = segmentClearedHigh > 0 ? segmentRequirements[0] * segmentClearedHigh : dmgHigh;
+      } else {
+        // Different segment
+        // no KO
+        // show segment damage for both
+        koText = "";
+
+        dmgLow = segmentClearedLow > 0 ? segmentRequirements[0] * segmentClearedLow : dmgLow;
+        dmgHigh = segmentClearedHigh > 0 ? segmentRequirements[0] * segmentClearedHigh : dmgHigh;
+      }
+
+      // Re-Floor based on the new numbers
+      dmgLowF = Math.floor(dmgLow);
+      dmgHighF = Math.floor(dmgHigh);
+      if (this.logDamagePrediction) {
+        console.log(`Boss damage min: ${dmgLow} | Boss damage max: ${dmgHigh}`);
+      }
+    }
+
+    // %HP removed
+    const dmgLowP = Math.round((dmgLowF) / target.getMaxHp() * 100);
+    const dmgHighP = Math.round((dmgHighF) / target.getMaxHp() * 100);
+
+    if (this.logDamagePrediction) {
+      console.log(`HP% min: ${dmgLowP} | HP% max: ${dmgHighP}`);
+    }
+
+    if (this.logDamagePrediction) {
+      console.log(`Enemy HP: ${target.hp} | Enemy HP%: ${target.getHpRatio() * 100}`);
+    }
+    if (this.logDamagePrediction) {
+      console.log(`Max EHP: ${maxEHP}`);
+    }
+    if (this.logDamagePrediction && !Utils.isNullOrUndefined(koText)) {
+      console.log(`KO%: ${koText}`);
+    }
+
+    if (globalScene.damageDisplay == "Percent") {
+      return (dmgLowP == dmgHighP ? dmgLowP + "%" + qSuffix : dmgLowP + "%-" + dmgHighP + "%" + qSuffix) + koText;
+    }
+    if (globalScene.damageDisplay == "Value") {
+      return (dmgLowF == dmgHighF ? dmgLowF + qSuffix : dmgLowF + "-" + dmgHighF + qSuffix) + koText;
+    }
+    return "";
   }
 }

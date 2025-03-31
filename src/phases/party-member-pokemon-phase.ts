@@ -1,6 +1,7 @@
 import { globalScene } from "#app/global-scene";
 import type Pokemon from "#app/field/pokemon";
 import { FieldPhase } from "./field-phase";
+import * as LoggerTools from "../logger";
 
 export abstract class PartyMemberPokemonPhase extends FieldPhase {
   protected partyMemberIndex: number;

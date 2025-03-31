@@ -16,4 +16,5 @@ export enum Button {
 	CYCLE_TERA,
 	SPEED_UP,
 	SLOW_DOWN,
+	PATHING_TOOL_UI,
 }

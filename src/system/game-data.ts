@@ -47,6 +47,7 @@ import { PlayerGender } from "#enums/player-gender";
 import { Species } from "#enums/species";
 import { applyChallenges, ChallengeType } from "#app/data/challenge";
 import { WeatherType } from "#enums/weather-type";
+import * as LoggerTools from "../logger";
 import { TerrainType } from "#app/data/terrain";
 import { ReloadSessionPhase } from "#app/phases/reload-session-phase";
 import { RUN_HISTORY_LIMIT } from "#app/ui/run-history-ui-handler";
@@ -57,6 +58,7 @@ import { pokerogueApi } from "#app/plugins/api/pokerogue-api";
 import { ArenaTrapTag } from "#app/data/arena-tag";
 import { pokemonFormChanges } from "#app/data/pokemon-forms";
 import type { Type } from "#enums/type";
+import { Abilities } from "#app/enums/abilities";
 
 export const defaultStarterSpecies: Species[] = [
   Species.BULBASAUR, Species.CHARMANDER, Species.SQUIRTLE,
@@ -141,6 +143,9 @@ export interface SessionSaveData {
   gameVersion: string;
   timestamp: number;
   challenges: ChallengeData[];
+  slot: integer;
+  description: string;
+  autoSlot: integer;
   mysteryEncounterType: MysteryEncounterType | -1; // Only defined when current wave is ME,
   mysteryEncounterSaveData: MysteryEncounterSaveData;
   /**
@@ -337,8 +342,8 @@ export class GameData {
     this.loadSettings();
     this.loadGamepadSettings();
     this.loadMappingConfigs();
-    this.trainerId = Utils.randInt(65536);
-    this.secretId = Utils.randInt(65536);
+    this.trainerId = Utils.randInt(65536, undefined, "Trainer ID");
+    this.secretId = Utils.randInt(65536, undefined, "Secret ID");
     this.starterData = {};
     this.gameStats = new GameStats();
     this.runHistory = {};
@@ -976,7 +981,7 @@ export class GameData {
     } as SessionSaveData;
   }
 
-  getSession(slotId: number): Promise<SessionSaveData | null> {
+  getSession(slotId: number, autoSlot?: integer): Promise<SessionSaveData | null> {
     return new Promise(async (resolve, reject) => {
       if (slotId < 0) {
         return resolve(null);
@@ -984,6 +989,17 @@ export class GameData {
       const handleSessionData = async (sessionDataStr: string) => {
         try {
           const sessionData = this.parseSessionData(sessionDataStr);
+          sessionData.autoSlot = autoSlot!;
+          for (let i = 0; i <= 5; i++) {
+            if (sessionData.party[i]) {
+              const speciesToCheck = getPokemonSpecies(sessionData.party[i]?.species);
+              if (sessionData.party[i]?.abilityIndex === 1) {
+                if (speciesToCheck.ability1 === speciesToCheck.ability2 && speciesToCheck.abilityHidden !== Abilities.NONE && speciesToCheck.abilityHidden !== speciesToCheck.ability1) {
+                  sessionData.party[i].abilityIndex = 2;
+                }
+              }
+            }
+          }
           resolve(sessionData);
         } catch (err) {
           reject(err);
@@ -991,6 +1007,10 @@ export class GameData {
         }
       };
 
+      let autokey = "";
+      if (autoSlot != undefined) {
+        autokey = "_auto" + autoSlot;
+      }
       if (!bypassLogin && !localStorage.getItem(`sessionData${slotId ? slotId : ""}_${loggedInUser?.username}`)) {
         pokerogueApi.savedata.session.get({ slot: slotId, clientSessionId })
           .then(async response => {
@@ -999,12 +1019,13 @@ export class GameData {
               return resolve(null);
             }
 
-            localStorage.setItem(`sessionData${slotId ? slotId : ""}_${loggedInUser?.username}`, encrypt(response, bypassLogin));
+            localStorage.setItem(`sessionData${slotId ? slotId : ""}_${loggedInUser ? loggedInUser.username : "Guest"}`, encrypt(response, bypassLogin));
 
             await handleSessionData(response);
           });
       } else {
-        const sessionData = localStorage.getItem(`sessionData${slotId ? slotId : ""}_${loggedInUser?.username}`);
+        const sessionData = localStorage.getItem(`sessionData${slotId ? slotId : ""}_${loggedInUser ? loggedInUser.username : "Guest"}${autokey}`);
+        //console.log(`sessionData${slotId ? slotId : ""}_${loggedInUser.username}${autokey}`, sessionData)
         if (sessionData) {
           await handleSessionData(decrypt(sessionData, bypassLogin));
         } else {
@@ -1014,7 +1035,7 @@ export class GameData {
     });
   }
 
-  loadSession(slotId: number, sessionData?: SessionSaveData): Promise<boolean> {
+  loadSession(slotId: number, sessionData?: SessionSaveData, autoSlot?: integer): Promise<boolean> {
     return new Promise(async (resolve, reject) => {
       try {
         const initSessionFromData = async (sessionData: SessionSaveData) => {
@@ -1104,6 +1125,8 @@ export class GameData {
             }
           }
 
+          const modifiersModule = await import("../modifier/modifier");
+
           for (const modifierData of sessionData.modifiers) {
             const modifier = modifierData.toModifier(Modifier[modifierData.className]);
             if (modifier) {
@@ -1127,7 +1150,7 @@ export class GameData {
         if (sessionData) {
           initSessionFromData(sessionData);
         } else {
-          this.getSession(slotId)
+          this.getSession(slotId, autoSlot)
             .then(data => data && initSessionFromData(data))
             .catch(err => {
               reject(err);
@@ -1313,6 +1336,13 @@ export class GameData {
     applySessionVersionMigration(sessionData);
 
     return sessionData;
+  }
+
+  saveGameToAuto() {
+    const autoSlot = LoggerTools.autoCheckpoints.indexOf(globalScene.currentBattle.waveIndex);
+    const dat = this.getSessionSaveData();
+    console.log(`Stored autosave as sessionData${globalScene.sessionSlotId ? globalScene.sessionSlotId : ""}_${loggedInUser ? loggedInUser.username : "Guest"}_auto${autoSlot}`);
+    localStorage.setItem(`sessionData${globalScene.sessionSlotId ? globalScene.sessionSlotId : ""}_${loggedInUser ? loggedInUser.username : "Guest"}_auto${autoSlot}`, encrypt(JSON.stringify(dat), bypassLogin));
   }
 
   saveAll(skipVerification: boolean = false, sync: boolean = false, useCachedSession: boolean = false, useCachedSystem: boolean = false): Promise<boolean> {
@@ -1534,7 +1564,7 @@ export class GameData {
     globalScene.executeWithSeedOffset(() => {
       const neutralNatures = [ Nature.HARDY, Nature.DOCILE, Nature.SERIOUS, Nature.BASHFUL, Nature.QUIRKY ];
       for (let s = 0; s < defaultStarterSpecies.length; s++) {
-        defaultStarterNatures.push(Utils.randSeedItem(neutralNatures));
+        defaultStarterNatures.push(Utils.randSeedItem(neutralNatures, "Random neutral nature"));
       }
     }, 0, "default");
 
@@ -2020,7 +2050,7 @@ export class GameData {
         entry.hatchedCount = 0;
       }
       if (!entry.hasOwnProperty("natureAttr") || (entry.caughtAttr && !entry.natureAttr)) {
-        entry.natureAttr = this.defaultDexData?.[k].natureAttr || (1 << Utils.randInt(25, 1));
+        entry.natureAttr = this.defaultDexData?.[k].natureAttr || (1 << Utils.randInt(25, 1, "Random bit shift"));
       }
     }
   }

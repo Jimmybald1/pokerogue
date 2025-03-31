@@ -210,7 +210,7 @@ export const BugTypeSuperfanEncounter: MysteryEncounter =
       )
     )
     .withMaxAllowedEncounters(1)
-    .withSceneWaveRangeRequirement(...CLASSIC_MODE_MYSTERY_ENCOUNTER_WAVES)
+    .withSceneWaveRangeRequirement(-1, -1)
     .withIntroSpriteConfigs([]) // These are set in onInit()
     .withAutoHideIntroVisuals(false)
     .withIntroDialogue([

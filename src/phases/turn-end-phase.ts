@@ -10,6 +10,7 @@ import i18next from "i18next";
 import { FieldPhase } from "./field-phase";
 import { PokemonHealPhase } from "./pokemon-heal-phase";
 import { globalScene } from "#app/global-scene";
+import * as LoggerTools from "../logger";
 
 export class TurnEndPhase extends FieldPhase {
   constructor() {
@@ -18,6 +19,8 @@ export class TurnEndPhase extends FieldPhase {
 
   start() {
     super.start();
+
+    globalScene.arenaFlyout.updateFieldText();
 
     globalScene.currentBattle.incrementTurn();
     globalScene.eventTarget.dispatchEvent(new TurnEndEvent(globalScene.currentBattle.turn));

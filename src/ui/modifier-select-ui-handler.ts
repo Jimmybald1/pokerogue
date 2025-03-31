@@ -13,6 +13,7 @@ import { allMoves } from "../data/move";
 import * as Utils from "./../utils";
 import Overrides from "#app/overrides";
 import i18next from "i18next";
+import { GameModes } from "#app/game-mode";
 import { ShopCursorTarget } from "#app/enums/shop-cursor-target";
 import { NumberHolder } from "./../utils";
 import Phaser from "phaser";
@@ -44,6 +45,10 @@ export default class ModifierSelectUiHandler extends AwaitableUiHandler {
   private rerollCost: number;
   private transferButtonWidth: number;
   private checkButtonWidth: number;
+
+  public args: any[] = [];
+  public refreshIndex: integer = 0;
+  public optionP: ModifierTypeOption[][];
 
   public options: ModifierOption[];
   public shopOptionsRows: ModifierOption[][];
@@ -143,6 +148,7 @@ export default class ModifierSelectUiHandler extends AwaitableUiHandler {
   }
 
   show(args: any[]): boolean {
+    this.args = args;
 
     globalScene.disableMenu = false;
 
@@ -318,6 +324,12 @@ export default class ModifierSelectUiHandler extends AwaitableUiHandler {
     });
 
     return true;
+  }
+
+  refresh() {
+    this.clear();
+    this.args[1] = this.optionP[this.refreshIndex];
+    this.show(this.args);
   }
 
   processInput(button: Button): boolean {

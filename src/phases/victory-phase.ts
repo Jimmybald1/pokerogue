@@ -11,6 +11,7 @@ import { GameOverPhase } from "./game-over-phase";
 import { ModifierRewardPhase } from "./modifier-reward-phase";
 import { SelectModifierPhase } from "./select-modifier-phase";
 import { TrainerVictoryPhase } from "./trainer-victory-phase";
+import * as LoggerTools from "../logger";
 import { handleMysteryEncounterVictory } from "#app/data/mystery-encounters/utils/encounter-phase-utils";
 import { globalScene } from "#app/global-scene";
 
@@ -56,11 +57,13 @@ export class VictoryPhase extends PokemonPhase {
         if (globalScene.currentBattle.waveIndex % 10) {
           globalScene.pushPhase(new SelectModifierPhase(undefined, undefined, this.getFixedBattleCustomModifiers()));
         } else if (globalScene.gameMode.isDaily) {
+          LoggerTools.logShop(globalScene.currentBattle.waveIndex, "");
           globalScene.pushPhase(new ModifierRewardPhase(modifierTypes.EXP_CHARM));
           if (globalScene.currentBattle.waveIndex > 10 && !globalScene.gameMode.isWaveFinal(globalScene.currentBattle.waveIndex)) {
             globalScene.pushPhase(new ModifierRewardPhase(modifierTypes.GOLDEN_POKEBALL));
           }
         } else {
+          LoggerTools.logShop(globalScene.currentBattle.waveIndex, "");
           const superExpWave = !globalScene.gameMode.isEndless ? (globalScene.offsetGym ? 0 : 20) : 10;
           if (globalScene.gameMode.isEndless && globalScene.currentBattle.waveIndex === 10) {
             globalScene.pushPhase(new ModifierRewardPhase(modifierTypes.EXP_SHARE));
@@ -78,6 +81,7 @@ export class VictoryPhase extends PokemonPhase {
         }
         globalScene.pushPhase(new NewBattlePhase());
       } else {
+        LoggerTools.logShop(globalScene.currentBattle.waveIndex, "");
         globalScene.currentBattle.battleType = BattleType.CLEAR;
         globalScene.score += globalScene.gameMode.getClearScoreBonus();
         globalScene.updateScoreText();

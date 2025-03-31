@@ -71,7 +71,10 @@ export enum EvolutionItem {
   METAL_ALLOY,
   SCROLL_OF_DARKNESS,
   SCROLL_OF_WATERS,
-  LEADERS_CREST
+  LEADERS_CREST,
+
+  SUPER_EVO_ITEM,
+  SUPER_EVO_ITEM_FUSION,
 }
 
 /**
@@ -333,7 +336,7 @@ class DunsparceEvolutionCondition extends SpeciesEvolutionCondition {
     super(p => {
       let ret = false;
       if (p.moveset.filter(m => m?.moveId === Moves.HYPER_DRILL).length > 0) {
-        globalScene.executeWithSeedOffset(() => ret = !Utils.randSeedInt(4), p.id);
+        globalScene.executeWithSeedOffset(() => ret = !Utils.randSeedInt(4, undefined, "Dunsparce form selection"), p.id);
       }
       return ret;
     });
@@ -346,7 +349,7 @@ class TandemausEvolutionCondition extends SpeciesEvolutionCondition {
   constructor() {
     super(p => {
       let ret = false;
-      globalScene.executeWithSeedOffset(() => ret = !Utils.randSeedInt(4), p.id);
+      globalScene.executeWithSeedOffset(() => ret = !Utils.randSeedInt(4, undefined, "Tandemaus form selection"), p.id);
       return ret;
     });
   }

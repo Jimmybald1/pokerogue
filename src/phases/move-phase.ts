@@ -50,6 +50,7 @@ import { BattlerTagType } from "#enums/battler-tag-type";
 import { Moves } from "#enums/moves";
 import { StatusEffect } from "#enums/status-effect";
 import i18next from "i18next";
+import * as LoggerTools from "../logger";
 
 export class MovePhase extends BattlePhase {
   protected _pokemon: Pokemon;

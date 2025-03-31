@@ -8,6 +8,7 @@ import { PlayerPartyMemberPokemonPhase } from "#app/phases/player-party-member-p
 import { LevelAchv } from "#app/system/achv";
 import { NumberHolder } from "#app/utils";
 import i18next from "i18next";
+import * as LoggerTools from "../logger";
 
 export class LevelUpPhase extends PlayerPartyMemberPokemonPhase {
   protected lastLevel: number;

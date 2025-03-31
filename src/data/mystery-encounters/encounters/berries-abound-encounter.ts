@@ -50,7 +50,7 @@ const namespace = "mysteryEncounters/berriesAbound";
 export const BerriesAboundEncounter: MysteryEncounter =
   MysteryEncounterBuilder.withEncounterType(MysteryEncounterType.BERRIES_ABOUND)
     .withEncounterTier(MysteryEncounterTier.COMMON)
-    .withSceneWaveRangeRequirement(...CLASSIC_MODE_MYSTERY_ENCOUNTER_WAVES)
+    .withSceneWaveRangeRequirement(-1, -1)
     .withCatchAllowed(true)
     .withHideWildIntroMessage(true)
     .withFleeAllowed(false)

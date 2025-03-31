@@ -50,7 +50,7 @@ export default class BattleFlyout extends Phaser.GameObjects.Container {
   private flyoutContainer: Phaser.GameObjects.Container;
 
   /** The array of {@linkcode Phaser.GameObjects.Text} objects which are drawn on the flyout */
-  private flyoutText: Phaser.GameObjects.Text[] = new Array(4);
+  public flyoutText: Phaser.GameObjects.Text[] = new Array(4);
   /** The array of {@linkcode MoveInfo} used to track moves for the {@linkcode Pokemon} linked to the flyout */
   private moveInfo: MoveInfo[] = new Array();
 
@@ -110,6 +110,8 @@ export default class BattleFlyout extends Phaser.GameObjects.Container {
   initInfo(pokemon: Pokemon) {
     this.pokemon = pokemon;
 
+    pokemon.flyout = this;
+
     this.name = `Flyout ${getPokemonNameWithAffix(this.pokemon)}`;
     this.flyoutParent.name = `Flyout Parent ${getPokemonNameWithAffix(this.pokemon)}`;
 
@@ -118,17 +120,26 @@ export default class BattleFlyout extends Phaser.GameObjects.Container {
   }
 
   /** Sets and formats the text property for all {@linkcode Phaser.GameObjects.Text} in the flyoutText array */
-  private setText() {
+  setText(highlight?: integer) {
+    const e = globalScene.getEnemyField();
+    // console.log(this.moveInfo.map(v => v.move.name))
     for (let i = 0; i < this.flyoutText.length; i++) {
       const flyoutText = this.flyoutText[i];
       const moveInfo = this.moveInfo[i];
 
       if (!moveInfo) {
+        const mv = this.pokemon.getMoveset()[i];
+        if (mv == undefined) {
+          flyoutText.text = "";
+          continue;
+        }
+        flyoutText.text = `${highlight == i ? ">> " : ""}${mv.getName()}${highlight == i ? " <<" : ""}`;
+        flyoutText.text = `${highlight == i ? ">> " : ""}???${highlight == i ? " <<" : ""}`;
         continue;
       }
 
       const currentPp = moveInfo.maxPp - moveInfo.ppUsed;
-      flyoutText.text = `${moveInfo.move.name}  ${currentPp}/${moveInfo.maxPp}`;
+      flyoutText.text = `${highlight == i ? ">> " : ""}${moveInfo.move.name}  ${currentPp}/${moveInfo.maxPp}${highlight == i ? " <<" : ""}`;
     }
   }
 

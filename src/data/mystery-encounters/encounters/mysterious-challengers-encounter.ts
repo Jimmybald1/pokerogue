@@ -32,7 +32,7 @@ const namespace = "mysteryEncounters/mysteriousChallengers";
 export const MysteriousChallengersEncounter: MysteryEncounter =
   MysteryEncounterBuilder.withEncounterType(MysteryEncounterType.MYSTERIOUS_CHALLENGERS)
     .withEncounterTier(MysteryEncounterTier.GREAT)
-    .withSceneWaveRangeRequirement(...CLASSIC_MODE_MYSTERY_ENCOUNTER_WAVES)
+    .withSceneWaveRangeRequirement(-1, -1)
     .withIntroSpriteConfigs([]) // These are set in onInit()
     .withIntroDialogue([
       {

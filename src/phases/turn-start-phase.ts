@@ -16,9 +16,10 @@ import { MovePhase } from "./move-phase";
 import { SwitchSummonPhase } from "./switch-summon-phase";
 import { TurnEndPhase } from "./turn-end-phase";
 import { WeatherEffectPhase } from "./weather-effect-phase";
+import { BattlerIndex, TurnCommand } from "#app/battle";
 import { CheckStatusEffectPhase } from "#app/phases/check-status-effect-phase";
-import { BattlerIndex } from "#app/battle";
 import { TrickRoomTag } from "#app/data/arena-tag";
+import * as LoggerTools from "../logger";
 import { SwitchType } from "#enums/switch-type";
 import { globalScene } from "#app/global-scene";
 import { TeraPhase } from "./tera-phase";
@@ -151,6 +152,7 @@ export class TurnStartPhase extends FieldPhase {
       switch (preTurnCommand?.command) {
         case Command.TERA:
           globalScene.pushPhase(new TeraPhase(pokemon));
+          LoggerTools.Actions[pokemon.getFieldIndex()] = `*Terastallize* ${LoggerTools.Actions[pokemon.getFieldIndex()]}`;
       }
     }
 
@@ -190,6 +192,9 @@ export class TurnStartPhase extends FieldPhase {
           break;
         case Command.POKEMON:
           const switchType = turnCommand.args?.[0] ? SwitchType.BATON_PASS : SwitchType.SWITCH;
+          if (pokemon.isPlayer()) {
+            LoggerTools.Actions[pokemon.getFieldIndex()] = `${(globalScene.currentBattle.turn == 1 && globalScene.currentBattle.trainer == null) ? "Switch (NOT Pre-Switch)" : "Switch"} ${pokemon.name} to ${globalScene.getPlayerParty()[turnCommand.cursor!].name}`;
+          }
           globalScene.unshiftPhase(new SwitchSummonPhase(switchType, pokemon.getFieldIndex(), turnCommand.cursor!, true, pokemon.isPlayer()));
           break;
         case Command.RUN:
@@ -223,6 +228,42 @@ export class TurnStartPhase extends FieldPhase {
     globalScene.pushPhase(new CheckStatusEffectPhase(moveOrder));
 
     globalScene.pushPhase(new TurnEndPhase());
+
+    globalScene.arenaFlyout.updateFieldText();
+
+    if (LoggerTools.Actions.length > 1 && !globalScene.currentBattle.double) {
+      console.error(`Removed second entry (${LoggerTools.Actions[1]}) because this is a Single Battle`);
+      LoggerTools.Actions.pop(); // If this is a single battle, but we somehow have two actions, delete the second
+    }
+    if (LoggerTools.Actions.length > 1 && (LoggerTools.Actions[0] == "" || LoggerTools.Actions[0] == "%SKIP" || LoggerTools.Actions[0] == undefined || LoggerTools.Actions[0] == null)) {
+      if (LoggerTools.Actions[0] == "") {
+        console.error(`Removed first entry (${LoggerTools.Actions[0]}) because it was empty`);
+      } else if (LoggerTools.Actions[0] == "%SKIP") {
+        console.error(`Removed first entry (${LoggerTools.Actions[0]}) because it was flagged to be skipped`);
+      } else if (LoggerTools.Actions[0] == undefined || LoggerTools.Actions[0] == null) {
+        console.error(`Removed first entry (${LoggerTools.Actions[0]}) because it had no value`);
+      }
+      LoggerTools.Actions.shift();
+    } // If the left slot isn't doing anything, delete its entry
+    if (LoggerTools.Actions.length > 1 && (LoggerTools.Actions[1] == "" || LoggerTools.Actions[1] == "%SKIP" || LoggerTools.Actions[1] == undefined || LoggerTools.Actions[1] == null)) {
+      if (LoggerTools.Actions[1] == "") {
+        console.error(`Removed second entry (${LoggerTools.Actions[1]}) because it was empty`);
+      } else if (LoggerTools.Actions[1] == "%SKIP") {
+        console.error(`Removed second entry (${LoggerTools.Actions[1]}) because it was flagged to be skipped`);
+      } else if (LoggerTools.Actions[1] == undefined || LoggerTools.Actions[1] == null) {
+        console.error(`Removed second entry (${LoggerTools.Actions[1]}) because it had no value`);
+      }
+      LoggerTools.Actions.pop();
+    }  // If the right slot isn't doing anything, delete its entry
+
+    // If there is nothing to be logged, end.
+    if (LoggerTools.Actions.length <= 1 && (LoggerTools.Actions[0] == "" || LoggerTools.Actions[0] == "%SKIP" || LoggerTools.Actions[0] == undefined || LoggerTools.Actions[0] == null)) {
+      this.end();
+      return;
+    }
+
+    // Log the player's actions
+    LoggerTools.logActions(globalScene.currentBattle.waveIndex, LoggerTools.Actions.join(" & "));
 
     /**
        * this.end() will call shiftPhase(), which dumps everything from PrependQueue (aka everything that is unshifted()) to the front

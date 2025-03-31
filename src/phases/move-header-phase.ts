@@ -2,6 +2,7 @@ import { applyMoveAttrs, MoveHeaderAttr } from "#app/data/move";
 import type { PokemonMove } from "#app/field/pokemon";
 import type Pokemon from "#app/field/pokemon";
 import { BattlePhase } from "./battle-phase";
+import * as LoggerTools from "../logger";
 
 export class MoveHeaderPhase extends BattlePhase {
   public pokemon: Pokemon;

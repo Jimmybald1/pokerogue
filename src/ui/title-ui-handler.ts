@@ -99,8 +99,8 @@ export default class TitleUiHandler extends OptionSelectUiHandler {
       // Moving player count to top of the menu
       this.playerCountLabel.setY((globalScene.game.canvas.height / 6) - 13 - this.getWindowHeight());
 
-      this.splashMessage = Utils.randItem(getSplashMessages());
-      this.splashMessageText.setText(i18next.t(this.splashMessage, { count: TitleUiHandler.BATTLES_WON_FALLBACK }));
+      this.splashMessage = Utils.randItem(getSplashMessages(), "Splash message selection");
+      this.splashMessageText.setText(this.splashMessage.replace("{COUNT}", "?"));
 
       this.appVersionText.setText("v" + version);
 

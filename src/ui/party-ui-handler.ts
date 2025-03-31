@@ -6,7 +6,7 @@ import { Command } from "#app/ui/command-ui-handler";
 import MessageUiHandler from "#app/ui/message-ui-handler";
 import { Mode } from "#app/ui/ui";
 import * as Utils from "#app/utils";
-import { PokemonFormChangeItemModifier, PokemonHeldItemModifier, SwitchEffectTransferModifier } from "#app/modifier/modifier";
+import { BerryModifier, PokemonFormChangeItemModifier, PokemonHeldItemModifier, SwitchEffectTransferModifier } from "#app/modifier/modifier";
 import { allMoves, ForceSwitchOutAttr } from "#app/data/move";
 import { Gender, getGenderColor, getGenderSymbol } from "#app/data/gender";
 import { StatusEffect } from "#enums/status-effect";
@@ -26,6 +26,8 @@ import { getPokemonNameWithAffix } from "#app/messages";
 import type { CommandPhase } from "#app/phases/command-phase";
 import { SelectModifierPhase } from "#app/phases/select-modifier-phase";
 import { globalScene } from "#app/global-scene";
+import * as LoggerTools from "../logger";
+import { BerryType } from "#app/enums/berry-type";
 
 const defaultMessage = i18next.t("partyUiHandler:choosePokemon");
 
@@ -127,7 +129,7 @@ export enum PartyOption {
 }
 
 export type PartySelectCallback = (cursor: number, option: PartyOption) => void;
-export type PartyModifierTransferSelectCallback = (fromCursor: number, index: number, itemQuantity?: number, toCursor?: number) => void;
+export type PartyModifierTransferSelectCallback = (fromCursor: number, index: number, itemQuantity?: number, toCursor?: number, isAll?: boolean, isFirst?: boolean) => void;
 export type PartyModifierSpliceSelectCallback = (fromCursor: number, toCursor?: number) => void;
 export type PokemonSelectFilter = (pokemon: PlayerPokemon) => string | null;
 export type PokemonModifierTransferSelectFilter = (pokemon: PlayerPokemon, modifier: PokemonHeldItemModifier) => string | null;
@@ -172,6 +174,8 @@ export default class PartyUiHandler extends MessageUiHandler {
   private moveSelectFilter: PokemonMoveSelectFilter;
   private tmMoveId: Moves;
   private showMovePp: boolean;
+
+  private incomingMon: string;
 
   private iconAnimHandler: PokemonIconAnimHandler;
 
@@ -316,6 +320,7 @@ export default class PartyUiHandler extends MessageUiHandler {
       : PartyUiHandler.FilterAllMoves;
     this.tmMoveId = args.length > 5 && args[5] ? args[5] : Moves.NONE;
     this.showMovePp = args.length > 6 && args[6];
+    this.incomingMon = args.length > 7 && args[7] ? args[7] : undefined;
 
     this.partyContainer.setVisible(true);
     this.partyBg.setTexture(`party_bg${globalScene.currentBattle.double ? "_double" : ""}`);
@@ -378,6 +383,8 @@ export default class PartyUiHandler extends MessageUiHandler {
             partySlot.slotHpBar.setVisible(false);
             partySlot.slotHpOverlay.setVisible(false);
             partySlot.slotHpText.setVisible(false);
+            partySlot.slotHpPercentageText.setVisible(false);
+            partySlot.slotEtherText.setVisible(false);
             partySlot.slotDescriptionLabel.setText(ableToTransfer);
             partySlot.slotDescriptionLabel.setVisible(true);
           }
@@ -455,7 +462,7 @@ export default class PartyUiHandler extends MessageUiHandler {
                   globalScene.triggerPokemonFormChange(pokemon, SpeciesFormChangeItemTrigger, false, true);
                 }
               } else if (this.cursor) {
-                (globalScene.getCurrentPhase() as CommandPhase).handleCommand(Command.POKEMON, this.cursor, option === PartyOption.PASS_BATON);
+                (globalScene.getCurrentPhase() as CommandPhase).handleCommand(Command.POKEMON, false, this.cursor, option === PartyOption.PASS_BATON);
               }
             }
             if (this.partyUiMode !== PartyUiMode.MODIFIER && this.partyUiMode !== PartyUiMode.TM_MODIFIER && this.partyUiMode !== PartyUiMode.MOVE_MODIFIER) {
@@ -671,6 +678,11 @@ export default class PartyUiHandler extends MessageUiHandler {
           }
       }
     }
+
+    this.partySlots.forEach(ps => {
+      ps.slotHpPercentageText.setVisible(globalScene.pathingToolUI);
+      ps.slotEtherText.setVisible(globalScene.pathingToolUI);
+    });
 
     if (success) {
       ui.playSelect();
@@ -1066,16 +1078,30 @@ export default class PartyUiHandler extends MessageUiHandler {
   clearTransfer(): void {
     this.transferMode = false;
     this.transferAll = false;
+    LoggerTools.isTransferAll.value = false;
+
     this.partySlots[this.transferCursor].setTransfer(false);
     for (let i = 0; i < this.partySlots.length; i++) {
       this.partySlots[i].slotDescriptionLabel.setVisible(false);
       this.partySlots[i].slotHpBar.setVisible(true);
       this.partySlots[i].slotHpOverlay.setVisible(true);
       this.partySlots[i].slotHpText.setVisible(true);
+      if (globalScene.pathingToolUI) {
+        this.partySlots[i].slotHpPercentageText.setVisible(true);
+      }
+      if (globalScene.pathingToolUI) {
+        this.partySlots[i].slotEtherText.setVisible(true);
+      }
     }
   }
 
   doRelease(slotIndex: number): void {
+    if (this.incomingMon != undefined) {
+      LoggerTools.logActions(globalScene.currentBattle.waveIndex, `${this.incomingMon} > ${globalScene.getPlayerParty()[this.cursor].name} (Slot ${this.cursor + 1})`);
+    } else {
+      LoggerTools.logActions(globalScene.currentBattle.waveIndex, `Release ${globalScene.getPlayerParty()[this.cursor].name} (Slot ${this.cursor + 1})`);
+    }
+
     this.showText(this.getReleaseMessage(getPokemonNameWithAffix(globalScene.getPlayerParty()[slotIndex])), null, () => {
       this.clearPartySlots();
       globalScene.removePartyMemberModifiers(slotIndex);
@@ -1095,7 +1121,7 @@ export default class PartyUiHandler extends MessageUiHandler {
   }
 
   getReleaseMessage(pokemonName: string): string {
-    const rand = Utils.randInt(128);
+    const rand = Utils.randInt(128, undefined, "Random release message");
     if (rand < 20) {
       return i18next.t("partyUiHandler:goodbye", { pokemonName: pokemonName });
     } else if (rand < 40) {
@@ -1188,6 +1214,8 @@ class PartySlot extends Phaser.GameObjects.Container {
   public slotHpBar: Phaser.GameObjects.Image;
   public slotHpOverlay: Phaser.GameObjects.Sprite;
   public slotHpText: Phaser.GameObjects.Text;
+  public slotHpPercentageText: Phaser.GameObjects.Text;
+  public slotEtherText: Phaser.GameObjects.Text;
   public slotDescriptionLabel: Phaser.GameObjects.Text; // this is used to show text instead of the HP bar i.e. for showing "Able"/"Not Able" for TMs when you try to learn them
 
   private pokemonIcon: Phaser.GameObjects.Container;
@@ -1341,22 +1369,45 @@ class PartySlot extends Phaser.GameObjects.Container {
     this.slotHpText.setOrigin(1, 0);
     this.slotHpText.setVisible(false);
 
+    const hpPercentage = (this.pokemon.hp / this.pokemon.getMaxHp()) * 100;
+    this.slotHpPercentageText = addTextObject(0, 0, `${hpPercentage.toFixed(2)}%`, TextStyle.PARTY);
+    this.slotHpPercentageText.setPositionRelative(this.slotHpBar, this.slotIndex >= battlerCount ? 57 : 35, this.slotHpBar.height - 2);
+    this.slotHpPercentageText.setOrigin(1, 0);
+    this.slotHpPercentageText.setVisible(false);
+
+    const fainted = this.pokemon.hp <= 0;
+    const leppa = this.pokemon.getHeldItems().some(m => m instanceof BerryModifier && m.berryType === BerryType.LEPPA);
+    const lowPP = this.pokemon.moveset.some(m => m?.ppUsed && (m.getMovePp() - m.ppUsed) <= 5 && m.ppUsed > Math.floor(m.getMovePp() / 2));
+    const showEther = !fainted && !leppa && lowPP;
+    this.slotEtherText = addTextObject(0, 0, `${showEther ? "E" : ""}`, TextStyle.PARTY);
+    this.slotEtherText.setPositionRelative(this.slotHpBar, this.slotIndex >= battlerCount ? 58 : 36, this.slotHpBar.height - 2);
+    this.slotEtherText.setOrigin(0, 0);
+    this.slotEtherText.setVisible(false);
+
     this.slotDescriptionLabel = addTextObject(0, 0, "", TextStyle.MESSAGE);
     this.slotDescriptionLabel.setPositionRelative(slotBg, this.slotIndex >= battlerCount ? 94 : 32, this.slotIndex >= battlerCount ? 16 : 46);
     this.slotDescriptionLabel.setOrigin(0, 1);
     this.slotDescriptionLabel.setVisible(false);
 
-    slotInfoContainer.add([ this.slotHpBar, this.slotHpOverlay, this.slotHpText, this.slotDescriptionLabel ]);
+    slotInfoContainer.add([ this.slotHpBar, this.slotHpOverlay, this.slotHpText, this.slotDescriptionLabel, this.slotHpPercentageText, this.slotEtherText ]);
 
     if (partyUiMode !== PartyUiMode.TM_MODIFIER) {
       this.slotDescriptionLabel.setVisible(false);
       this.slotHpBar.setVisible(true);
       this.slotHpOverlay.setVisible(true);
       this.slotHpText.setVisible(true);
+      if (globalScene.pathingToolUI) {
+        this.slotHpPercentageText.setVisible(true);
+      }
+      if (globalScene.pathingToolUI) {
+        this.slotEtherText.setVisible(true);
+      }
     } else {
       this.slotHpBar.setVisible(false);
       this.slotHpOverlay.setVisible(false);
       this.slotHpText.setVisible(false);
+      this.slotHpPercentageText.setVisible(false);
+      this.slotEtherText.setVisible(false);
       let slotTmText: string;
 
       if (this.pokemon.getMoveset().filter(m => m?.moveId === tmMoveId).length > 0) {

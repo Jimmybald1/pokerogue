@@ -46,6 +46,8 @@ import SettingsAudioUiHandler from "./settings/settings-audio-ui-handler";
 import { PlayerGender } from "#enums/player-gender";
 import type BgmBar from "#app/ui/bgm-bar";
 import RenameFormUiHandler from "./rename-form-ui-handler";
+import LogNameFormUiHandler from "./log-name-form-ui-handler";
+import LogSelectUiHandler from "./log-select-ui-handler";
 import AdminUiHandler from "./admin-ui-handler";
 import RunHistoryUiHandler from "./run-history-ui-handler";
 import RunInfoUiHandler from "./run-info-ui-handler";
@@ -97,6 +99,8 @@ export enum Mode {
   SESSION_RELOAD,
   UNAVAILABLE,
   CHALLENGE_SELECT,
+  NAME_LOG,
+  LOG_HANDLER,
   RENAME_POKEMON,
   RUN_HISTORY,
   RUN_INFO,
@@ -118,6 +122,8 @@ const transitionModes = [
   Mode.POKEDEX,
   Mode.POKEDEX_PAGE,
   Mode.CHALLENGE_SELECT,
+  Mode.NAME_LOG,
+  Mode.LOG_HANDLER,
   Mode.RUN_HISTORY,
 ];
 
@@ -211,6 +217,8 @@ export default class UI extends Phaser.GameObjects.Container {
       new SessionReloadModalUiHandler(),
       new UnavailableModalUiHandler(),
       new GameChallengesUiHandler(),
+      new LogNameFormUiHandler(),
+      new LogSelectUiHandler(),
       new RenameFormUiHandler(),
       new RunHistoryUiHandler(),
       new RunInfoUiHandler(),
@@ -349,7 +357,7 @@ export default class UI extends Phaser.GameObjects.Container {
 
       // Skip dialogue if the player has enabled the option and the dialogue has been already seen
       if (this.shouldSkipDialogue(i18nKey)) {
-        console.log(`Dialogue ${i18nKey} skipped`);
+        // console.log(`Dialogue ${i18nKey} skipped`);
         callback();
         return;
       }

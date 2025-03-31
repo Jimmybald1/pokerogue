@@ -5,6 +5,7 @@ import { SwitchType } from "#enums/switch-type";
 import { BattlePhase } from "./battle-phase";
 import { PostSummonPhase } from "./post-summon-phase";
 import { SwitchSummonPhase } from "./switch-summon-phase";
+import * as LoggerTools from "../logger";
 
 /**
  * Opens the party selector UI and transitions into a {@linkcode SwitchSummonPhase}
@@ -62,6 +63,16 @@ export class SwitchPhase extends BattlePhase {
     const fieldIndex = globalScene.currentBattle.getBattlerCount() === 1 || globalScene.getPokemonAllowedInBattle().length > 1 ? this.fieldIndex : 0;
 
     globalScene.ui.setMode(Mode.PARTY, this.isModal ? PartyUiMode.FAINT_SWITCH : PartyUiMode.POST_BATTLE_SWITCH, fieldIndex, (slotIndex: number, option: PartyOption) => {
+      if (this.isModal) {
+        console.error("Forced Switch Detected");
+        let waveIndex = globalScene.currentBattle.waveIndex;
+        if (globalScene.currentBattle.enemyParty.length == 0) {
+          // No enemy party means the switch is happening in between waves (post-shop, pre-next-encounter)
+          // Correct the wave index for logging.
+          waveIndex--;
+        }
+        LoggerTools.logActions(waveIndex, `Send in ${globalScene.getPlayerParty()[slotIndex].name}`);
+      }
       if (slotIndex >= globalScene.currentBattle.getBattlerCount() && slotIndex < 6) {
         // Remove any pre-existing PostSummonPhase under the same field index.
         // Pre-existing PostSummonPhases may occur when this phase is invoked during a prompt to switch at the start of a wave.

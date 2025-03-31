@@ -16,6 +16,7 @@ import i18next from "i18next";
 import { getPokemonNameWithAffix } from "#app/messages";
 import { LearnMovePhase } from "#app/phases/learn-move-phase";
 import { EndEvolutionPhase } from "#app/phases/end-evolution-phase";
+import * as LoggerTools from "../logger";
 import { EVOLVE_MOVE } from "#app/data/balance/pokemon-level-moves";
 
 export class EvolutionPhase extends Phase {
@@ -197,8 +198,10 @@ export class EvolutionPhase extends Phase {
                       this.evolutionHandler.canCancel = true;
                       this.doCycle(1).then(success => {
                         if (success) {
+                          LoggerTools.logActions(globalScene.currentBattle.waveIndex, `Let ${this.pokemon.name} Evolve`);
                           this.handleSuccessEvolution(evolvedPokemon);
                         } else {
+                          LoggerTools.logActions(globalScene.currentBattle.waveIndex, `DO NOT LET ${this.pokemon.name} Evolve`);
                           this.handleFailedEvolution(evolvedPokemon);
                         }
                       });
@@ -420,7 +423,7 @@ export class EvolutionPhase extends Phase {
             this.doSprayParticle(i);
           }
         } else if (f < 50) {
-          this.doSprayParticle(Utils.randInt(8));
+          this.doSprayParticle(Utils.randInt(8, undefined, "%HIDE"));
         }
         f++;
       }
@@ -536,8 +539,8 @@ export class EvolutionPhase extends Phase {
 
     let f = 0;
     let yOffset = 0;
-    const speed = 3 - Utils.randInt(8);
-    const amp = 48 + Utils.randInt(64);
+    const speed = 3 - Utils.randInt(8, undefined, "%HIDE");
+    const amp = 48 + Utils.randInt(64, undefined, "%HIDE");
 
     const particleTimer = globalScene.tweens.addCounter({
       repeat: -1,

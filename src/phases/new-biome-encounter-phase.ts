@@ -2,6 +2,7 @@ import { globalScene } from "#app/global-scene";
 import { applyAbAttrs, PostBiomeChangeAbAttr } from "#app/data/ability";
 import { getRandomWeatherType } from "#app/data/weather";
 import { NextEncounterPhase } from "./next-encounter-phase";
+import * as LoggerTools from "../logger";
 
 export class NewBiomeEncounterPhase extends NextEncounterPhase {
   constructor() {

@@ -89,6 +89,7 @@ export class UiInputs {
       [Button.CYCLE_TERA]:      () => this.buttonCycleOption(Button.CYCLE_TERA),
       [Button.SPEED_UP]:        () => this.buttonSpeedChange(),
       [Button.SLOW_DOWN]:       () => this.buttonSpeedChange(false),
+      [Button.PATHING_TOOL_UI]: () => this.buttonHideCustomUI(Button.PATHING_TOOL_UI),
     };
     return actions;
   }
@@ -112,6 +113,7 @@ export class UiInputs {
       [Button.CYCLE_TERA]:      () => this.buttonInfo(false),
       [Button.SPEED_UP]:        () => undefined,
       [Button.SLOW_DOWN]:       () => undefined,
+      [Button.PATHING_TOOL_UI]: () => undefined,
     };
     return actions;
   }
@@ -155,6 +157,12 @@ export class UiInputs {
     if (globalScene.showMovesetFlyout ) {
       for (const p of globalScene.getField().filter(p => p?.isActive(true))) {
         p.toggleFlyout(pressed);
+      }
+    }
+
+    if (globalScene.showTeams) {
+      for (const p of globalScene.getField().filter(p => p?.isActive(true))) {
+        p.toggleTeamTray(pressed);
       }
     }
 
@@ -217,4 +225,9 @@ export class UiInputs {
     }
   }
 
+  buttonHideCustomUI(button: Button): void {
+    globalScene.togglePathingToolUI();
+    console.log(`Toggle Pathing Tool UI ${globalScene.pathingToolUI ? "ON" : "OFF"}`);
+    globalScene.ui.processInput(button);
+  }
 }

@@ -6,6 +6,8 @@ import { StatusEffect } from "#app/enums/status-effect";
 import type Pokemon from "#app/field/pokemon";
 import { getPokemonNameWithAffix } from "#app/messages";
 import { PokemonPhase } from "./pokemon-phase";
+import { PostTurnStatusEffectPhase } from "./post-turn-status-effect-phase";
+import * as LoggerTools from "../logger";
 
 export class ObtainStatusEffectPhase extends PokemonPhase {
   private statusEffect?: StatusEffect;

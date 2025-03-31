@@ -7,6 +7,8 @@ import i18next from "i18next";
 import { BattlePhase } from "./battle-phase";
 import { SummonMissingPhase } from "./summon-missing-phase";
 import { SwitchPhase } from "./switch-phase";
+import { getNatureName } from "#app/data/nature";
+import * as LoggerTools from "../logger";
 import { SwitchType } from "#enums/switch-type";
 
 export class CheckSwitchPhase extends BattlePhase {
@@ -50,13 +52,60 @@ export class CheckSwitchPhase extends BattlePhase {
       return super.end();
     }
 
+    for (let i = 0; i < globalScene.getEnemyField().length; i++) {
+      const pk = globalScene.getEnemyField()[i];
+      var maxIVs: string[] = [];
+      var ivnames = [ "HP", "Atk", "Def", "Sp.Atk", "Sp.Def", "Speed" ];
+      pk.ivs.forEach((iv, j) => {
+        if (iv == 31) {
+          maxIVs.push(ivnames[j]);
+        }
+      });
+      let ivDesc = maxIVs.join(",");
+      if (ivDesc == "") {
+        ivDesc = "No Max IVs";
+      } else {
+        ivDesc = "31iv: " + ivDesc;
+      }
+      pk.getBattleInfo().flyoutMenu.toggleFlyout(true);
+      pk.getBattleInfo().flyoutMenu.flyoutText[0].text = getNatureName(pk.nature);
+      pk.getBattleInfo().flyoutMenu.flyoutText[1].text = ivDesc;
+      pk.getBattleInfo().flyoutMenu.flyoutText[2].text = pk.getAbility().name;
+      pk.getBattleInfo().flyoutMenu.flyoutText[3].text = pk.getPassiveAbility().name;
+      if (pk.abilityIndex == 2) { // Hidden Ability
+        pk.getBattleInfo().flyoutMenu.flyoutText[2].setColor("#e8e8a8");
+        pk.getBattleInfo().flyoutMenu.flyoutText[2].text += " (HA)";
+      }
+    }
+
     globalScene.ui.showText(i18next.t("battle:switchQuestion", { pokemonName: this.useName ? getPokemonNameWithAffix(pokemon) : i18next.t("battle:pokemon") }), null, () => {
       globalScene.ui.setMode(Mode.CONFIRM, () => {
+        // Yes, I want to Pre-Switch
         globalScene.ui.setMode(Mode.MESSAGE);
         globalScene.unshiftPhase(new SwitchPhase(SwitchType.INITIAL_SWITCH, this.fieldIndex, false, true));
+        for (let i = 0; i < globalScene.getEnemyField().length; i++) {
+          globalScene.getEnemyField()[i].getBattleInfo().flyoutMenu.toggleFlyout(false);
+          globalScene.getEnemyField()[i].getBattleInfo().flyoutMenu.flyoutText[0].text = "???";
+          globalScene.getEnemyField()[i].getBattleInfo().flyoutMenu.flyoutText[1].text = "???";
+          globalScene.getEnemyField()[i].getBattleInfo().flyoutMenu.flyoutText[2].text = "???";
+          globalScene.getEnemyField()[i].getBattleInfo().flyoutMenu.flyoutText[3].text = "???";
+          globalScene.getEnemyField()[i].getBattleInfo().flyoutMenu.flyoutText[2].setColor("#f8f8f8");
+          globalScene.getEnemyField()[i].flyout.setText();
+        }
+        //globalScene.pokemonInfoContainer.hide()
         this.end();
       }, () => {
+        // No, I want to leave my Pokémon as is
         globalScene.ui.setMode(Mode.MESSAGE);
+        for (let i = 0; i < globalScene.getEnemyField().length; i++) {
+          globalScene.getEnemyField()[i].getBattleInfo().flyoutMenu.toggleFlyout(false);
+          globalScene.getEnemyField()[i].getBattleInfo().flyoutMenu.flyoutText[0].text = "???";
+          globalScene.getEnemyField()[i].getBattleInfo().flyoutMenu.flyoutText[1].text = "???";
+          globalScene.getEnemyField()[i].getBattleInfo().flyoutMenu.flyoutText[2].text = "???";
+          globalScene.getEnemyField()[i].getBattleInfo().flyoutMenu.flyoutText[3].text = "???";
+          globalScene.getEnemyField()[i].getBattleInfo().flyoutMenu.flyoutText[2].setColor("#f8f8f8");
+        }
+        //globalScene.pokemonInfoContainer.hide()
         this.end();
       });
     });

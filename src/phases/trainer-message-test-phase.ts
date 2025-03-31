@@ -3,6 +3,7 @@ import { trainerConfigs } from "#app/data/trainer-config";
 import type { TrainerType } from "#app/enums/trainer-type";
 import { BattlePhase } from "./battle-phase";
 import { TestMessagePhase } from "./test-message-phase";
+import * as LoggerTools from "../logger";
 
 export class TrainerMessageTestPhase extends BattlePhase {
   private trainerTypes: TrainerType[];

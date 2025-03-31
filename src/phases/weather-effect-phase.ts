@@ -9,6 +9,7 @@ import type Pokemon from "#app/field/pokemon";
 import { HitResult } from "#app/field/pokemon";
 import * as Utils from "#app/utils";
 import { CommonAnimPhase } from "./common-anim-phase";
+import * as LoggerTools from "../logger";
 
 export class WeatherEffectPhase extends CommonAnimPhase {
   public weather: Weather | null;

@@ -9,6 +9,7 @@ import type PartyUiHandler from "../ui/party-ui-handler";
 import { getPokemonNameWithAffix } from "../messages";
 import { EndEvolutionPhase } from "./end-evolution-phase";
 import { EvolutionPhase } from "./evolution-phase";
+import * as LoggerTools from "../logger";
 import { BattlerTagType } from "#app/enums/battler-tag-type";
 import { SpeciesFormKey } from "#enums/species-form-key";
 

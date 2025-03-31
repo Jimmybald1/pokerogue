@@ -25,6 +25,7 @@ import { ToggleDoublePositionPhase } from "./toggle-double-position-phase";
 import { VictoryPhase } from "./victory-phase";
 import { isNullOrUndefined } from "#app/utils";
 import { FRIENDSHIP_LOSS_FROM_FAINT } from "#app/data/balance/starters";
+import * as LoggerTools from "../logger";
 
 export class FaintPhase extends PokemonPhase {
   /**

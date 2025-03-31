@@ -39,6 +39,8 @@ import { overrideHeldItems, overrideModifiers } from "#app/modifier/modifier";
 import i18next from "i18next";
 import { WEIGHT_INCREMENT_ON_SPAWN_MISS } from "#app/data/mystery-encounters/mystery-encounters";
 import { getNatureName } from "#app/data/nature";
+import * as LoggerTools from "../logger";
+import { GameModes } from "#app/game-mode";
 
 export class EncounterPhase extends BattlePhase {
   private loaded: boolean;
@@ -98,6 +100,11 @@ export class EncounterPhase extends BattlePhase {
 
     let totalBst = 0;
 
+    while (LoggerTools.rarities.length > 0) {
+      LoggerTools.rarities.pop();
+    }
+    LoggerTools.rarityslot[0] = 0;
+    //console.log(globalScene.gameMode.getDailyOverride())
     battle.enemyLevels?.every((level, e) => {
       if (battle.isBattleMysteryEncounter()) {
         // Skip enemy loading for MEs, those are loaded elsewhere
@@ -113,6 +120,7 @@ export class EncounterPhase extends BattlePhase {
           }
           battle.enemyParty[e] = battle.trainer?.genPartyMember(e)!; // TODO:: is the bang correct here?
         } else {
+          LoggerTools.rarityslot[0] = e;
           let enemySpecies = globalScene.randomSpecies(battle.waveIndex, level, true);
           // If player has golden bug net, rolls 10% chance to replace non-boss wave wild species from the golden bug net bug pool
           if (globalScene.findModifier(m => m instanceof BoostBugSpawnModifier)
@@ -184,6 +192,7 @@ export class EncounterPhase extends BattlePhase {
       console.log("Moveset:", moveset);
       return true;
     });
+    console.log(LoggerTools.rarities);
 
     if (globalScene.getPlayerParty().filter(p => p.isShiny()).length === PLAYER_PARTY_MAX_SIZE) {
       globalScene.validateAchv(achvs.SHINY_PARTY);
@@ -347,6 +356,33 @@ export class EncounterPhase extends BattlePhase {
   doEncounterCommon(showEncounterMessage: boolean = true) {
     const enemyField = globalScene.getEnemyField();
 
+    //LoggerTools.resetWave(globalScene.currentBattle.waveIndex)
+    if (globalScene.lazyReloads) {
+      LoggerTools.flagResetIfExists();
+    }
+    LoggerTools.logTeam(globalScene.currentBattle.waveIndex);
+    if (globalScene.getEnemyParty()[0]?.hasTrainer()) {
+      LoggerTools.logTrainer(globalScene.currentBattle.waveIndex);
+    }
+    if (globalScene.currentBattle.waveIndex == 1) {
+      LoggerTools.logPlayerTeam();
+      if (globalScene.gameMode.modeId == GameModes.DAILY && globalScene.disableDailyShinies) {
+        globalScene.getPlayerParty().forEach(p => {
+          p.species.luckOverride = 0; // Disable shiny luck for party members
+        });
+      }
+    }
+    LoggerTools.resetWaveActions(undefined, true);
+    if (globalScene.currentBattle.waveIndex % 10 == 1) {
+      LoggerTools.logActions(globalScene.currentBattle.waveIndex, "RELOAD YOUR GAME (F5)");
+    }
+
+    //globalScene.doShinyCheck()
+
+    if (LoggerTools.autoCheckpoints.includes(globalScene.currentBattle.waveIndex)) {
+      //globalScene.gameData.saveGameToAuto(globalScene)
+    }
+
     if (globalScene.currentBattle.battleType === BattleType.WILD) {
       enemyField.forEach(enemyPokemon => {
         enemyPokemon.untint(100, "Sine.easeOut");
@@ -394,7 +430,7 @@ export class EncounterPhase extends BattlePhase {
         doSummon();
       } else {
         let message: string;
-        globalScene.executeWithSeedOffset(() => message = randSeedItem(encounterMessages), globalScene.currentBattle.waveIndex);
+        globalScene.executeWithSeedOffset(() => message = randSeedItem(encounterMessages, "Encounter message"), globalScene.currentBattle.waveIndex);
         message = message!; // tell TS compiler it's defined now
         const showDialogueAndSummon = () => {
           globalScene.ui.showDialogue(message, trainer?.getName(TrainerSlot.NONE, true), null, () => {
@@ -541,7 +577,15 @@ export class EncounterPhase extends BattlePhase {
         }
       }
     }
-    handleTutorial(Tutorial.Access_Menu).then(() => super.end());
+    handleTutorial(Tutorial.Access_Menu).then(() => {
+      // Auto-show the flyout
+      if (globalScene.currentBattle.battleType !== BattleType.TRAINER) {
+        globalScene.arenaFlyout.display2();
+        globalScene.arenaFlyout.toggleFlyout(true);
+        globalScene.arenaFlyout.isAuto = true;
+      }
+      super.end();
+    });
   }
 
   tryOverrideForBattleSpec(): boolean {

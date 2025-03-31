@@ -383,7 +383,7 @@ export function getRandomWeatherType(arena: Arena): WeatherType {
     let totalWeight = 0;
     weatherPool.forEach(w => totalWeight += w.weight);
 
-    const rand = Utils.randSeedInt(totalWeight);
+    const rand = Utils.randSeedInt(totalWeight, undefined, "Weather selection");
     let w = 0;
     for (const weather of weatherPool) {
       w += weather.weight;

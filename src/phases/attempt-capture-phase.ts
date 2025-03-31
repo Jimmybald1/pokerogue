@@ -1,7 +1,7 @@
 import { BattlerIndex } from "#app/battle";
 import { PLAYER_PARTY_MAX_SIZE } from "#app/constants";
 import { SubstituteTag } from "#app/data/battler-tags";
-import { doPokeballBounceAnim, getPokeballAtlasKey, getPokeballCatchMultiplier, getPokeballTintColor, getCriticalCaptureChance } from "#app/data/pokeball";
+import { doPokeballBounceAnim, getPokeballAtlasKey, getPokeballCatchMultiplier, getPokeballTintColor, getCriticalCaptureChance, getPokeballName } from "#app/data/pokeball";
 import { getStatusEffectCatchRateMultiplier } from "#app/data/status-effect";
 import { addPokeballCaptureStars, addPokeballOpenParticles } from "#app/field/anims";
 import type { EnemyPokemon } from "#app/field/pokemon";
@@ -18,16 +18,30 @@ import type { PokeballType } from "#enums/pokeball";
 import { StatusEffect } from "#enums/status-effect";
 import i18next from "i18next";
 import { globalScene } from "#app/global-scene";
+import * as LoggerTools from "../logger";
 
 export class AttemptCapturePhase extends PokemonPhase {
+  /** The Pokeball being used. */
   private pokeballType: PokeballType;
+  /** The Pokeball sprite. */
   private pokeball: Phaser.GameObjects.Sprite;
+  /** The sprite's original Y position. */
   private originalY: number;
 
   constructor(targetIndex: number, pokeballType: PokeballType) {
     super(BattlerIndex.ENEMY + targetIndex);
 
     this.pokeballType = pokeballType;
+  }
+
+  roll(y?: integer) {
+    const roll = (this.getPokemon() as EnemyPokemon).randSeedInt(65536, undefined, "Capture roll");
+    if (y != undefined) {
+      console.log(roll, y, roll < y);
+    } else {
+      console.log(roll);
+    }
+    return roll;
   }
 
   start() {
@@ -58,6 +72,8 @@ export class AttemptCapturePhase extends PokemonPhase {
     const criticalCaptureChance = getCriticalCaptureChance(modifiedCatchRate);
     const isCritical = pokemon.randSeedInt(256) < criticalCaptureChance;
     const fpOffset = pokemon.getFieldPositionOffset();
+
+    LoggerTools.logActions(globalScene.currentBattle.waveIndex, getPokeballName(this.pokeballType));
 
     const pokeballAtlasKey = getPokeballAtlasKey(this.pokeballType);
     this.pokeball = globalScene.addFieldSprite(16, 80, "pb", pokeballAtlasKey);
@@ -124,13 +140,13 @@ export class AttemptCapturePhase extends PokemonPhase {
                     this.failCatch(shakeCount);
                   } else if (shakeCount++ < (isCritical ? 1 : 3)) {
                     // Shake check (skip check for critical or guaranteed captures, but still play the sound)
-                    if (pokeballMultiplier === -1 || isCritical || modifiedCatchRate >= 255 || pokemon.randSeedInt(65536) < shakeProbability) {
+                    if (pokeballMultiplier === -1 || isCritical || modifiedCatchRate >= 255 || this.roll(shakeProbability) < shakeProbability) {
                       globalScene.playSound("se/pb_move");
                     } else {
                       shakeCounter.stop();
                       this.failCatch(shakeCount);
                     }
-                  } else if (isCritical && pokemon.randSeedInt(65536) >= shakeProbability) {
+                  } else if (isCritical && this.roll(shakeProbability) >= shakeProbability) {
                     // Above, perform the one shake check for critical captures after the ball shakes once
                     shakeCounter.stop();
                     this.failCatch(shakeCount);
@@ -208,10 +224,13 @@ export class AttemptCapturePhase extends PokemonPhase {
   }
 
   catch() {
+    /** The Pokemon being caught. */
     const pokemon = this.getPokemon() as EnemyPokemon;
 
+    /** Used for achievements. */
     const speciesForm = !pokemon.fusionSpecies ? pokemon.getSpeciesForm() : pokemon.getFusionSpeciesForm();
 
+    // Achievements
     if (speciesForm.abilityHidden && (pokemon.fusionSpecies ? pokemon.fusionAbilityIndex : pokemon.abilityIndex) === speciesForm.getAbilityCount() - 1) {
       globalScene.validateAchv(achvs.HIDDEN_ABILITY);
     }
@@ -228,8 +247,9 @@ export class AttemptCapturePhase extends PokemonPhase {
       globalScene.validateAchv(achvs.CATCH_MYTHICAL);
     }
 
+    // Show its info
     globalScene.pokemonInfoContainer.show(pokemon, true);
-
+    // Update new IVs
     globalScene.gameData.updateSpeciesDexIvs(pokemon.species.getRootSpeciesId(true), pokemon.ivs);
 
     globalScene.ui.showText(i18next.t("battle:pokemonCaught", { pokemonName: getPokemonNameWithAffix(pokemon) }), null, () => {
@@ -239,6 +259,7 @@ export class AttemptCapturePhase extends PokemonPhase {
         this.removePb();
         this.end();
       };
+      LoggerTools.logCapture(globalScene.currentBattle.waveIndex, pokemon);
       const removePokemon = () => {
         globalScene.addFaintedEnemyScore(pokemon);
         pokemon.hp = 0;
@@ -265,9 +286,13 @@ export class AttemptCapturePhase extends PokemonPhase {
       Promise.all([ pokemon.hideInfo(), globalScene.gameData.setPokemonCaught(pokemon) ]).then(() => {
         if (globalScene.getPlayerParty().length === PLAYER_PARTY_MAX_SIZE) {
           const promptRelease = () => {
+            // Say that your party is full
             globalScene.ui.showText(i18next.t("battle:partyFull", { pokemonName: pokemon.getNameToRender() }), null, () => {
+              // Ask if you want to make room
               globalScene.pokemonInfoContainer.makeRoomForConfirmUi(1, true);
               globalScene.ui.setMode(Mode.CONFIRM, () => {
+                // YES
+                // Open up the party menu on the RELEASE setting
                 const newPokemon = globalScene.addPlayerPokemon(pokemon.species, pokemon.level, pokemon.abilityIndex, pokemon.formIndex, pokemon.gender, pokemon.shiny, pokemon.variant, pokemon.ivs, pokemon.nature, pokemon);
                 globalScene.ui.setMode(Mode.SUMMARY, newPokemon, 0, SummaryUiMode.DEFAULT, () => {
                   globalScene.ui.setMode(Mode.MESSAGE).then(() => {
@@ -283,8 +308,10 @@ export class AttemptCapturePhase extends PokemonPhase {
                       promptRelease();
                     }
                   });
-                });
+                }, undefined, undefined, undefined, undefined, pokemon.name);
               }, () => {
+                // NO
+                LoggerTools.logActions(globalScene.currentBattle.waveIndex, "Do Not Keep " + pokemon.name);
                 globalScene.ui.setMode(Mode.MESSAGE).then(() => {
                   removePokemon();
                   end();
@@ -294,12 +321,14 @@ export class AttemptCapturePhase extends PokemonPhase {
           };
           promptRelease();
         } else {
+          //LoggerTools.logActions(globalScene.currentBattle.waveIndex, `${pokemon.name} added to party`)
           addToParty();
         }
       });
     }, 0, true);
   }
 
+  /** Remove the Poke Ball from the scene. */
   removePb() {
     globalScene.tweens.add({
       targets: this.pokeball,

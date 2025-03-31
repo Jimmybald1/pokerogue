@@ -1,6 +1,7 @@
 import { globalScene } from "#app/global-scene";
 import * as Utils from "#app/utils";
 import { BattlePhase } from "./battle-phase";
+import * as LoggerTools from "../logger";
 
 export class PartyHealPhase extends BattlePhase {
   private resumeBgm: boolean;
@@ -23,7 +24,7 @@ export class PartyHealPhase extends BattlePhase {
         pokemon.hp = pokemon.getMaxHp();
         pokemon.resetStatus();
         for (const move of pokemon.moveset) {
-            move!.ppUsed = 0; // TODO: is this bang correct?
+          move!.ppUsed = 0; // TODO: is this bang correct?
         }
         pokemon.updateInfo(true);
       }

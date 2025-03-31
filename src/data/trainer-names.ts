@@ -20,7 +20,7 @@ interface TrainerNameConfigs {
 }
 
 // used in a commented code
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+
 const trainerNameConfigs: TrainerNameConfigs = {
   [TrainerType.ACE_TRAINER]: new TrainerNameConfig(TrainerType.ACE_TRAINER),
   [TrainerType.ARTIST]: new TrainerNameConfig(TrainerType.ARTIST),
@@ -128,7 +128,7 @@ export const trainerNamePools = {
 };
 
 // function used in a commented code
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+
 function fetchAndPopulateTrainerNames(url: string, parser: DOMParser, trainerNames: Set<string>, femaleTrainerNames: Set<string>, forceFemale: boolean = false) {
   return new Promise<void>(resolve => {
     fetch(`https://bulbapedia.bulbagarden.net/wiki/${url}_(Trainer_class)`)

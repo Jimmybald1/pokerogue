@@ -509,7 +509,7 @@ export class SingleGenerationChallenge extends Challenge {
         trainerTypes = [ TrainerType.LANCE, TrainerType.KAREN, TrainerType.DRAKE, TrainerType.LUCIAN, TrainerType.CAITLIN, TrainerType.DRASNA, TrainerType.KAHILI, TrainerType.RAIHAN_ELITE, TrainerType.HASSEL ];
         break;
       case ClassicFixedBossWaves.CHAMPION:
-        trainerTypes = [ TrainerType.BLUE, Utils.randSeedItem([ TrainerType.RED, TrainerType.LANCE_CHAMPION ]), Utils.randSeedItem([ TrainerType.STEVEN, TrainerType.WALLACE ]), TrainerType.CYNTHIA, Utils.randSeedItem([ TrainerType.ALDER, TrainerType.IRIS ]), TrainerType.DIANTHA, Utils.randSeedItem([ TrainerType.KUKUI, TrainerType.HAU ]), Utils.randSeedItem([ TrainerType.LEON, TrainerType.MUSTARD ]), Utils.randSeedItem([ TrainerType.GEETA, TrainerType.NEMONA ]) ];
+        trainerTypes = [ TrainerType.BLUE, Utils.randSeedItem([ TrainerType.RED, TrainerType.LANCE_CHAMPION ], "Champion (Gen 2)"), Utils.randSeedItem([ TrainerType.STEVEN, TrainerType.WALLACE ], "Champion (Gen 3)"), TrainerType.CYNTHIA, Utils.randSeedItem([ TrainerType.ALDER, TrainerType.IRIS ], "Champion (Gen 5)"), TrainerType.DIANTHA, Utils.randSeedItem([ TrainerType.KUKUI, TrainerType.HAU ]), Utils.randSeedItem([ TrainerType.LEON, TrainerType.MUSTARD ]), Utils.randSeedItem([ TrainerType.GEETA, TrainerType.NEMONA ], "Champion (Gen 9+)") ];
         break;
     }
     if (trainerTypes.length === 0) {

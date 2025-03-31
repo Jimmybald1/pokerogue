@@ -1,6 +1,6 @@
 import { globalScene } from "#app/global-scene";
 import type { TurnCommand } from "#app/battle";
-import { BattleType } from "#app/battle";
+import { BattleType, BattlerIndex } from "#app/battle";
 import type { EncoreTag } from "#app/data/battler-tags";
 import { TrappedTag } from "#app/data/battler-tags";
 import type { MoveTargetSet } from "#app/data/move";
@@ -12,17 +12,22 @@ import { Biome } from "#app/enums/biome";
 import { Moves } from "#app/enums/moves";
 import { PokeballType } from "#enums/pokeball";
 import type { PlayerPokemon, TurnMove } from "#app/field/pokemon";
-import { FieldPosition } from "#app/field/pokemon";
+import { FieldPosition, PokemonMove } from "#app/field/pokemon";
 import { getPokemonNameWithAffix } from "#app/messages";
 import { Command } from "#app/ui/command-ui-handler";
 import { Mode } from "#app/ui/ui";
 import i18next from "i18next";
 import { FieldPhase } from "./field-phase";
 import { SelectTargetPhase } from "./select-target-phase";
+import * as LoggerTools from "../logger";
 import { MysteryEncounterMode } from "#enums/mystery-encounter-mode";
 import { isNullOrUndefined } from "#app/utils";
 import { ArenaTagSide } from "#app/data/arena-tag";
 import { ArenaTagType } from "#app/enums/arena-tag-type";
+
+/**
+ * IMPORTANT: Fix command logger!!!
+ */
 
 export class CommandPhase extends FieldPhase {
   protected fieldIndex: number;
@@ -61,6 +66,11 @@ export class CommandPhase extends FieldPhase {
       } else {
         const allyCommand = globalScene.currentBattle.turnCommands[this.fieldIndex - 1];
         if (allyCommand?.command === Command.BALL || allyCommand?.command === Command.RUN) {
+          if (this.fieldIndex == 0) {
+            LoggerTools.Actions[1] = ""; // Remove the second Pokémon's action, as we will not be attacking this turn
+          } else {
+            LoggerTools.Actions[0] = ""; // Remove the first Pokémon's action, as their turn is now being skipped]
+          }
           globalScene.currentBattle.turnCommands[this.fieldIndex] = { command: allyCommand?.command, skip: true };
         }
       }
@@ -85,21 +95,26 @@ export class CommandPhase extends FieldPhase {
 
     const moveQueue = playerPokemon.getMoveQueue();
 
+    // Remove queued moves the Pokemon no longer has access to or can't use this turn
     while (moveQueue.length && moveQueue[0]
-        && moveQueue[0].move && !moveQueue[0].virtual && (!playerPokemon.getMoveset().find(m => m?.moveId === moveQueue[0].move)
-          || !playerPokemon.getMoveset()[playerPokemon.getMoveset().findIndex(m => m?.moveId === moveQueue[0].move)]!.isUsable(playerPokemon, moveQueue[0].ignorePP))) { // TODO: is the bang correct?
+      && moveQueue[0].move && !moveQueue[0].virtual && (!playerPokemon.getMoveset().find(m => m?.moveId === moveQueue[0].move)
+        || !playerPokemon.getMoveset()[playerPokemon.getMoveset().findIndex(m => m?.moveId === moveQueue[0].move)]!.isUsable(playerPokemon, moveQueue[0].ignorePP))) { // TODO: is the bang correct?
       moveQueue.shift();
     }
 
     if (moveQueue.length > 0) {
       const queuedMove = moveQueue[0];
       if (!queuedMove.move) {
-        this.handleCommand(Command.FIGHT, -1);
+        // Struggle
+        this.handleCommand(Command.FIGHT, false, -1);
       } else {
+        // Locate the queued move in our moveset
         const moveIndex = playerPokemon.getMoveset().findIndex(m => m?.moveId === queuedMove.move);
         if ((moveIndex > -1 && playerPokemon.getMoveset()[moveIndex]!.isUsable(playerPokemon, queuedMove.ignorePP)) || queuedMove.virtual) { // TODO: is the bang correct?
-          this.handleCommand(Command.FIGHT, moveIndex, queuedMove.ignorePP, queuedMove);
+          // Use the queued move
+          this.handleCommand(Command.FIGHT, false, moveIndex, queuedMove.ignorePP, queuedMove);
         } else {
+          // The move is no longer in our moveset or is unuseable; allow the player to choose an action
           globalScene.ui.setMode(Mode.COMMAND, this.fieldIndex);
         }
       }
@@ -113,9 +128,13 @@ export class CommandPhase extends FieldPhase {
     }
   }
 
-  handleCommand(command: Command, cursor: number, ...args: any[]): boolean {
+  handleCommand(command: Command, logCommand: boolean = true, cursor: number, ...args: any[]): boolean {
     const playerPokemon = globalScene.getPlayerField()[this.fieldIndex];
     let success: boolean = false;
+
+    if (!logCommand) {
+      LoggerTools.Actions[this.fieldIndex] = "%SKIP";
+    }
 
     switch (command) {
       case Command.TERA:
@@ -123,8 +142,8 @@ export class CommandPhase extends FieldPhase {
         let useStruggle = false;
         const turnMove: TurnMove | undefined = (args.length === 2 ? (args[1] as TurnMove) : undefined);
         if (cursor === -1 ||
-            playerPokemon.trySelectMove(cursor, args[0] as boolean) ||
-            (useStruggle = cursor > -1 && !playerPokemon.getMoveset().filter(m => m?.isUsable(playerPokemon)).length)) {
+          playerPokemon.trySelectMove(cursor, args[0] as boolean) ||
+          (useStruggle = cursor > -1 && !playerPokemon.getMoveset().filter(m => m?.isUsable(playerPokemon)).length)) {
 
           let moveId: Moves;
           if (useStruggle) {
@@ -137,6 +156,10 @@ export class CommandPhase extends FieldPhase {
             moveId = Moves.NONE;
           }
 
+          if (logCommand) {
+            LoggerTools.Actions[this.fieldIndex] = playerPokemon.getMoveset()[cursor]!.getName();
+          }
+
           const turnCommand: TurnCommand = { command: Command.FIGHT, cursor: cursor, move: { move: moveId, targets: [], ignorePP: args[0] }, args: args };
           const preTurnCommand: TurnCommand = { command: command, targets: [ this.fieldIndex ], skip: command === Command.FIGHT };
           const moveTargets: MoveTargetSet = turnMove === undefined ? getMoveTargets(playerPokemon, moveId) : { targets: turnMove.targets, multiple: turnMove.targets.length > 1 };
@@ -146,13 +169,16 @@ export class CommandPhase extends FieldPhase {
           console.log(moveTargets, getPokemonNameWithAffix(playerPokemon));
           if (moveTargets.targets.length > 1 && moveTargets.multiple) {
             globalScene.unshiftPhase(new SelectTargetPhase(this.fieldIndex));
+          // No need to log the move, as SelectTargetPhase will call another CommandPhase with the correct data
           }
           if (moveTargets.targets.length <= 1 || moveTargets.multiple) {
-            turnCommand.move!.targets = moveTargets.targets; //TODO: is the bang correct here?
+          turnCommand.move!.targets = moveTargets.targets; //TODO: is the bang correct here?
           } else if (playerPokemon.getTag(BattlerTagType.CHARGING) && playerPokemon.getMoveQueue().length >= 1) {
-            turnCommand.move!.targets = playerPokemon.getMoveQueue()[0].targets; //TODO: is the bang correct here?
+          // A charging move will be executed this turn, so we do not need to log ourselves using it (we already selected the move last turn)
+          turnCommand.move!.targets = playerPokemon.getMoveQueue()[0].targets; //TODO: is the bang correct here?
           } else {
             globalScene.unshiftPhase(new SelectTargetPhase(this.fieldIndex));
+          // No need to log the move, as SelectTargetPhase will call another CommandPhase with the correct data
           }
           globalScene.currentBattle.preTurnCommands[this.fieldIndex] = preTurnCommand;
           globalScene.currentBattle.turnCommands[this.fieldIndex] = turnCommand;
@@ -222,6 +248,8 @@ export class CommandPhase extends FieldPhase {
                 globalScene.currentBattle.turnCommands[this.fieldIndex - 1]!.skip = true;
               }
               success = true;
+              // Remove first pokemon's action if its there, ball overrides it.
+              LoggerTools.Actions[0] = "%SKIP";
             }
           }
         }
@@ -316,7 +344,9 @@ export class CommandPhase extends FieldPhase {
 
   cancel() {
     if (this.fieldIndex) {
+      LoggerTools.Actions[0] = "";
       globalScene.unshiftPhase(new CommandPhase(0));
+      LoggerTools.Actions[1] = "";
       globalScene.unshiftPhase(new CommandPhase(1));
       this.end();
     }

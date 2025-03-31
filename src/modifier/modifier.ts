@@ -789,7 +789,7 @@ export abstract class LapsingPokemonHeldItemModifier extends PokemonHeldItemModi
 /**
  * Modifier used for held items, specifically vitamins like Carbos, Hp Up, etc., that
  * increase the value of a given {@linkcode PermanentStat}.
- * @extends PokemonHeldItemModifier
+ * @extends LapsingPersistentModifier
  * @see {@linkcode apply}
  */
 export class BaseStatModifier extends PokemonHeldItemModifier {
@@ -1466,7 +1466,7 @@ export class SurviveDamageModifier extends PokemonHeldItemModifier {
    * @returns `true` if the survive damage has been applied
    */
   override apply(pokemon: Pokemon, surviveDamage: BooleanHolder): boolean {
-    if (!surviveDamage.value && pokemon.randSeedInt(10) < this.getStackCount()) {
+    if (!surviveDamage.value && pokemon.randSeedInt(10, undefined, "Chance to endure an attack") < this.getStackCount()) {
       surviveDamage.value = true;
 
       globalScene.queueMessage(i18next.t("modifier:surviveDamageApply", { pokemonNameWithAffix: getPokemonNameWithAffix(pokemon), typeName: this.type.name }));
@@ -1511,7 +1511,7 @@ export class BypassSpeedChanceModifier extends PokemonHeldItemModifier {
    * @returns `true` if {@linkcode BypassSpeedChanceModifier} has been applied
    */
   override apply(pokemon: Pokemon, doBypassSpeed: BooleanHolder): boolean {
-    if (!doBypassSpeed.value && pokemon.randSeedInt(10) < this.getStackCount()) {
+    if (!doBypassSpeed.value && pokemon.randSeedInt(10, undefined, "Chance to activate Quick Claw") < this.getStackCount()) {
       doBypassSpeed.value = true;
       const isCommandFight = globalScene.currentBattle.turnCommands[pokemon.getBattlerIndex()]?.command === Command.FIGHT;
       const hasQuickClaw = this.type instanceof PokemonHeldItemModifierType && this.type.id === "QUICK_CLAW";
@@ -1568,7 +1568,7 @@ export class FlinchChanceModifier extends PokemonHeldItemModifier {
    */
   override apply(pokemon: Pokemon, flinched: BooleanHolder): boolean {
     // The check for pokemon.battleSummonData is to ensure that a crash doesn't occur when a Pokemon with King's Rock procs a flinch
-    if (pokemon.battleSummonData && !flinched.value && pokemon.randSeedInt(100) < (this.getStackCount() * this.chance)) {
+    if (pokemon.battleSummonData && !flinched.value && pokemon.randSeedInt(100, undefined, "Chance to flinch") < (this.getStackCount() * this.chance)) {
       flinched.value = true;
       return true;
     }
@@ -1831,7 +1831,7 @@ export class PreserveBerryModifier extends PersistentModifier {
    */
   override apply(pokemon: Pokemon, doPreserve: BooleanHolder): boolean {
     if (!doPreserve.value) {
-      doPreserve.value = pokemon.randSeedInt(10) < this.getStackCount() * 3;
+      doPreserve.value = pokemon.randSeedInt(10, undefined, "Chance to preserve berry") < this.getStackCount() * 3;
     }
 
     return true;
@@ -3121,7 +3121,7 @@ export abstract class HeldItemTransferModifier extends PokemonHeldItemModifier {
       return false;
     }
 
-    const targetPokemon = opponents[pokemon.randSeedInt(opponents.length)];
+    const targetPokemon = opponents[pokemon.randSeedInt(opponents.length, undefined, "Chance to steal item")];
 
     const transferredItemCount = this.getTransferredItemCount();
     if (!transferredItemCount) {
@@ -3145,7 +3145,7 @@ export abstract class HeldItemTransferModifier extends PokemonHeldItemModifier {
           break;
         }
       }
-      const randItemIndex = pokemon.randSeedInt(itemModifiers.length);
+      const randItemIndex = pokemon.randSeedInt(itemModifiers.length, undefined, "Choosing an item to steal");
       const randItem = itemModifiers[randItemIndex];
       if (globalScene.tryTransferHeldItemModifier(randItem, pokemon, false)) {
         transferredModifierTypes.push(randItem.type);
@@ -3238,7 +3238,13 @@ export class ContactHeldItemTransferChanceModifier extends HeldItemTransferModif
     return super.getArgs().concat(this.chance * 100);
   }
 
-  getTransferredItemCount(): number {
+  getTransferredItemCount(simulated?: "PASS" | "FAIL"): integer {
+    if (simulated == "PASS") {
+      return 1;
+    }
+    if (simulated == "FAIL") {
+      return 0;
+    }
     return Phaser.Math.RND.realInRange(0, 1) < (this.chance * this.getStackCount()) ? 1 : 0;
   }
 

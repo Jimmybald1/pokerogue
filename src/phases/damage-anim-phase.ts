@@ -4,6 +4,7 @@ import { BattleSpec } from "#enums/battle-spec";
 import { type DamageResult, HitResult } from "#app/field/pokemon";
 import { fixedInt } from "#app/utils";
 import { PokemonPhase } from "#app/phases/pokemon-phase";
+import * as LoggerTools from "../logger";
 
 export class DamageAnimPhase extends PokemonPhase {
   private amount: number;

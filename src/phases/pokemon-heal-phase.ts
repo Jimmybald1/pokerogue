@@ -11,6 +11,7 @@ import { HealAchv } from "#app/system/achv";
 import i18next from "i18next";
 import * as Utils from "#app/utils";
 import { CommonAnimPhase } from "./common-anim-phase";
+import * as LoggerTools from "../logger";
 import { BattlerTagType } from "#app/enums/battler-tag-type";
 import type { HealBlockTag } from "#app/data/battler-tags";
 
