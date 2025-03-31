@@ -19,7 +19,10 @@ export class BattleEndPhase extends BattlePhase {
     super.start();
 
     globalScene.gameData.gameStats.battles++;
-    if (globalScene.gameMode.isEndless && globalScene.currentBattle.waveIndex + 1 > globalScene.gameData.gameStats.highestEndlessWave) {
+    if (
+      globalScene.gameMode.isEndless &&
+      globalScene.currentBattle.waveIndex + 1 > globalScene.gameData.gameStats.highestEndlessWave
+    ) {
       globalScene.gameData.gameStats.highestEndlessWave = globalScene.currentBattle.waveIndex + 1;
     }
 
@@ -38,7 +41,7 @@ export class BattleEndPhase extends BattlePhase {
     }
 
     for (const pokemon of globalScene.getField()) {
-      if (pokemon && pokemon.battleSummonData) {
+      if (pokemon?.battleSummonData) {
         pokemon.battleSummonData.waveTurnCount = 1;
       }
     }
@@ -53,7 +56,9 @@ export class BattleEndPhase extends BattlePhase {
 
     globalScene.clearEnemyHeldItemModifiers();
 
-    const lapsingModifiers = globalScene.findModifiers(m => m instanceof LapsingPersistentModifier || m instanceof LapsingPokemonHeldItemModifier) as (LapsingPersistentModifier | LapsingPokemonHeldItemModifier)[];
+    const lapsingModifiers = globalScene.findModifiers(
+      m => m instanceof LapsingPersistentModifier || m instanceof LapsingPokemonHeldItemModifier,
+    ) as (LapsingPersistentModifier | LapsingPokemonHeldItemModifier)[];
     for (const m of lapsingModifiers) {
       const args: any[] = [];
       if (m instanceof LapsingPokemonHeldItemModifier) {

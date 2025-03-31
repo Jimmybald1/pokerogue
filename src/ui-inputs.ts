@@ -45,23 +45,31 @@ export class UiInputs {
   }
 
   listenInputs(): void {
-    this.events.on("input_down", (event) => {
-      this.detectInputMethod(event);
+    this.events.on(
+      "input_down",
+      event => {
+        this.detectInputMethod(event);
 
-      const actions = this.getActionsKeyDown();
-      if (!actions.hasOwnProperty(event.button)) {
-        return;
-      }
-      actions[event.button]();
-    }, this);
+        const actions = this.getActionsKeyDown();
+        if (!actions.hasOwnProperty(event.button)) {
+          return;
+        }
+        actions[event.button]();
+      },
+      this,
+    );
 
-    this.events.on("input_up", (event) => {
-      const actions = this.getActionsKeyUp();
-      if (!actions.hasOwnProperty(event.button)) {
-        return;
-      }
-      actions[event.button]();
-    }, this);
+    this.events.on(
+      "input_up",
+      event => {
+        const actions = this.getActionsKeyUp();
+        if (!actions.hasOwnProperty(event.button)) {
+          return;
+        }
+        actions[event.button]();
+      },
+      this,
+    );
   }
 
   doVibration(inputSuccess: boolean, vibrationLength: number): void {
@@ -72,23 +80,23 @@ export class UiInputs {
 
   getActionsKeyDown(): ActionKeys {
     const actions: ActionKeys = {
-      [Button.UP]:              () => this.buttonDirection(Button.UP),
-      [Button.DOWN]:            () => this.buttonDirection(Button.DOWN),
-      [Button.LEFT]:            () => this.buttonDirection(Button.LEFT),
-      [Button.RIGHT]:           () => this.buttonDirection(Button.RIGHT),
-      [Button.SUBMIT]:          () => this.buttonTouch(),
-      [Button.ACTION]:          () => this.buttonAb(Button.ACTION),
-      [Button.CANCEL]:          () => this.buttonAb(Button.CANCEL),
-      [Button.MENU]:            () => this.buttonMenu(),
-      [Button.STATS]:           () => this.buttonGoToFilter(Button.STATS),
-      [Button.CYCLE_SHINY]:     () => this.buttonCycleOption(Button.CYCLE_SHINY),
-      [Button.CYCLE_FORM]:      () => this.buttonCycleOption(Button.CYCLE_FORM),
-      [Button.CYCLE_GENDER]:    () => this.buttonCycleOption(Button.CYCLE_GENDER),
-      [Button.CYCLE_ABILITY]:   () => this.buttonCycleOption(Button.CYCLE_ABILITY),
-      [Button.CYCLE_NATURE]:    () => this.buttonCycleOption(Button.CYCLE_NATURE),
-      [Button.CYCLE_TERA]:      () => this.buttonCycleOption(Button.CYCLE_TERA),
-      [Button.SPEED_UP]:        () => this.buttonSpeedChange(),
-      [Button.SLOW_DOWN]:       () => this.buttonSpeedChange(false),
+      [Button.UP]: () => this.buttonDirection(Button.UP),
+      [Button.DOWN]: () => this.buttonDirection(Button.DOWN),
+      [Button.LEFT]: () => this.buttonDirection(Button.LEFT),
+      [Button.RIGHT]: () => this.buttonDirection(Button.RIGHT),
+      [Button.SUBMIT]: () => this.buttonTouch(),
+      [Button.ACTION]: () => this.buttonAb(Button.ACTION),
+      [Button.CANCEL]: () => this.buttonAb(Button.CANCEL),
+      [Button.MENU]: () => this.buttonMenu(),
+      [Button.STATS]: () => this.buttonGoToFilter(Button.STATS),
+      [Button.CYCLE_SHINY]: () => this.buttonCycleOption(Button.CYCLE_SHINY),
+      [Button.CYCLE_FORM]: () => this.buttonCycleOption(Button.CYCLE_FORM),
+      [Button.CYCLE_GENDER]: () => this.buttonCycleOption(Button.CYCLE_GENDER),
+      [Button.CYCLE_ABILITY]: () => this.buttonCycleOption(Button.CYCLE_ABILITY),
+      [Button.CYCLE_NATURE]: () => this.buttonCycleOption(Button.CYCLE_NATURE),
+      [Button.CYCLE_TERA]: () => this.buttonCycleOption(Button.CYCLE_TERA),
+      [Button.SPEED_UP]: () => this.buttonSpeedChange(),
+      [Button.SLOW_DOWN]: () => this.buttonSpeedChange(false),
       [Button.PATHING_TOOL_UI]: () => this.buttonHideCustomUI(Button.PATHING_TOOL_UI),
     };
     return actions;
@@ -96,23 +104,23 @@ export class UiInputs {
 
   getActionsKeyUp(): ActionKeys {
     const actions: ActionKeys = {
-      [Button.UP]:              () => undefined,
-      [Button.DOWN]:            () => undefined,
-      [Button.LEFT]:            () => undefined,
-      [Button.RIGHT]:           () => undefined,
-      [Button.SUBMIT]:          () => undefined,
-      [Button.ACTION]:          () => undefined,
-      [Button.CANCEL]:          () => undefined,
-      [Button.MENU]:            () => undefined,
-      [Button.STATS]:           () => this.buttonStats(false),
-      [Button.CYCLE_SHINY]:     () => undefined,
-      [Button.CYCLE_FORM]:      () => undefined,
-      [Button.CYCLE_GENDER]:    () => undefined,
-      [Button.CYCLE_ABILITY]:   () => undefined,
-      [Button.CYCLE_NATURE]:    () => undefined,
-      [Button.CYCLE_TERA]:      () => this.buttonInfo(false),
-      [Button.SPEED_UP]:        () => undefined,
-      [Button.SLOW_DOWN]:       () => undefined,
+      [Button.UP]: () => undefined,
+      [Button.DOWN]: () => undefined,
+      [Button.LEFT]: () => undefined,
+      [Button.RIGHT]: () => undefined,
+      [Button.SUBMIT]: () => undefined,
+      [Button.ACTION]: () => undefined,
+      [Button.CANCEL]: () => undefined,
+      [Button.MENU]: () => undefined,
+      [Button.STATS]: () => this.buttonStats(false),
+      [Button.CYCLE_SHINY]: () => undefined,
+      [Button.CYCLE_FORM]: () => undefined,
+      [Button.CYCLE_GENDER]: () => undefined,
+      [Button.CYCLE_ABILITY]: () => undefined,
+      [Button.CYCLE_NATURE]: () => undefined,
+      [Button.CYCLE_TERA]: () => this.buttonInfo(false),
+      [Button.SPEED_UP]: () => undefined,
+      [Button.SLOW_DOWN]: () => undefined,
       [Button.PATHING_TOOL_UI]: () => undefined,
     };
     return actions;
@@ -132,7 +140,7 @@ export class UiInputs {
     globalScene.ui.processInput(Button.SUBMIT) || globalScene.ui.processInput(Button.ACTION);
   }
 
-  buttonStats(pressed: boolean = true): void {
+  buttonStats(pressed = true): void {
     // allow access to Button.STATS as a toggle for other elements
     for (const t of globalScene.getInfoToggles(true)) {
       t.toggleInfo(pressed);
@@ -144,7 +152,7 @@ export class UiInputs {
   }
 
   buttonGoToFilter(button: Button): void {
-    const whitelist = [ StarterSelectUiHandler, PokedexUiHandler, PokedexPageUiHandler ];
+    const whitelist = [StarterSelectUiHandler, PokedexUiHandler, PokedexPageUiHandler];
     const uiHandler = globalScene.ui?.getHandler();
     if (whitelist.some(handler => uiHandler instanceof handler)) {
       globalScene.ui.processInput(button);
@@ -153,8 +161,8 @@ export class UiInputs {
     }
   }
 
-  buttonInfo(pressed: boolean = true): void {
-    if (globalScene.showMovesetFlyout ) {
+  buttonInfo(pressed = true): void {
+    if (globalScene.showMovesetFlyout) {
       for (const p of globalScene.getField().filter(p => p?.isActive(true))) {
         p.toggleFlyout(pressed);
       }
@@ -201,7 +209,17 @@ export class UiInputs {
   }
 
   buttonCycleOption(button: Button): void {
-    const whitelist = [ StarterSelectUiHandler, PokedexUiHandler, PokedexPageUiHandler, SettingsUiHandler, RunInfoUiHandler, SettingsDisplayUiHandler, SettingsAudioUiHandler, SettingsGamepadUiHandler, SettingsKeyboardUiHandler ];
+    const whitelist = [
+      StarterSelectUiHandler,
+      PokedexUiHandler,
+      PokedexPageUiHandler,
+      SettingsUiHandler,
+      RunInfoUiHandler,
+      SettingsDisplayUiHandler,
+      SettingsAudioUiHandler,
+      SettingsGamepadUiHandler,
+      SettingsKeyboardUiHandler,
+    ];
     const uiHandler = globalScene.ui?.getHandler();
     if (whitelist.some(handler => uiHandler instanceof handler)) {
       globalScene.ui.processInput(button);
@@ -213,18 +231,26 @@ export class UiInputs {
   buttonSpeedChange(up = true): void {
     const settingGameSpeed = settingIndex(SettingKeys.Game_Speed);
     if (up && globalScene.gameSpeed < 5) {
-      globalScene.gameData.saveSetting(SettingKeys.Game_Speed, Setting[settingGameSpeed].options.findIndex((item) => item.label === `${globalScene.gameSpeed}x`) + 1);
+      globalScene.gameData.saveSetting(
+        SettingKeys.Game_Speed,
+        Setting[settingGameSpeed].options.findIndex(item => item.label === `${globalScene.gameSpeed}x`) + 1,
+      );
       if (globalScene.ui?.getMode() === Mode.SETTINGS) {
         (globalScene.ui.getHandler() as SettingsUiHandler).show([]);
       }
     } else if (!up && globalScene.gameSpeed > 1) {
-      globalScene.gameData.saveSetting(SettingKeys.Game_Speed, Math.max(Setting[settingGameSpeed].options.findIndex((item) => item.label === `${globalScene.gameSpeed}x`) - 1, 0));
+      globalScene.gameData.saveSetting(
+        SettingKeys.Game_Speed,
+        Math.max(
+          Setting[settingGameSpeed].options.findIndex(item => item.label === `${globalScene.gameSpeed}x`) - 1,
+          0,
+        ),
+      );
       if (globalScene.ui?.getMode() === Mode.SETTINGS) {
         (globalScene.ui.getHandler() as SettingsUiHandler).show([]);
       }
     }
   }
-
   buttonHideCustomUI(button: Button): void {
     globalScene.togglePathingToolUI();
     console.log(`Toggle Pathing Tool UI ${globalScene.pathingToolUI ? "ON" : "OFF"}`);

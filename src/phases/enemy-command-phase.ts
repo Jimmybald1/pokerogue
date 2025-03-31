@@ -18,7 +18,7 @@ import { PokemonMove } from "#app/field/pokemon";
  */
 export class EnemyCommandPhase extends FieldPhase {
   protected fieldIndex: number;
-  protected skipTurn: boolean = false;
+  protected skipTurn = false;
 
   constructor(fieldIndex: number) {
     super();
@@ -39,8 +39,11 @@ export class EnemyCommandPhase extends FieldPhase {
 
     const trainer = battle.trainer;
 
-    if (battle.double && enemyPokemon.hasAbility(Abilities.COMMANDER)
-        && enemyPokemon.getAlly().getTag(BattlerTagType.COMMANDED)) {
+    if (
+      battle.double &&
+      enemyPokemon.hasAbility(Abilities.COMMANDER) &&
+      enemyPokemon.getAlly().getTag(BattlerTagType.COMMANDED)
+    ) {
       this.skipTurn = true;
     }
 
@@ -61,17 +64,22 @@ export class EnemyCommandPhase extends FieldPhase {
 
         if (partyMemberScores.length) {
           const matchupScores = opponents.map(opp => enemyPokemon.getMatchupScore(opp));
-          const matchupScore = matchupScores.reduce((total, score) => total += score, 0) / matchupScores.length;
+          const matchupScore = matchupScores.reduce((total, score) => (total += score), 0) / matchupScores.length;
 
           const sortedPartyMemberScores = trainer.getSortedPartyMemberMatchupScores(partyMemberScores);
 
-          const switchMultiplier = 1 - (battle.enemySwitchCounter ? Math.pow(0.1, (1 / battle.enemySwitchCounter)) : 0);
+          const switchMultiplier = 1 - (battle.enemySwitchCounter ? Math.pow(0.1, 1 / battle.enemySwitchCounter) : 0);
 
           if (sortedPartyMemberScores[0][1] * switchMultiplier >= matchupScore * (trainer.config.isBoss ? 2 : 3)) {
             const index = trainer.getNextSummonIndex(enemyPokemon.trainerSlot, partyMemberScores);
 
-            battle.turnCommands[this.fieldIndex + BattlerIndex.ENEMY] =
-                { command: Command.POKEMON, cursor: index, args: [ false ], skip: this.skipTurn };
+            battle.turnCommands[this.fieldIndex + BattlerIndex.ENEMY] = {
+              command: Command.POKEMON,
+              cursor: index,
+              args: [false],
+              skip: this.skipTurn,
+            };
+
             console.log(enemyPokemon.name + " selects:", "Switch to " + globalScene.getEnemyParty()[index].name);
 
             battle.enemySwitchCounter++;
@@ -93,12 +101,15 @@ export class EnemyCommandPhase extends FieldPhase {
     const nextMove = enemyPokemon.getNextMove();
     const mv = new PokemonMove(nextMove.move);
 
-    if (trainer && trainer.shouldTera(enemyPokemon)) {
+    if (trainer?.shouldTera(enemyPokemon)) {
       globalScene.currentBattle.preTurnCommands[this.fieldIndex + BattlerIndex.ENEMY] = { command: Command.TERA };
     }
 
-    globalScene.currentBattle.turnCommands[this.fieldIndex + BattlerIndex.ENEMY] =
-      { command: Command.FIGHT, move: nextMove, skip: this.skipTurn };
+    globalScene.currentBattle.turnCommands[this.fieldIndex + BattlerIndex.ENEMY] = {
+    command: Command.FIGHT,
+      move: nextMove,
+      skip: this.skipTurn,
+    };
     const targetLabels = [ "Counter", "[PLAYER L]", "[PLAYER R]", "[ENEMY L]", "[ENEMY R]" ];
     globalScene.getPlayerParty().forEach((v, i, a) => {
       if (v.isActive() && v.name) {

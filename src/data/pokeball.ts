@@ -119,16 +119,31 @@ export function getCriticalCaptureChance(modifiedCatchRate: number): number {
   const dexCount = globalScene.gameData.getSpeciesCount(d => !!d.caughtAttr);
   const catchingCharmMultiplier = new NumberHolder(1);
   globalScene.findModifier(m => m instanceof CriticalCatchChanceBoosterModifier)?.apply(catchingCharmMultiplier);
-  const dexMultiplier = globalScene.gameMode.isDaily || dexCount > 800 ? 2.5
-    : dexCount > 600 ? 2
-      : dexCount > 400 ? 1.5
-        : dexCount > 200 ? 1
-          : dexCount > 100 ? 0.5
-            : 0;
-  return Math.floor(catchingCharmMultiplier.value * dexMultiplier * Math.min(255, modifiedCatchRate) / 6);
+  const dexMultiplier =
+    globalScene.gameMode.isDaily || dexCount > 800
+      ? 2.5
+      : dexCount > 600
+        ? 2
+        : dexCount > 400
+          ? 1.5
+          : dexCount > 200
+            ? 1
+            : dexCount > 100
+              ? 0.5
+              : 0;
+  return Math.floor((catchingCharmMultiplier.value * dexMultiplier * Math.min(255, modifiedCatchRate)) / 6);
 }
 
-export function doPokeballBounceAnim(pokeball: Phaser.GameObjects.Sprite, y1: number, y2: number, baseBounceDuration: number, callback: Function, isCritical: boolean = false) {
+// TODO: fix Function annotations
+export function doPokeballBounceAnim(
+  pokeball: Phaser.GameObjects.Sprite,
+  y1: number,
+  y2: number,
+  baseBounceDuration: number,
+  // biome-ignore lint/complexity/noBannedTypes: TODO
+  callback: Function,
+  isCritical = false,
+) {
   let bouncePower = 1;
   let bounceYOffset = y1;
   let bounceY = y2;
@@ -158,12 +173,12 @@ export function doPokeballBounceAnim(pokeball: Phaser.GameObjects.Sprite, y1: nu
             y: bounceY,
             duration: bouncePower * baseBounceDuration,
             ease: "Cubic.easeOut",
-            onComplete: () => doBounce()
+            onComplete: () => doBounce(),
           });
         } else if (callback) {
           callback();
         }
-      }
+      },
     });
   };
 
@@ -189,12 +204,12 @@ export function doPokeballBounceAnim(pokeball: Phaser.GameObjects.Sprite, y1: nu
                 x: x0,
                 duration: 60,
                 ease: "Linear",
-                onComplete: () => globalScene.time.delayedCall(500, doBounce)
+                onComplete: () => globalScene.time.delayedCall(500, doBounce),
               });
             }
-          }
+          },
         });
-      }
+      },
     });
   };
 

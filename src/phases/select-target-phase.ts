@@ -6,7 +6,7 @@ import { CommandPhase } from "./command-phase";
 import { PokemonPhase } from "./pokemon-phase";
 import * as LoggerTools from "../logger";
 import i18next from "#app/plugins/i18n";
-import { allMoves } from "#app/data/move";
+import { allMoves } from "#app/data/moves/move";
 
 export class SelectTargetPhase extends PokemonPhase {
   constructor(fieldIndex: number) {
@@ -25,7 +25,9 @@ export class SelectTargetPhase extends PokemonPhase {
       const moveObject = allMoves[move!];
       // Reject player's target selection
       if (moveObject && user.isMoveTargetRestricted(moveObject.id, user, fieldSide[targets[0]])) {
-        const errorMessage = user.getRestrictingTag(move!, user, fieldSide[targets[0]])!.selectionDeniedText(user, moveObject.id);
+        const errorMessage = user
+          .getRestrictingTag(move!, user, fieldSide[targets[0]])!
+          .selectionDeniedText(user, moveObject.id);
         globalScene.queueMessage(i18next.t(errorMessage, { moveName: moveObject.name }), 0, true);
         targets = [];
       }

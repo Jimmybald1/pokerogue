@@ -1,7 +1,14 @@
 import { BattlerIndex } from "#app/battle";
 import { PLAYER_PARTY_MAX_SIZE } from "#app/constants";
 import { SubstituteTag } from "#app/data/battler-tags";
-import { doPokeballBounceAnim, getPokeballAtlasKey, getPokeballCatchMultiplier, getPokeballTintColor, getCriticalCaptureChance, getPokeballName } from "#app/data/pokeball";
+import {
+  doPokeballBounceAnim,
+  getPokeballAtlasKey,
+  getPokeballCatchMultiplier,
+  getPokeballTintColor,
+  getCriticalCaptureChance, 
+  getPokeballName,
+} from "#app/data/pokeball";
 import { getStatusEffectCatchRateMultiplier } from "#app/data/status-effect";
 import { addPokeballCaptureStars, addPokeballOpenParticles } from "#app/field/anims";
 import type { EnemyPokemon } from "#app/field/pokemon";
@@ -18,6 +25,7 @@ import type { PokeballType } from "#enums/pokeball";
 import { StatusEffect } from "#enums/status-effect";
 import i18next from "i18next";
 import { globalScene } from "#app/global-scene";
+import { Gender } from "#app/data/gender";
 import * as LoggerTools from "../logger";
 
 export class AttemptCapturePhase extends PokemonPhase {
@@ -68,7 +76,7 @@ export class AttemptCapturePhase extends PokemonPhase {
     const pokeballMultiplier = getPokeballCatchMultiplier(this.pokeballType);
     const statusMultiplier = pokemon.status ? getStatusEffectCatchRateMultiplier(pokemon.status.effect) : 1;
     const modifiedCatchRate = Math.round((((_3m - _2h) * catchRate * pokeballMultiplier) / _3m) * statusMultiplier);
-    const shakeProbability = Math.round(65536 / Math.pow((255 / modifiedCatchRate), 0.1875)); // Formula taken from gen 6
+    const shakeProbability = Math.round(65536 / Math.pow(255 / modifiedCatchRate, 0.1875)); // Formula taken from gen 6
     const criticalCaptureChance = getCriticalCaptureChance(modifiedCatchRate);
     const isCritical = pokemon.randSeedInt(256) < criticalCaptureChance;
     const fpOffset = pokemon.getFieldPositionOffset();
@@ -140,7 +148,12 @@ export class AttemptCapturePhase extends PokemonPhase {
                     this.failCatch(shakeCount);
                   } else if (shakeCount++ < (isCritical ? 1 : 3)) {
                     // Shake check (skip check for critical or guaranteed captures, but still play the sound)
-                    if (pokeballMultiplier === -1 || isCritical || modifiedCatchRate >= 255 || this.roll(shakeProbability) < shakeProbability) {
+                    if (
+                      pokeballMultiplier === -1 ||
+                      isCritical ||
+                      modifiedCatchRate >= 255 ||
+                      this.roll(shakeProbability) < shakeProbability
+                    ) {
                       globalScene.playSound("se/pb_move");
                     } else {
                       shakeCounter.stop();
@@ -170,27 +183,29 @@ export class AttemptCapturePhase extends PokemonPhase {
                           alpha: 0,
                           duration: 200,
                           easing: "Sine.easeIn",
-                          onComplete: () => pbTint.destroy()
+                          onComplete: () => pbTint.destroy(),
                         });
-                      }
+                      },
                     });
                   }
                 },
                 onComplete: () => {
                   this.catch();
-                }
+                },
               });
             };
 
             // Ball bounces (handled in pokemon.ts)
-            globalScene.time.delayedCall(250, () => doPokeballBounceAnim(this.pokeball, 16, 72, 350, doShake, isCritical));
-          }
+            globalScene.time.delayedCall(250, () =>
+              doPokeballBounceAnim(this.pokeball, 16, 72, 350, doShake, isCritical),
+            );
+          },
         });
-      }
+      },
     });
   }
 
-  failCatch(shakeCount: number) {
+  failCatch(_shakeCount: number) {
     const pokemon = this.getPokemon();
 
     globalScene.playSound("se/pb_rel");
@@ -215,7 +230,7 @@ export class AttemptCapturePhase extends PokemonPhase {
       targets: pokemon,
       duration: 250,
       ease: "Sine.easeOut",
-      scale: 1
+      scale: 1,
     });
 
     globalScene.currentBattle.lastUsedPokeball = this.pokeballType;
@@ -230,8 +245,10 @@ export class AttemptCapturePhase extends PokemonPhase {
     /** Used for achievements. */
     const speciesForm = !pokemon.fusionSpecies ? pokemon.getSpeciesForm() : pokemon.getFusionSpeciesForm();
 
-    // Achievements
-    if (speciesForm.abilityHidden && (pokemon.fusionSpecies ? pokemon.fusionAbilityIndex : pokemon.abilityIndex) === speciesForm.getAbilityCount() - 1) {
+    if (
+      speciesForm.abilityHidden &&
+      (pokemon.fusionSpecies ? pokemon.fusionAbilityIndex : pokemon.abilityIndex) === speciesForm.getAbilityCount() - 1
+    ) {
       globalScene.validateAchv(achvs.HIDDEN_ABILITY);
     }
 
@@ -252,80 +269,136 @@ export class AttemptCapturePhase extends PokemonPhase {
     // Update new IVs
     globalScene.gameData.updateSpeciesDexIvs(pokemon.species.getRootSpeciesId(true), pokemon.ivs);
 
-    globalScene.ui.showText(i18next.t("battle:pokemonCaught", { pokemonName: getPokemonNameWithAffix(pokemon) }), null, () => {
-      const end = () => {
-        globalScene.unshiftPhase(new VictoryPhase(this.battlerIndex));
-        globalScene.pokemonInfoContainer.hide();
-        this.removePb();
-        this.end();
-      };
-      LoggerTools.logCapture(globalScene.currentBattle.waveIndex, pokemon);
-      const removePokemon = () => {
-        globalScene.addFaintedEnemyScore(pokemon);
-        pokemon.hp = 0;
-        pokemon.trySetStatus(StatusEffect.FAINT);
-        globalScene.clearEnemyHeldItemModifiers();
-        pokemon.leaveField(true, true, true);
-      };
-      const addToParty = (slotIndex?: number) => {
-        const newPokemon = pokemon.addToParty(this.pokeballType, slotIndex);
-        const modifiers = globalScene.findModifiers(m => m instanceof PokemonHeldItemModifier, false);
-        if (globalScene.getPlayerParty().filter(p => p.isShiny()).length === PLAYER_PARTY_MAX_SIZE) {
-          globalScene.validateAchv(achvs.SHINY_PARTY);
-        }
-        Promise.all(modifiers.map(m => globalScene.addModifier(m, true))).then(() => {
-          globalScene.updateModifiers(true);
-          removePokemon();
-          if (newPokemon) {
-            newPokemon.loadAssets().then(end);
+    globalScene.ui.showText(
+      i18next.t("battle:pokemonCaught", {
+        pokemonName: getPokemonNameWithAffix(pokemon),
+      }),
+      null,
+      () => {
+        const end = () => {
+          globalScene.unshiftPhase(new VictoryPhase(this.battlerIndex));
+          globalScene.pokemonInfoContainer.hide();
+          this.removePb();
+          this.end();
+        };
+        LoggerTools.logCapture(globalScene.currentBattle.waveIndex, pokemon);
+        const removePokemon = () => {
+          globalScene.addFaintedEnemyScore(pokemon);
+          pokemon.hp = 0;
+          pokemon.trySetStatus(StatusEffect.FAINT);
+          globalScene.clearEnemyHeldItemModifiers();
+          pokemon.leaveField(true, true, true);
+        };
+        const addToParty = (slotIndex?: number) => {
+          const newPokemon = pokemon.addToParty(this.pokeballType, slotIndex);
+          const modifiers = globalScene.findModifiers(m => m instanceof PokemonHeldItemModifier, false);
+          if (globalScene.getPlayerParty().filter(p => p.isShiny()).length === PLAYER_PARTY_MAX_SIZE) {
+            globalScene.validateAchv(achvs.SHINY_PARTY);
+          }
+          Promise.all(modifiers.map(m => globalScene.addModifier(m, true))).then(() => {
+            globalScene.updateModifiers(true);
+            removePokemon();
+            if (newPokemon) {
+              newPokemon.loadAssets().then(end);
+            } else {
+              end();
+            }
+          });
+        };
+        Promise.all([pokemon.hideInfo(), globalScene.gameData.setPokemonCaught(pokemon)]).then(() => {
+          if (globalScene.getPlayerParty().length === PLAYER_PARTY_MAX_SIZE) {
+            const promptRelease = () => {
+            // Say that your party is full
+              globalScene.ui.showText(
+                i18next.t("battle:partyFull", {
+                  pokemonName: pokemon.getNameToRender(),
+                }),
+                null,
+                () => {
+                  // Ask if you want to make room
+                  globalScene.pokemonInfoContainer.makeRoomForConfirmUi(1, true);
+                  globalScene.ui.setMode(
+                    Mode.CONFIRM,
+                    () => {
+                      // YES
+                      // Open up the party menu on the RELEASE setting
+                      const newPokemon = globalScene.addPlayerPokemon(
+                        pokemon.species,
+                        pokemon.level,
+                        pokemon.abilityIndex,
+                        pokemon.formIndex,
+                        pokemon.gender,
+                        pokemon.shiny,
+                        pokemon.variant,
+                        pokemon.ivs,
+                        pokemon.nature,
+                        pokemon,
+                      );
+                      globalScene.ui.setMode(
+                        Mode.SUMMARY,
+                        newPokemon,
+                        0,
+                        SummaryUiMode.DEFAULT,
+                        () => {
+                          globalScene.ui.setMode(Mode.MESSAGE).then(() => {
+                            promptRelease();
+                          });
+                        },
+                        false,
+                      );
+                    },
+                    () => {
+                      const attributes = {
+                        shiny: pokemon.shiny,
+                        variant: pokemon.variant,
+                        form: pokemon.formIndex,
+                        female: pokemon.gender === Gender.FEMALE,
+                      };
+                      globalScene.ui.setOverlayMode(Mode.POKEDEX_PAGE, pokemon.species, attributes, null, null, () => {
+                        globalScene.ui.setMode(Mode.MESSAGE).then(() => {
+                          promptRelease();
+                        });
+                      });
+                    },
+                    () => {
+                      globalScene.ui.setMode(
+                        Mode.PARTY,
+                        PartyUiMode.RELEASE,
+                        this.fieldIndex,
+                        (slotIndex: number, _option: PartyOption) => {
+                          globalScene.ui.setMode(Mode.MESSAGE).then(() => {
+                            if (slotIndex < 6) {
+                              addToParty(slotIndex);
+                            } else {
+                              promptRelease();
+                            }
+                          });
+                        }, undefined, undefined, undefined, undefined, pokemon.name,
+                      );
+                    },
+                    () => {
+                      // NO
+                      LoggerTools.logActions(globalScene.currentBattle.waveIndex, "Do Not Keep " + pokemon.name);
+                      globalScene.ui.setMode(Mode.MESSAGE).then(() => {
+                        removePokemon();
+                        end();
+                      });
+                    },
+                    "fullParty",
+                  );
+                },
+              );
+            };
+            promptRelease();
           } else {
-            end();
+            //LoggerTools.logActions(globalScene.currentBattle.waveIndex, `${pokemon.name} added to party`)
+            addToParty();
           }
         });
-      };
-      Promise.all([ pokemon.hideInfo(), globalScene.gameData.setPokemonCaught(pokemon) ]).then(() => {
-        if (globalScene.getPlayerParty().length === PLAYER_PARTY_MAX_SIZE) {
-          const promptRelease = () => {
-            // Say that your party is full
-            globalScene.ui.showText(i18next.t("battle:partyFull", { pokemonName: pokemon.getNameToRender() }), null, () => {
-              // Ask if you want to make room
-              globalScene.pokemonInfoContainer.makeRoomForConfirmUi(1, true);
-              globalScene.ui.setMode(Mode.CONFIRM, () => {
-                // YES
-                // Open up the party menu on the RELEASE setting
-                const newPokemon = globalScene.addPlayerPokemon(pokemon.species, pokemon.level, pokemon.abilityIndex, pokemon.formIndex, pokemon.gender, pokemon.shiny, pokemon.variant, pokemon.ivs, pokemon.nature, pokemon);
-                globalScene.ui.setMode(Mode.SUMMARY, newPokemon, 0, SummaryUiMode.DEFAULT, () => {
-                  globalScene.ui.setMode(Mode.MESSAGE).then(() => {
-                    promptRelease();
-                  });
-                }, false);
-              }, () => {
-                globalScene.ui.setMode(Mode.PARTY, PartyUiMode.RELEASE, this.fieldIndex, (slotIndex: number, _option: PartyOption) => {
-                  globalScene.ui.setMode(Mode.MESSAGE).then(() => {
-                    if (slotIndex < 6) {
-                      addToParty(slotIndex);
-                    } else {
-                      promptRelease();
-                    }
-                  });
-                }, undefined, undefined, undefined, undefined, pokemon.name);
-              }, () => {
-                // NO
-                LoggerTools.logActions(globalScene.currentBattle.waveIndex, "Do Not Keep " + pokemon.name);
-                globalScene.ui.setMode(Mode.MESSAGE).then(() => {
-                  removePokemon();
-                  end();
-                });
-              }, "fullParty");
-            });
-          };
-          promptRelease();
-        } else {
-          //LoggerTools.logActions(globalScene.currentBattle.waveIndex, `${pokemon.name} added to party`)
-          addToParty();
-        }
-      });
-    }, 0, true);
+      },
+      0,
+      true,
+    );
   }
 
   /** Remove the Poke Ball from the scene. */
@@ -336,7 +409,7 @@ export class AttemptCapturePhase extends PokemonPhase {
       delay: 250,
       ease: "Sine.easeIn",
       alpha: 0,
-      onComplete: () => this.pokeball.destroy()
+      onComplete: () => this.pokeball.destroy(),
     });
   }
 }

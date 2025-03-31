@@ -2,12 +2,12 @@ import type { InfoToggle } from "#app/battle-scene";
 import { globalScene } from "#app/global-scene";
 import { addTextObject, TextStyle } from "./text";
 import { getTypeDamageMultiplierColor } from "#app/data/type";
-import { Type } from "#enums/type";
+import { PokemonType } from "#enums/pokemon-type";
 import { Command } from "./command-ui-handler";
 import { Mode } from "./ui";
 import UiHandler from "./ui-handler";
 import * as Utils from "../utils";
-import * as MoveData from "#app/data/move";
+import { MoveCategory } from "#enums/MoveCategory";
 import i18next from "i18next";
 import { Button } from "#enums/buttons";
 import type { EnemyPokemon, PlayerPokemon, PokemonMove } from "#app/field/pokemon";
@@ -17,6 +17,8 @@ import { PokemonMultiHitModifierType } from "#app/modifier/modifier-type";
 import { StatusEffect } from "#app/enums/status-effect";
 import MoveInfoOverlay from "./move-info-overlay";
 import { BattleType } from "#app/battle";
+import { MultiHitType } from "#enums/MultiHitType";
+import { applyMoveAttrs, FixedDamageAttr, MultiHitAttr } from "#app/data/moves/move";
 
 export default class FightUiHandler extends UiHandler implements InfoToggle {
   public static readonly MOVES_CONTAINER_NAME = "moves";
@@ -34,11 +36,11 @@ export default class FightUiHandler extends UiHandler implements InfoToggle {
   private accuracyText: Phaser.GameObjects.Text;
   private cursorObj: Phaser.GameObjects.Image | null;
   private moveCategoryIcon: Phaser.GameObjects.Sprite;
-  private moveInfoOverlay : MoveInfoOverlay;
+  private moveInfoOverlay: MoveInfoOverlay;
 
-  protected fieldIndex: number = 0;
+  protected fieldIndex = 0;
   protected fromCommand: Command = Command.FIGHT;
-  protected cursor2: number = 0;
+  protected cursor2 = 0;
 
   constructor() {
     super(Mode.FIGHT);
@@ -55,7 +57,12 @@ export default class FightUiHandler extends UiHandler implements InfoToggle {
     this.moveInfoContainer.setName("move-info");
     ui.add(this.moveInfoContainer);
 
-    this.typeIcon = globalScene.add.sprite(globalScene.scaledCanvas.width - 57, -36, Utils.getLocalizedSpriteKey("types"), "unknown");
+    this.typeIcon = globalScene.add.sprite(
+      globalScene.scaledCanvas.width - 57,
+      -36,
+      Utils.getLocalizedSpriteKey("types"),
+      "unknown",
+    );
     this.typeIcon.setVisible(false);
     this.moveInfoContainer.add(this.typeIcon);
 
@@ -105,9 +112,9 @@ export default class FightUiHandler extends UiHandler implements InfoToggle {
       right: true,
       x: 0,
       y: -MoveInfoOverlay.getHeight(overlayScale, true),
-      width: (globalScene.game.canvas.width / 6) + 4,
+      width: globalScene.game.canvas.width / 6 + 4,
       hideEffectBox: true,
-      hideBg: true
+      hideBg: true,
     });
     ui.add(this.moveInfoOverlay);
     // register the overlay to receive toggle events
@@ -118,8 +125,8 @@ export default class FightUiHandler extends UiHandler implements InfoToggle {
   show(args: any[]): boolean {
     super.show(args);
 
-    this.fieldIndex = args.length ? args[0] as number : 0;
-    this.fromCommand = args.length > 1 ? args[1] as Command : Command.FIGHT;
+    this.fieldIndex = args.length ? (args[0] as number) : 0;
+    this.fromCommand = args.length > 1 ? (args[1] as Command) : Command.FIGHT;
 
     const messageHandler = this.getUi().getMessageHandler();
     messageHandler.bg.setVisible(false);
@@ -197,10 +204,10 @@ export default class FightUiHandler extends UiHandler implements InfoToggle {
       this.cursorObj?.setVisible(false);
     }
     globalScene.tweens.add({
-      targets: [ this.movesContainer, this.cursorObj ],
+      targets: [this.movesContainer, this.cursorObj],
       duration: Utils.fixedInt(125),
       ease: "Sine.easeInOut",
-      alpha: visible ? 0 : 1
+      alpha: visible ? 0 : 1,
     });
     if (!visible) {
       this.movesContainer.setVisible(true);
@@ -242,13 +249,13 @@ export default class FightUiHandler extends UiHandler implements InfoToggle {
     const hasMove = cursor < moveset.length;
 
     if (hasMove) {
-      const pokemonMove = moveset[cursor]!; // TODO: is the bang correct?
+      const pokemonMove = moveset[cursor];
       const moveType = pokemon.getMoveType(pokemonMove.getMove());
       const textureKey = Utils.getLocalizedSpriteKey("types");
-      this.typeIcon.setTexture(textureKey, Type[moveType].toLowerCase()).setScale(0.8);
+      this.typeIcon.setTexture(textureKey, PokemonType[moveType].toLowerCase()).setScale(0.8);
 
       const moveCategory = pokemonMove.getMove().category;
-      this.moveCategoryIcon.setTexture("categories", MoveData.MoveCategory[moveCategory].toLowerCase()).setScale(1.0);
+      this.moveCategoryIcon.setTexture("categories", MoveCategory[moveCategory].toLowerCase()).setScale(1.0);
       const power = pokemonMove.getMove().power;
       const accuracy = pokemonMove.getMove().accuracy;
       const maxPP = pokemonMove.getMovePp();
@@ -277,7 +284,7 @@ export default class FightUiHandler extends UiHandler implements InfoToggle {
       this.ppText.setShadowColor(this.getTextColor(ppColorStyle, true));
       this.moveInfoOverlay.show(pokemonMove.getMove());
 
-      pokemon.getOpponents().forEach((opponent) => {
+      pokemon.getOpponents().forEach(opponent => {
         opponent.updateEffectiveness(this.getEffectivenessText(pokemon, opponent, pokemonMove));
       });
     }
@@ -307,7 +314,11 @@ export default class FightUiHandler extends UiHandler implements InfoToggle {
    * If Type Hints and Damage Calculation are both off, the type effectiveness multiplier is hidden.
    */
   private getEffectivenessText(pokemon: Pokemon, opponent: Pokemon, pokemonMove: PokemonMove): string | undefined {
-    const effectiveness = opponent.getMoveEffectiveness(pokemon, pokemonMove.getMove(), !opponent.battleData?.abilityRevealed);
+    const effectiveness = opponent.getMoveEffectiveness(
+      pokemon,
+      pokemonMove.getMove(),
+      !opponent.battleData?.abilityRevealed,
+    );
     if (effectiveness === undefined) {
       return undefined;
     }
@@ -360,9 +371,11 @@ export default class FightUiHandler extends UiHandler implements InfoToggle {
     }
 
     const moveColors = opponents
-      .map((opponent) => opponent.getMoveEffectiveness(pokemon, pokemonMove.getMove(), !opponent.battleData.abilityRevealed))
+      .map(opponent =>
+        opponent.getMoveEffectiveness(pokemon, pokemonMove.getMove(), !opponent.battleData.abilityRevealed),
+      )
       .sort((a, b) => b - a)
-      .map((effectiveness) => getTypeDamageMultiplierColor(effectiveness ?? 0, "offense"));
+      .map(effectiveness => getTypeDamageMultiplierColor(effectiveness ?? 0, "offense"));
 
     return moveColors[0];
   }
@@ -389,7 +402,7 @@ export default class FightUiHandler extends UiHandler implements InfoToggle {
     this.movesContainer.removeAll(true);
 
     const opponents = (globalScene.getCurrentPhase() as CommandPhase).getPokemon().getOpponents();
-    opponents.forEach((opponent) => {
+    opponents.forEach(opponent => {
       opponent.updateEffectiveness(undefined);
     });
   }
@@ -403,7 +416,7 @@ export default class FightUiHandler extends UiHandler implements InfoToggle {
 
   calcDamage(user: PlayerPokemon, target: Pokemon, move: PokemonMove) {
     const moveObj = move.getMove();
-    if (moveObj.category == MoveData.MoveCategory.STATUS) {
+    if (moveObj.category == MoveCategory.STATUS) {
       return ""; // Don't give a damage estimate for status moves
     }
 
@@ -413,7 +426,7 @@ export default class FightUiHandler extends UiHandler implements InfoToggle {
 
     let dmgRange = 0.85;
     const fixedDamage = new Utils.NumberHolder(0);
-    MoveData.applyMoveAttrs(MoveData.FixedDamageAttr, user, target, moveObj, fixedDamage);
+    applyMoveAttrs(FixedDamageAttr, user, target, moveObj, fixedDamage);
     if (fixedDamage.value > 0) {
       dmgRange = 1;
     }
@@ -431,21 +444,21 @@ export default class FightUiHandler extends UiHandler implements InfoToggle {
 
     let minHits = 1;
     let maxHits = -1; // If nothing changes this value, it is set to minHits
-    const mh = moveObj.getAttrs(MoveData.MultiHitAttr);
+    const mh = moveObj.getAttrs(MultiHitAttr);
     for (var i = 0; i < mh.length; i++) {
-      const mh2 = mh[i] as MoveData.MultiHitAttr;
+      const mh2 = mh[i] as MultiHitAttr;
       switch (mh2.getMultiHitType()) {
-        case MoveData.MultiHitType._2:
+        case MultiHitType._2:
           minHits = 2;
-        case MoveData.MultiHitType._2_TO_5:
+        case MultiHitType._2_TO_5:
           minHits = 2;
           maxHits = 5;
-        case MoveData.MultiHitType._3:
+        case MultiHitType._3:
           minHits = 3;
-        case MoveData.MultiHitType._10:
+        case MultiHitType._10:
           minHits = 1;
           maxHits = 10;
-        case MoveData.MultiHitType.BEAT_UP:
+        case MultiHitType.BEAT_UP:
           const party = user.isPlayer() ? globalScene.getPlayerParty() : globalScene.getEnemyParty();
           // No status means the ally pokemon can contribute to Beat Up
           minHits = party.reduce((total, pokemon) => {

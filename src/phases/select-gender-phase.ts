@@ -24,7 +24,7 @@ export class SelectGenderPhase extends Phase {
               globalScene.gameData.saveSetting(SettingKeys.Player_Gender, 0);
               globalScene.gameData.saveSystem().then(() => this.end());
               return true;
-            }
+            },
           },
           {
             label: i18next.t("settings:girl"),
@@ -33,9 +33,9 @@ export class SelectGenderPhase extends Phase {
               globalScene.gameData.saveSetting(SettingKeys.Player_Gender, 1);
               globalScene.gameData.saveSystem().then(() => this.end());
               return true;
-            }
-          }
-        ]
+            },
+          },
+        ],
       });
     });
   }
