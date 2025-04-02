@@ -483,7 +483,7 @@ export default class BattleScene extends SceneBase {
       Phaser.Math.RND.realInRange = function (min: number, max: number): number {
         const ret = originalRealInRange.apply(this, [min, max]);
         const args = ["RNG", ++this.rngCounter, ret / (max - min), `min: ${min} / max: ${max}`];
-        globalScene.setScoreText("RNG: " + this.rngCounter + ")");
+        this.setScoreText("RNG: " + this.rngCounter + ")");
         args.push(`seed: ${this.rngSeedOverride || this.waveSeed || this.seed}`);
         if (this.rngOffset) {
           args.push(`offset: ${this.rngOffset}`);
