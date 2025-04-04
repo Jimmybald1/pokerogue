@@ -4153,7 +4153,7 @@ export default class BattleScene extends SceneBase {
         // Always rolls the check on the same offset to ensure no RNG changes from reloading session
         this.executeWithSeedOffset(
           () => {
-            roll = randSeedInt(MYSTERY_ENCOUNTER_SPAWN_MAX_WEIGHT);
+            roll = randSeedInt(MYSTERY_ENCOUNTER_SPAWN_MAX_WEIGHT, undefined, "Mystery Encounter Spawn Chance");
           },
           waveIndex * 3 * 1000,
         );
