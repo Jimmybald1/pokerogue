@@ -1466,7 +1466,6 @@ export default class BattleScene extends SceneBase {
     return Math.max(doubleChance.value, 1);
   }
 
-  // TODO: ...this never actually returns `null`, right?
   InsertLure() {
     const lure = modifierTypes
       .LURE()
@@ -1575,6 +1574,7 @@ export default class BattleScene extends SceneBase {
     });
   }
 
+  // TODO: ...this never actually returns `null`, right?
   newBattle(
     waveIndex?: integer,
     battleType?: BattleType,
