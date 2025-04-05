@@ -4,7 +4,7 @@ import { classicFixedBattles, FixedBattleConfig } from "./battle";
 import type { Challenge } from "./data/challenge";
 import { allChallenges, applyChallenges, ChallengeType, copyChallenge } from "./data/challenge";
 import type PokemonSpecies from "./data/pokemon-species";
-import { allSpecies } from "./data/pokemon-species";
+import { allSpecies, getPokemonSpecies } from "./data/pokemon-species";
 import type { Arena } from "./field/arena";
 import Overrides from "#app/overrides";
 import * as Utils from "./utils";
@@ -12,7 +12,7 @@ import { Biome } from "#enums/biome";
 import { Species } from "#enums/species";
 import { Challenges } from "./enums/challenges";
 import { globalScene } from "#app/global-scene";
-import { getDailyStartingBiome } from "./data/daily-run";
+import { getDailyEventSeedBoss, getDailyStartingBiome, isDailyEventSeed } from "./data/daily-run";
 
 export enum GameModes {
   CLASSIC,
@@ -215,6 +215,14 @@ export class GameMode implements GameModeConfig {
 
   getOverrideSpecies(waveIndex: number): PokemonSpecies | null {
     if (this.isDaily && this.isWaveFinal(waveIndex)) {
+      if (isDailyEventSeed(globalScene.seed)) {
+        const bossSpecies = getDailyEventSeedBoss(globalScene.seed);
+        if (bossSpecies) {
+          const boss = getPokemonSpecies(bossSpecies.speciesForm.speciesId);
+          return boss;
+        }
+      }
+
       const allFinalBossSpecies = allSpecies.filter(
         s =>
           (s.subLegendary || s.legendary || s.mythical) &&

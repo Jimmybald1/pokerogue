@@ -8,6 +8,7 @@ import { BattlePhase } from "./battle-phase";
 import * as Utils from "#app/utils";
 import { PartyHealPhase } from "./party-heal-phase";
 import { SwitchBiomePhase } from "./switch-biome-phase";
+import { getDailyEventSeedBiome, isDailyEventSeed } from "#app/data/daily-run";
 
 export class SelectBiomePhase extends BattlePhase {
   constructor() {
@@ -38,11 +39,16 @@ export class SelectBiomePhase extends BattlePhase {
       setNextBiome(this.generateNextBiome());
     } else if (Array.isArray(biomeLinks[currentBiome])) {
       let biomes: Biome[] = [];
-      globalScene.executeWithSeedOffset(() => {
-        biomes = (biomeLinks[currentBiome] as (Biome | [Biome, number])[])
-          .filter(b => !Array.isArray(b) || !Utils.randSeedInt(b[1]))
-          .map(b => (!Array.isArray(b) ? b : b[0]));
-      }, globalScene.currentBattle.waveIndex);
+      if (isDailyEventSeed(globalScene.seed) && getDailyEventSeedBiome(globalScene.seed)?.forceAllLinks) {
+        biomes = biomeLinks[currentBiome].map(b => (!Array.isArray(b) ? b : b[0]));
+      } else {
+        globalScene.executeWithSeedOffset(() => {
+          biomes = (biomeLinks[currentBiome] as (Biome | [Biome, number])[])
+            .filter(b => !Array.isArray(b) || !Utils.randSeedInt(b[1]))
+            .map(b => (!Array.isArray(b) ? b : b[0]));
+        }, globalScene.currentBattle.waveIndex);
+      }
+
       if (biomes.length > 1 && globalScene.findModifier(m => m instanceof MapModifier)) {
         let biomeChoices: Biome[] = [];
         globalScene.executeWithSeedOffset(() => {

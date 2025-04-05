@@ -9,6 +9,7 @@ import PokemonSpecies, { getPokemonSpecies, getPokemonSpeciesForm } from "#app/d
 import { speciesStarterCosts } from "#app/data/balance/starters";
 import { pokerogueApi } from "#app/plugins/api/pokerogue-api";
 import { Biome } from "#app/enums/biome";
+import type { Variant } from "./variant";
 
 export interface DailyRunConfig {
   seed: number;
@@ -24,24 +25,19 @@ export function fetchDailyRunSeed(): Promise<string | null> {
 }
 
 export function getDailyRunStarters(seed: string): Starter[] {
-  const starters: Starter[] = [];
+  let starters: Starter[] = [];
 
   globalScene.executeWithSeedOffset(
     () => {
-      const startingLevel = globalScene.gameMode.getStartingLevel();
-
-      if (/\d{18}$/.test(seed)) {
-        for (let s = 0; s < 3; s++) {
-          const offset = 6 + s * 6;
-          const starterSpeciesForm = getPokemonSpeciesForm(
-            Number.parseInt(seed.slice(offset, offset + 4)) as Species,
-            Number.parseInt(seed.slice(offset + 4, offset + 6)),
-          );
-          starters.push(getDailyRunStarter(starterSpeciesForm, startingLevel));
+      if (isDailyEventSeed(seed)) {
+        const eventStarters = getDailyEventSeedStarters(seed);
+        if (eventStarters) {
+          starters = eventStarters;
+          return;
         }
-        return;
       }
 
+      const startingLevel = globalScene.gameMode.getStartingLevel();
       const starterCosts: number[] = [];
       starterCosts.push(Math.min(Math.round(3.5 + Math.abs(Utils.randSeedGauss(1))), 8));
       starterCosts.push(Utils.randSeedInt(9 - starterCosts[0], 1));
@@ -66,7 +62,12 @@ export function getDailyRunStarters(seed: string): Starter[] {
   return starters;
 }
 
-function getDailyRunStarter(starterSpeciesForm: PokemonSpeciesForm, startingLevel: number): Starter {
+function getDailyRunStarter(
+  starterSpeciesForm: PokemonSpeciesForm,
+  startingLevel: number,
+  shiny: boolean | undefined = undefined,
+  variant: Variant | undefined = undefined,
+): Starter {
   const starterSpecies =
     starterSpeciesForm instanceof PokemonSpecies ? starterSpeciesForm : getPokemonSpecies(starterSpeciesForm.speciesId);
   const formIndex = starterSpeciesForm instanceof PokemonSpecies ? undefined : starterSpeciesForm.formIndex;
@@ -76,8 +77,8 @@ function getDailyRunStarter(starterSpeciesForm: PokemonSpeciesForm, startingLeve
     undefined,
     formIndex,
     undefined,
-    undefined,
-    undefined,
+    shiny,
+    variant,
     undefined,
     undefined,
     undefined,
@@ -142,7 +143,18 @@ const dailyBiomeWeights: BiomeWeights = {
   [Biome.END]: 0,
 };
 
+/**
+ * Either gets a starting biome from
+ * @returns True if it is a Daily Event Seed.
+ */
 export function getDailyStartingBiome(): Biome {
+  if (isDailyEventSeed(globalScene.seed)) {
+    const eventSeedBiome = getDailyEventSeedBiome(globalScene.seed);
+    if (eventSeedBiome) {
+      return eventSeedBiome.startingBiome;
+    }
+  }
+
   const biomes = Utils.getEnumValues(Biome).filter(b => b !== Biome.TOWN && b !== Biome.END);
 
   let totalWeight = 0;
@@ -165,4 +177,112 @@ export function getDailyStartingBiome(): Biome {
 
   // Fallback in case something went wrong
   return biomes[Utils.randSeedInt(biomes.length)];
+}
+
+/**
+ * Checks if the current GameMode is Daily
+ * and whether the Seed is longer than the default 24.
+ * This indicates that it is a custom event seed.
+ * @returns True if it is a Daily Event Seed.
+ */
+export function isDailyEventSeed(seed: string): boolean {
+  return globalScene.gameMode.isDaily && seed.length > 24;
+}
+
+/**
+ * Expects the seed to contain: /starter\d{21}/
+ * Where each Starter is 4 digits for the SpeciesId, 2 digits for the FormIndex and 1 digit for Shiny Variant.
+ * @returns An {@linkcode Starter[]} containing the starters or null if invalid.
+ */
+export function getDailyEventSeedStarters(seed: string): Starter[] | null {
+  if (!isDailyEventSeed(seed)) {
+    return null;
+  }
+
+  const starters: Starter[] = [];
+  const match = /starter(\d{4})(\d{2})(\d)(\d{4})(\d{2})(\d)(\d{4})(\d{2})(\d)/g.exec(seed);
+  if (match && match.length === 10) {
+    for (let i = 1; i < match.length; i += 3) {
+      const speciesId = Number.parseInt(match[i]) as Species;
+      const formIndex = Number.parseInt(match[i + 1]);
+
+      // 0 = not shiny, 1 = shiny, 2 = rare, 3 = epic
+      const shiny = Number.parseInt(match[i + 2]);
+      const isShiny = shiny > 0 ? true : undefined;
+      const variant = isShiny ? ((shiny - 1) as Variant) : undefined;
+
+      const starterForm = getPokemonSpeciesForm(speciesId, formIndex);
+      const startingLevel = globalScene.gameMode.getStartingLevel();
+      const starter = getDailyRunStarter(starterForm, startingLevel, isShiny, variant);
+      starters.push(starter);
+    }
+
+    return starters;
+  }
+
+  return null;
+}
+
+export interface DailyEventSeedBoss {
+  speciesForm: PokemonSpeciesForm;
+  isShiny: boolean | undefined;
+  variant: Variant | undefined;
+}
+
+/**
+ * Expects the seed to contain: /boss\d{7}/
+ * Where the boss is 4 digits for the SpeciesId, 2 digits for the FormIndex and 1 digit for the Shiny Variant.
+ * @returns A {@linkcode DailyEventSeedBoss} containing the boss or null if invalid.
+ */
+export function getDailyEventSeedBoss(seed: string): DailyEventSeedBoss | null {
+  if (!isDailyEventSeed(seed)) {
+    return null;
+  }
+
+  const match = /boss(\d{4})(\d{2})(\d)/g.exec(seed);
+  if (match && match.length === 4) {
+    const speciesForm = getPokemonSpeciesForm(Number.parseInt(match[1]) as Species, Number.parseInt(match[2]));
+    const shiny = Number.parseInt(match[3]);
+    const isShiny = shiny > 0 ? true : undefined;
+    const variant = isShiny ? ((shiny - 1) as Variant) : undefined;
+    return {
+      speciesForm,
+      isShiny,
+      variant,
+    };
+  }
+
+  return null;
+}
+
+export interface DailyEventSeedBiome {
+  startingBiome: Biome;
+  forceAllLinks: boolean;
+}
+
+/**
+ * Expects the seed to contain: /biome\d{2}all/ or /biome\d{2}ran/
+ * Where the biome is 2 digits for the BiomeId and then either "all" or "ran" for All links forced or Random links.
+ * @returns A {@linkcode DailyEventSeedBiome} containing the Biome or null if invalid.
+ */
+export function getDailyEventSeedBiome(seed: string): DailyEventSeedBiome | null {
+  if (!isDailyEventSeed(seed)) {
+    return null;
+  }
+
+  const match = /biome(\d{2})(all|ran)/g.exec(seed);
+  if (match && match.length === 3) {
+    const startingBiome = Number.parseInt(match[1]) as Biome;
+    let forceAllLinks = false;
+    if (match[2] === "all") {
+      forceAllLinks = true;
+    }
+
+    return {
+      startingBiome,
+      forceAllLinks,
+    };
+  }
+
+  return null;
 }

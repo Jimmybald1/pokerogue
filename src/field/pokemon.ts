@@ -264,6 +264,7 @@ import { StatusEffect } from "#enums/status-effect";
 import { doShinySparkleAnim } from "#app/field/anims";
 import { MoveFlags } from "#enums/MoveFlags";
 import { timedEventManager } from "#app/global-event-manager";
+import { DailyEventSeedBoss, getDailyEventSeedBoss, isDailyEventSeed } from "#app/data/daily-run";
 
 export enum LearnMoveSituation {
   MISC,
@@ -6950,6 +6951,16 @@ export class EnemyPokemon extends Pokemon {
 
     const speciesId = this.species.speciesId;
 
+    let dailyEventBoss: DailyEventSeedBoss | null = null;
+    if (globalScene.gameMode.isDaily && globalScene.gameMode.isWaveFinal(globalScene.currentBattle?.waveIndex ?? 0)) {
+      if (isDailyEventSeed(globalScene.seed)) {
+        dailyEventBoss = getDailyEventSeedBoss(globalScene.seed);
+        if (dailyEventBoss) {
+          this.formIndex = dailyEventBoss.speciesForm.formIndex;
+        }
+      }
+    }
+
     if (
       speciesId in Overrides.OPP_FORM_OVERRIDES &&
       !isNullOrUndefined(Overrides.OPP_FORM_OVERRIDES[speciesId]) &&
@@ -6964,7 +6975,12 @@ export class EnemyPokemon extends Pokemon {
       if (shinyLock || Overrides.OPP_SHINY_OVERRIDE === false) {
         this.shiny = false;
       } else {
-        this.trySetShiny();
+        if (dailyEventBoss && dailyEventBoss.isShiny !== undefined) {          
+          this.shiny = dailyEventBoss.isShiny;
+        }
+        else {
+          this.trySetShiny();
+        }
       }
 
       if (!this.shiny && Overrides.OPP_SHINY_OVERRIDE) {
@@ -6973,7 +6989,13 @@ export class EnemyPokemon extends Pokemon {
       }
 
       if (this.shiny) {
-        this.variant = this.generateShinyVariant();
+        if (dailyEventBoss && dailyEventBoss.variant !== undefined) {
+          this.variant = dailyEventBoss.variant;
+        }
+        else {
+          this.variant = this.generateShinyVariant();
+        }
+
         if (Overrides.OPP_VARIANT_OVERRIDE !== null) {
           this.variant = Overrides.OPP_VARIANT_OVERRIDE;
         }
