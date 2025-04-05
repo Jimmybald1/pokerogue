@@ -10,6 +10,8 @@ import { speciesStarterCosts } from "#app/data/balance/starters";
 import { pokerogueApi } from "#app/plugins/api/pokerogue-api";
 import { Biome } from "#app/enums/biome";
 import type { Variant } from "./variant";
+import type { Moves } from "#enums/moves";
+import type { StarterMoveset } from "#app/system/game-data";
 
 export interface DailyRunConfig {
   seed: number;
@@ -67,6 +69,7 @@ function getDailyRunStarter(
   startingLevel: number,
   shiny: boolean | undefined = undefined,
   variant: Variant | undefined = undefined,
+  moveset: StarterMoveset | undefined = undefined,
 ): Starter {
   const starterSpecies =
     starterSpeciesForm instanceof PokemonSpecies ? starterSpeciesForm : getPokemonSpecies(starterSpeciesForm.speciesId);
@@ -90,6 +93,7 @@ function getDailyRunStarter(
     passive: false,
     nature: pokemon.getNature(),
     pokerus: pokemon.pokerus,
+    moveset: moveset,
   };
   pokemon.destroy();
   return starter;
@@ -202,6 +206,7 @@ export function getDailyEventSeedStarters(seed: string): Starter[] | null {
   const starters: Starter[] = [];
   const match = /starter(\d{4})(\d{2})(\d)(\d{4})(\d{2})(\d)(\d{4})(\d{2})(\d)/g.exec(seed);
   if (match && match.length === 10) {
+    const movesets = getDailyEventSeedStarterMoves(seed);
     for (let i = 1; i < match.length; i += 3) {
       const speciesId = Number.parseInt(match[i]) as Species;
       const formIndex = Number.parseInt(match[i + 1]);
@@ -213,7 +218,8 @@ export function getDailyEventSeedStarters(seed: string): Starter[] | null {
 
       const starterForm = getPokemonSpeciesForm(speciesId, formIndex);
       const startingLevel = globalScene.gameMode.getStartingLevel();
-      const starter = getDailyRunStarter(starterForm, startingLevel, isShiny, variant);
+      const moveset = movesets ? movesets[(i - 1) / 3] : undefined;
+      const starter = getDailyRunStarter(starterForm, startingLevel, isShiny, variant, moveset);
       starters.push(starter);
     }
 
@@ -282,6 +288,30 @@ export function getDailyEventSeedBiome(seed: string): DailyEventSeedBiome | null
       startingBiome,
       forceAllLinks,
     };
+  }
+
+  return null;
+}
+
+/**
+ * Expects the seed to contain: /smove\d{48}/
+ * Where each Starter has 4 sets of 4 digits for the MoveIds
+ * @returns An array of {@linkcode StarterMoveset}s containing the movesets or null if invalid.
+ */
+export function getDailyEventSeedStarterMoves(seed: string): StarterMoveset[] | null {
+  if (!isDailyEventSeed(seed)) {
+    return null;
+  }
+
+  const match = /smove(\d{4})(\d{4})(\d{4})(\d{4})(\d{4})(\d{4})(\d{4})(\d{4})(\d{4})(\d{4})(\d{4})(\d{4})/g.exec(seed);
+  if (match && match.length === 13) {
+    const moves: StarterMoveset[] = [];
+    for (let i = 1; i < match.length; i += 4) {
+      const starterMoveset = match.slice(i, i + 4).map(m => Number.parseInt(m) as Moves);
+      moves.push(starterMoveset as StarterMoveset);
+    }
+
+    return moves;
   }
 
   return null;

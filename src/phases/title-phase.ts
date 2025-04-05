@@ -27,6 +27,7 @@ import { SelectStarterPhase } from "./select-starter-phase";
 import { SummonPhase } from "./summon-phase";
 import { globalScene } from "#app/global-scene";
 import Overrides from "#app/overrides";
+import { PokemonMove } from "#app/field/pokemon";
 
 export class TitlePhase extends Phase {
   private loaded: boolean;
@@ -245,6 +246,9 @@ export class TitlePhase extends Phase {
             undefined,
             starter.nature,
           );
+          if (starter.moveset) {
+            starterPokemon.moveset = starter.moveset.map(m => new PokemonMove(m));
+          }
           starterPokemon.setVisible(false);
           party.push(starterPokemon);
           loadPokemonAssets.push(starterPokemon.loadAssets());
