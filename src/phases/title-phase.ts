@@ -1305,8 +1305,8 @@ export class TitlePhase extends Phase {
           enemy.nickname = btoa(Species[enemy.species.speciesId]);
         }
 
-        // Always pyroar...
-        if (atlaspath == "668") {
+        // Always pyroar and meowstic...
+        if (atlaspath == "668" || atlaspath == "678") {
           atlaspath += `-${Gender[enemy.gender].toLowerCase()}`;
         }
 
