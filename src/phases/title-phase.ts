@@ -479,39 +479,7 @@ export class TitlePhase extends Phase {
     }, {
       label: "Scouting",
       handler: () => {
-        const charmOptions: OptionSelectItem[] = [];
-        charmOptions.push({
-          label: "default",
-          handler: () => {
-            this.InitScouting(0);
-            return true;
-          }
-        // }, {
-        //   label: "1 charm",
-        //   handler: () => {
-        //     this.InitScouting(1);
-        //     return true;
-        //   }
-        // }, {
-        //   label: "2 charms",
-        //   handler: () => {
-        //     this.InitScouting(2);
-        //     return true;
-        //   }
-        // }, {
-        //   label: "3 charms",
-        //   handler: () => {
-        //     this.InitScouting(3);
-        //     return true;
-        //   }
-        // }, {
-        //   label: "4 charms",
-        //   handler: () => {
-        //     this.InitScouting(4);
-        //     return true;
-        //   }
-        });
-        globalScene.ui.showText("Encounter Scouting", null, () => globalScene.ui.setOverlayMode(Mode.OPTION_SELECT, { options: charmOptions }));
+        globalScene.ui.showText("Encounter Scouting", null, () => this.InitScouting(0));
         return true;
       }
     }, {
