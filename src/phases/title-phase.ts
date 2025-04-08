@@ -481,35 +481,35 @@ export class TitlePhase extends Phase {
       handler: () => {
         const charmOptions: OptionSelectItem[] = [];
         charmOptions.push({
-          label: "0 charms",
+          label: "default",
           handler: () => {
             this.InitScouting(0);
             return true;
           }
-        }, {
-          label: "1 charm",
-          handler: () => {
-            this.InitScouting(1);
-            return true;
-          }
-        }, {
-          label: "2 charms",
-          handler: () => {
-            this.InitScouting(2);
-            return true;
-          }
-        }, {
-          label: "3 charms",
-          handler: () => {
-            this.InitScouting(3);
-            return true;
-          }
-        }, {
-          label: "4 charms",
-          handler: () => {
-            this.InitScouting(4);
-            return true;
-          }
+        // }, {
+        //   label: "1 charm",
+        //   handler: () => {
+        //     this.InitScouting(1);
+        //     return true;
+        //   }
+        // }, {
+        //   label: "2 charms",
+        //   handler: () => {
+        //     this.InitScouting(2);
+        //     return true;
+        //   }
+        // }, {
+        //   label: "3 charms",
+        //   handler: () => {
+        //     this.InitScouting(3);
+        //     return true;
+        //   }
+        // }, {
+        //   label: "4 charms",
+        //   handler: () => {
+        //     this.InitScouting(4);
+        //     return true;
+        //   }
         });
         globalScene.ui.showText("Encounter Scouting", null, () => globalScene.ui.setOverlayMode(Mode.OPTION_SELECT, { options: charmOptions }));
         return true;
@@ -1275,6 +1275,9 @@ export class TitlePhase extends Phase {
       LoggerTools.rarities.pop();
     }
     LoggerTools.rarityslot[0] = 0;
+    while (LoggerTools.haChances.length > 0) {
+      LoggerTools.haChances.pop();
+    }
 
     if (!nolog && battle?.trainer != null) {
       this.encounterList.push(`Wave: ${globalScene.currentBattle.waveIndex} Biome: ${Biome[globalScene.arena.biomeType]} Trainer: ${battle.trainer.config.name}`);
@@ -1314,7 +1317,7 @@ export class TitlePhase extends Phase {
         const text = `Wave: ${globalScene.currentBattle.waveIndex} Biome: ${Biome[globalScene.arena.biomeType]} Pokemon: ${getPokemonNameWithAffix(enemy)} ` +
         `Form: ${atlaspath} Species ID: ${enemy.species.speciesId} Stats: ${enemy.stats} IVs: ${enemy.ivs} Ability: ${enemy.getAbility().name} ` +
         `Passive Ability: ${enemy.getPassiveAbility().name} Nature: ${Nature[enemy.nature]} Gender: ${Gender[enemy.gender]} Rarity: ${LoggerTools.rarities[e]} AbilityIndex: ${enemy.abilityIndex} ` +
-        `ID: ${enemy.id} Type: ${enemy.getTypes().map(t => PokemonType[t]).join(",")} Moves: ${enemy.getMoveset().map(m => Moves[m?.moveId ?? 0]).join(",")}`;
+        `ID: ${enemy.id} Type: ${enemy.getTypes().map(t => PokemonType[t]).join(",")} Moves: ${enemy.getMoveset().map(m => Moves[m?.moveId ?? 0]).join(",")} HARolls: ${LoggerTools.haChances[e].join(",")}`;
         this.encounterList.push(text);
         console.log(text);
         if (battle.waveIndex == 50) {

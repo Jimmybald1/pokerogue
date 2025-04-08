@@ -265,6 +265,7 @@ import { StatusEffect } from "#enums/status-effect";
 import { doShinySparkleAnim } from "#app/field/anims";
 import { MoveFlags } from "#enums/MoveFlags";
 import { timedEventManager } from "#app/global-event-manager";
+import * as LoggerTools from "../logger";
 
 const doMoveLogging: boolean = false;
 
@@ -405,6 +406,33 @@ export default abstract class Pokemon extends Phaser.GameObjects.Container {
     if (abilityIndex !== undefined) {
       this.abilityIndex = abilityIndex; // Use the provided ability index if it is defined
     } else {
+      if (species.abilityHidden) {
+        const haRolls: Number[] = []
+        globalScene.executeWithoutSeedAdvancement(() => {
+          haRolls.push(Utils.randSeedInt(BASE_HIDDEN_ABILITY_CHANCE, undefined, "Hidden Ability chance 0 charms"));
+        });
+        
+        globalScene.executeWithoutSeedAdvancement(() => {
+          haRolls.push(Utils.randSeedInt(BASE_HIDDEN_ABILITY_CHANCE/4, undefined, "Hidden Ability chance 1 charm")); // first charm is 4x
+        });
+        
+        globalScene.executeWithoutSeedAdvancement(() => {
+          haRolls.push(Utils.randSeedInt(BASE_HIDDEN_ABILITY_CHANCE/8, undefined, "Hidden Ability chance 2 charms"));
+        });
+        
+        globalScene.executeWithoutSeedAdvancement(() => {
+          haRolls.push(Utils.randSeedInt(BASE_HIDDEN_ABILITY_CHANCE/16, undefined, "Hidden Ability chance 3 charms"));
+        });
+        
+        globalScene.executeWithoutSeedAdvancement(() => {
+          haRolls.push(Utils.randSeedInt(BASE_HIDDEN_ABILITY_CHANCE/32, undefined, "Hidden Ability chance 4 charms"));
+        });
+        LoggerTools.haChances.push(haRolls);
+      }
+      else {
+        LoggerTools.haChances.push([-1, -1, -1, -1, -1]);
+      }
+
       // If abilityIndex is not provided, determine it based on species and hidden ability
       const hasHiddenAbility = !Utils.randSeedInt(hiddenAbilityChance.value, undefined, "Hidden Ability chance");
       const randAbilityIndex = Utils.randSeedInt(2, undefined, "Selecting ability index");

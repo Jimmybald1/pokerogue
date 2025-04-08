@@ -2156,6 +2156,24 @@ export default class BattleScene extends SceneBase {
     this.battleBaseRNGState = Phaser.Math.RND.state();
   }
 
+  executeWithoutSeedAdvancement(
+    // biome-ignore lint/complexity/noBannedTypes: Refactor to not use Function
+    func: Function,
+  ): void {
+    if (!func) {
+      return;
+    }
+    const tempRngCounter = this.rngCounter;
+    const tempRngOffset = this.rngOffset;
+    const tempRngSeedOverride = this.rngSeedOverride;
+    const state = Phaser.Math.RND.state();
+    func();
+    Phaser.Math.RND.state(state);
+    this.rngCounter = tempRngCounter;
+    this.rngOffset = tempRngOffset;
+    this.rngSeedOverride = tempRngSeedOverride;
+  }
+
   executeWithSeedOffset(
     // biome-ignore lint/complexity/noBannedTypes: Refactor to not use Function
     func: Function,

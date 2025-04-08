@@ -78,6 +78,9 @@ const catchDebug: boolean = false;
 /** Holds the encounter rarities for the Pokemon in this wave. */
 export const rarities = [];
 
+// Holds the encounter HA rolls for the Pokemon in this wave.
+export const haChances: Number[][] = [];
+
 /** Used to store rarity tier between files when calculating and storing a Pokemon's encounter rarity.
  *
  * The second index is (very lazily) used to store a log's name/seed for `setFileInfo`.

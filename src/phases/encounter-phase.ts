@@ -106,6 +106,9 @@ export class EncounterPhase extends BattlePhase {
       LoggerTools.rarities.pop();
     }
     LoggerTools.rarityslot[0] = 0;
+    while (LoggerTools.haChances.length > 0) {
+      LoggerTools.haChances.pop();
+    }
     //console.log(globalScene.gameMode.getDailyOverride())
     battle.enemyLevels?.every((level, e) => {
       if (battle.isBattleMysteryEncounter()) {
