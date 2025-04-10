@@ -820,18 +820,23 @@ export class TitlePhase extends Phase {
     ];
 
     const ethers = [
-      (pokemon) => true,
-      (pokemon) => {
+      (pokemon: PlayerPokemon) => {
+        return 0;
+      },
+      (pokemon: PlayerPokemon) => {
         this.SetFullPP(pokemon);
         pokemon.moveset[0]?.usePp(pokemon.moveset[0].getMovePp());
+        return 1;
       },
-      (pokemon) =>  {
+      (pokemon: PlayerPokemon) =>  {
         this.SetFullPP(pokemon);
         pokemon.moveset[1]?.usePp(pokemon.moveset[1].getMovePp());
+        return 2;
       },
-      (pokemon) =>  {
+      (pokemon: PlayerPokemon) =>  {
         this.SetFullPP(pokemon);
         pokemon.moveset[2]?.usePp(pokemon.moveset[2].getMovePp());
+        return 3;
       },
     ];
 
@@ -973,6 +978,9 @@ export class TitlePhase extends Phase {
 
         lures.forEach(lure => {
           const text = lure();
+          
+          ethers.forEach(ether => {
+            const e = ether(party[0]);
             this.IteratePotions(party, 0, 0, 0, 0, 0, 0, e, text, mu.start, mu.end, mu.level, rogueItem);
           });
         });
