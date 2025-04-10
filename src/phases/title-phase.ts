@@ -36,7 +36,7 @@ import { Species } from "#app/enums/species";
 import { getPokemonNameWithAffix } from "#app/messages";
 import { Nature } from "#app/enums/nature";
 import { biomeLinks } from "#app/data/balance/biomes";
-import { applyAbAttrs, SyncEncounterNatureAbAttr } from "#app/data/ability";
+import { allAbilities, applyAbAttrs, SyncEncounterNatureAbAttr } from "#app/data/ability";
 import { BattleSpec } from "#app/enums/battle-spec";
 import { Moves } from "#app/enums/moves";
 import { PokemonType } from "#app/enums/pokemon-type";
@@ -1285,7 +1285,8 @@ export class TitlePhase extends Phase {
         const text = `Wave: ${globalScene.currentBattle.waveIndex} Biome: ${Biome[globalScene.arena.biomeType]} Pokemon: ${getPokemonNameWithAffix(enemy)} ` +
         `Form: ${atlaspath} Species ID: ${enemy.species.speciesId} Stats: ${enemy.stats} IVs: ${enemy.ivs} Ability: ${enemy.getAbility().name} ` +
         `Passive Ability: ${enemy.getPassiveAbility().name} Nature: ${Nature[enemy.nature]} Gender: ${Gender[enemy.gender]} Rarity: ${LoggerTools.rarities[e]} AbilityIndex: ${enemy.abilityIndex} ` +
-        `ID: ${enemy.id} Type: ${enemy.getTypes().map(t => PokemonType[t]).join(",")} Moves: ${enemy.getMoveset().map(m => Moves[m?.moveId ?? 0]).join(",")} HARolls: ${LoggerTools.haChances[e].join(",")}`;
+        `ID: ${enemy.id} Type: ${enemy.getTypes().map(t => PokemonType[t]).join(",")} Moves: ${enemy.getMoveset().map(m => Moves[m?.moveId ?? 0]).join(",")} HARolls: ${LoggerTools.haChances[e].join(",")} ` +
+        `Hidden Ability: ${allAbilities[enemy.species.abilityHidden].name}`;
         this.encounterList.push(text);
         console.log(text);
         if (battle.waveIndex == 50) {
