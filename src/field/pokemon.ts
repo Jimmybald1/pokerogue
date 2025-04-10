@@ -2,7 +2,7 @@ import Phaser from "phaser";
 import type { AnySound } from "#app/battle-scene";
 import type BattleScene from "#app/battle-scene";
 import { globalScene } from "#app/global-scene";
-import type { Variant, VariantSet } from "#app/sprites/variant";
+import type { Variant } from "#app/sprites/variant";
 import { populateVariantColors, variantColorCache } from "#app/sprites/variant";
 import { variantData } from "#app/sprites/variant";
 import BattleInfo, {
@@ -96,7 +96,6 @@ import {
 } from "#app/modifier/modifier";
 import { PokeballType } from "#enums/pokeball";
 import { Gender } from "#app/data/gender";
-import { initMoveAnim, loadMoveAnimAssets } from "#app/data/battle-anims";
 import { Status, getRandomStatus } from "#app/data/status-effect";
 import type {
   SpeciesFormEvolution,
@@ -177,8 +176,6 @@ import {
   FullHpResistTypeAbAttr,
   applyCheckTrappedAbAttrs,
   CheckTrappedAbAttr,
-  PostSetStatusAbAttr,
-  applyPostSetStatusAbAttrs,
   InfiltratorAbAttr,
   AlliedFieldDamageReductionAbAttr,
   PostDamageAbAttr,
@@ -221,7 +218,6 @@ import {
   SpeciesFormChangeLapseTeraTrigger,
   SpeciesFormChangeMoveLearnedTrigger,
   SpeciesFormChangePostMoveTrigger,
-  SpeciesFormChangeStatusEffectTrigger,
 } from "#app/data/pokemon-forms";
 import { TerrainType } from "#app/data/terrain";
 import type { TrainerSlot } from "#enums/trainer-slot";
@@ -263,11 +259,15 @@ import { Nature } from "#enums/nature";
 import { StatusEffect } from "#enums/status-effect";
 import { doShinySparkleAnim } from "#app/field/anims";
 import { MoveFlags } from "#enums/MoveFlags";
-import { hasExpSprite } from "#app/sprites/sprite-utils";
 import { timedEventManager } from "#app/global-event-manager";
 import { loadMoveAnimations } from "#app/sprites/pokemon-asset-loader";
 import { ResetStatusPhase } from "#app/phases/reset-status-phase";
-import { DailyEventSeedBoss, getDailyEventSeedBoss, isDailyEventSeed } from "#app/data/daily-run";
+import {
+  DailyEventSeedBoss,
+  getDailyEventSeedBoss,
+  getDailyEventSeedBossMoveset,
+  isDailyEventSeed
+} from "#app/data/daily-run";
 
 export enum LearnMoveSituation {
   MISC,
@@ -6888,12 +6888,15 @@ export class EnemyPokemon extends Pokemon {
     const speciesId = this.species.speciesId;
 
     let dailyEventBoss: DailyEventSeedBoss | null = null;
+    let dailyEventBossMoveset: PokemonMove[] | null = null;
     if (globalScene.gameMode.isDaily && globalScene.gameMode.isWaveFinal(globalScene.currentBattle?.waveIndex ?? 0)) {
       if (isDailyEventSeed(globalScene.seed)) {
         dailyEventBoss = getDailyEventSeedBoss(globalScene.seed);
         if (dailyEventBoss) {
           this.formIndex = dailyEventBoss.speciesForm.formIndex;
         }
+
+        dailyEventBossMoveset = getDailyEventSeedBossMoveset(globalScene.seed);        
       }
     }
 
@@ -6906,7 +6909,12 @@ export class EnemyPokemon extends Pokemon {
     }
 
     if (!dataSource) {
-      this.generateAndPopulateMoveset();
+      if (dailyEventBossMoveset) {
+        this.moveset = dailyEventBossMoveset;
+      }
+      else {
+        this.generateAndPopulateMoveset();
+      }
 
       if (shinyLock || Overrides.OPP_SHINY_OVERRIDE === false) {
         this.shiny = false;

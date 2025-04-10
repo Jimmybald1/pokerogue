@@ -1,7 +1,7 @@
 import { PartyMemberStrength } from "#enums/party-member-strength";
 import type { Species } from "#enums/species";
 import { globalScene } from "#app/global-scene";
-import { PlayerPokemon } from "#app/field/pokemon";
+import { PlayerPokemon, PokemonMove } from "#app/field/pokemon";
 import type { Starter } from "#app/ui/starter-select-ui-handler";
 import * as Utils from "#app/utils";
 import type { PokemonSpeciesForm } from "#app/data/pokemon-species";
@@ -9,7 +9,7 @@ import PokemonSpecies, { getPokemonSpecies, getPokemonSpeciesForm } from "#app/d
 import { speciesStarterCosts } from "#app/data/balance/starters";
 import { pokerogueApi } from "#app/plugins/api/pokerogue-api";
 import { Biome } from "#app/enums/biome";
-import type { Variant } from "./variant";
+import type { Variant } from "#app/sprites/variant";
 import type { Moves } from "#enums/moves";
 import type { StarterMoveset } from "#app/system/game-data";
 
@@ -206,7 +206,7 @@ export function getDailyEventSeedStarters(seed: string): Starter[] | null {
   const starters: Starter[] = [];
   const match = /starter(\d{4})(\d{2})(\d)(\d{4})(\d{2})(\d)(\d{4})(\d{2})(\d)/g.exec(seed);
   if (match && match.length === 10) {
-    const movesets = getDailyEventSeedStarterMoves(seed);
+    const movesets = getDailyEventSeedStarterMoveset(seed);
     for (let i = 1; i < match.length; i += 3) {
       const speciesId = Number.parseInt(match[i]) as Species;
       const formIndex = Number.parseInt(match[i + 1]);
@@ -298,7 +298,7 @@ export function getDailyEventSeedBiome(seed: string): DailyEventSeedBiome | null
  * Where each Starter has 4 sets of 4 digits for the MoveIds
  * @returns An array of {@linkcode StarterMoveset}s containing the movesets or null if invalid.
  */
-export function getDailyEventSeedStarterMoves(seed: string): StarterMoveset[] | null {
+export function getDailyEventSeedStarterMoveset(seed: string): StarterMoveset[] | null {
   if (!isDailyEventSeed(seed)) {
     return null;
   }
@@ -311,6 +311,25 @@ export function getDailyEventSeedStarterMoves(seed: string): StarterMoveset[] | 
       moves.push(starterMoveset as StarterMoveset);
     }
 
+    return moves;
+  }
+
+  return null;
+}
+
+/**
+ * Expects the seed to contain: /bmove\d{16}/
+ * Where the Boss has 4 sets of 4 digits for the MoveIds
+ * @returns An array of {@linkcode PokemonMove}s containing the movesets or null if invalid.
+ */
+export function getDailyEventSeedBossMoveset(seed: string): PokemonMove[] | null {
+  if (!isDailyEventSeed(seed)) {
+    return null;
+  }
+
+  const match = /bmove(\d{4})(\d{4})(\d{4})(\d{4})/g.exec(seed);
+  if (match && match.length === 5) {
+    const moves = match.slice(1).map(m => new PokemonMove(Number.parseInt(m) as Moves));
     return moves;
   }
 
