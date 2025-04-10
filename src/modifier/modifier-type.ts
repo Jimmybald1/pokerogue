@@ -128,6 +128,7 @@ import { getStatKey, Stat, TEMP_BATTLE_STATS } from "#enums/stat";
 import { StatusEffect } from "#enums/status-effect";
 import i18next from "i18next";
 import { timedEventManager } from "#app/global-event-manager";
+import { getDailyEventSeedLuck, isDailyEventSeed } from "#app/data/daily-run";
 
 const outputModifierData = false;
 const useMaxWeightForOutput = false;
@@ -3705,6 +3706,13 @@ export class ModifierTypeOption {
  */
 export function getPartyLuckValue(party: Pokemon[]): number {
   if (globalScene.gameMode.isDaily) {
+    if (isDailyEventSeed(globalScene.seed)) {
+      const luck = getDailyEventSeedLuck(globalScene.seed);
+      if (luck) {
+        return luck;
+      }
+    }
+
     const DailyLuck = new NumberHolder(0);
     globalScene.executeWithSeedOffset(
       () => {

@@ -335,3 +335,21 @@ export function getDailyEventSeedBossMoveset(seed: string): PokemonMove[] | null
 
   return null;
 }
+
+/**
+ * Expects the seed to contain: /luck\d{2}/
+ * Where the Luck has 2 digits for the number.
+ * @returns A {@linkcode number} representing the Daily Luck value or null if invalid.
+ */
+export function getDailyEventSeedLuck(seed: string): number | null {
+  if (!isDailyEventSeed(seed)) {
+    return null;
+  }
+
+  const match = /luck(\d{2})/g.exec(seed);
+  if (match && match.length === 2) {
+    return Number.parseInt(match[1]);
+  }
+
+  return null;
+}
