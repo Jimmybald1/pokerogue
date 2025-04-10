@@ -790,7 +790,9 @@ export class TitlePhase extends Phase {
   InitShopScouting(method) {
     globalScene.sessionSlotId = 0;
     globalScene.gameData.loadSession(globalScene.sessionSlotId, undefined, undefined).then((success: boolean) => {
+      console.time('Shop Scouting');
       this.ShopScouting(method);
+      console.timeEnd('Shop Scouting');
     }).catch(err => {
       console.error(err);
       globalScene.ui.showText("something went wrong, see console error", null);
@@ -802,7 +804,7 @@ export class TitlePhase extends Phase {
   ShopScouting(method) {
     // Remove any lures or charms
     globalScene.RemoveModifiers();
-    console.log(`Starting shop scouting ${new Date().toLocaleString()}`);
+    console.log(`Starting shop scouting ${new Date().toLocaleTimeString()}`);
 
     const party = globalScene.getPlayerParty();
 
@@ -969,21 +971,16 @@ export class TitlePhase extends Phase {
         const partynames = party.map(p => p.name);
         console.log(rogueItem, mu.level, partynames, party);
 
-        let e = 0;
-        ethers.forEach(ether => {
-          ether(party[0]);
-
-          lures.forEach(lure => {
-            const text = lure();
+        lures.forEach(lure => {
+          const text = lure();
             this.IteratePotions(party, 0, 0, 0, 0, 0, 0, e, text, mu.start, mu.end, mu.level, rogueItem);
           });
-
-          e++;
         });
       });
     });
 
     console.log(this.charmList);
+    console.log(`Shop scouting done ${new Date().toLocaleTimeString()}`);
     globalScene.ui.showText("DONE! Copy the list from the console and refresh the page.", null);
   }
 
