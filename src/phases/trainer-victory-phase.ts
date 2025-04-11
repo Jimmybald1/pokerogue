@@ -3,22 +3,17 @@ import { TrainerType } from "#app/enums/trainer-type";
 import { modifierTypes } from "#app/modifier/modifier-type";
 import { vouchers } from "#app/system/voucher";
 import i18next from "i18next";
-import * as Utils from "#app/utils";
+import { randSeedItem } from "#app/utils";
 import { BattlePhase } from "./battle-phase";
 import { ModifierRewardPhase } from "./modifier-reward-phase";
 import { MoneyRewardPhase } from "./money-reward-phase";
 import { TrainerSlot } from "#enums/trainer-slot";
 import { globalScene } from "#app/global-scene";
-import * as LoggerTools from "../logger";
 import { Biome } from "#app/enums/biome";
 import { achvs } from "#app/system/achv";
 import { timedEventManager } from "#app/global-event-manager";
 
 export class TrainerVictoryPhase extends BattlePhase {
-  constructor() {
-    super();
-  }
-
   start() {
     globalScene.disableMenu = true;
 
@@ -83,7 +78,7 @@ export class TrainerVictoryPhase extends BattlePhase {
         const victoryMessages = globalScene.currentBattle.trainer?.getVictoryMessages()!; // TODO: is this bang correct?
         let message: string;
         globalScene.executeWithSeedOffset(
-          () => (message = Utils.randSeedItem(victoryMessages, "Victory message")),
+          () => (message = randSeedItem(victoryMessages, "Victory message")),
           globalScene.currentBattle.waveIndex,
         );
         message = message!; // tell TS compiler it's defined now

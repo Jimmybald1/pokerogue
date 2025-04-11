@@ -5,12 +5,12 @@ import { TitlePhase } from "./title-phase";
 import * as LoggerTools from "../logger";
 
 export class PostGameOverPhase extends Phase {
-  private endCardPhase: EndCardPhase | null;
+  private endCardPhase?: EndCardPhase;
 
   constructor(endCardPhase?: EndCardPhase) {
     super();
 
-    this.endCardPhase = endCardPhase!; // TODO: is this bang correct?
+    this.endCardPhase = endCardPhase;
   }
 
   start() {

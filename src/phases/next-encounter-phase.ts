@@ -3,10 +3,6 @@ import { EncounterPhase } from "./encounter-phase";
 import * as LoggerTools from "../logger";
 
 export class NextEncounterPhase extends EncounterPhase {
-  constructor() {
-    super();
-  }
-
   start() {
     super.start();
   }

@@ -4,6 +4,7 @@ import { PokemonPhase } from "./pokemon-phase";
 import * as LoggerTools from "../logger";
 
 export class ShinySparklePhase extends PokemonPhase {
+  // biome-ignore lint/complexity/noUselessConstructor: This makes `battlerIndex` required
   constructor(battlerIndex: BattlerIndex) {
     super(battlerIndex);
   }

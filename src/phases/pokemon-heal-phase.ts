@@ -8,7 +8,7 @@ import { getPokemonNameWithAffix } from "#app/messages";
 import { HealingBoosterModifier } from "#app/modifier/modifier";
 import { HealAchv } from "#app/system/achv";
 import i18next from "i18next";
-import * as Utils from "#app/utils";
+import { NumberHolder } from "#app/utils";
 import { CommonAnimPhase } from "./common-anim-phase";
 import * as LoggerTools from "../logger";
 import { BattlerTagType } from "#app/enums/battler-tag-type";
@@ -73,11 +73,11 @@ export class PokemonHealPhase extends CommonAnimPhase {
       return super.end();
     }
     if (healOrDamage) {
-      const hpRestoreMultiplier = new Utils.NumberHolder(1);
+      const hpRestoreMultiplier = new NumberHolder(1);
       if (!this.revive) {
         globalScene.applyModifiers(HealingBoosterModifier, this.player, hpRestoreMultiplier);
       }
-      const healAmount = new Utils.NumberHolder(Math.floor(this.hpHealed * hpRestoreMultiplier.value));
+      const healAmount = new NumberHolder(Math.floor(this.hpHealed * hpRestoreMultiplier.value));
       if (healAmount.value < 0) {
         pokemon.damageAndUpdate(healAmount.value * -1, { result: HitResult.INDIRECT });
         healAmount.value = 0;

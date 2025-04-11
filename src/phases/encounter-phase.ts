@@ -45,10 +45,10 @@ import { GameModes } from "#app/game-mode";
 export class EncounterPhase extends BattlePhase {
   private loaded: boolean;
 
-  constructor(loaded?: boolean) {
+  constructor(loaded = false) {
     super();
 
-    this.loaded = !!loaded;
+    this.loaded = loaded;
   }
 
   start() {

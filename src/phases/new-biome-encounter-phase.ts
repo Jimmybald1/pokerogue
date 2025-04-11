@@ -5,10 +5,6 @@ import { NextEncounterPhase } from "./next-encounter-phase";
 import * as LoggerTools from "../logger";
 
 export class NewBiomeEncounterPhase extends NextEncounterPhase {
-  constructor() {
-    super();
-  }
-
   doEncounter(): void {
     globalScene.playBgm(undefined, true);
 

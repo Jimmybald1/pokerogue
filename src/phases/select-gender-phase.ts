@@ -7,10 +7,6 @@ import i18next from "i18next";
 import * as LoggerTools from "../logger";
 
 export class SelectGenderPhase extends Phase {
-  constructor() {
-    super();
-  }
-
   start(): void {
     super.start();
 

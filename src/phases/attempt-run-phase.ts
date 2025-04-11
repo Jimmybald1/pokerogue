@@ -1,10 +1,10 @@
 import { applyAbAttrs, applyPreLeaveFieldAbAttrs, PreLeaveFieldAbAttr, RunSuccessAbAttr } from "#app/data/ability";
-import { Stat } from "#app/enums/stat";
-import { StatusEffect } from "#app/enums/status-effect";
+import { Stat } from "#enums/stat";
+import { StatusEffect } from "#enums/status-effect";
 import type { PlayerPokemon, EnemyPokemon } from "#app/field/pokemon";
 import type Pokemon from "#app/field/pokemon";
 import i18next from "i18next";
-import * as Utils from "#app/utils";
+import { NumberHolder } from "#app/utils";
 import { BattleEndPhase } from "./battle-end-phase";
 import { NewBattlePhase } from "./new-battle-phase";
 import { PokemonPhase } from "./pokemon-phase";
@@ -23,7 +23,7 @@ export class AttemptRunPhase extends PokemonPhase {
 
     const playerPokemon = this.getPokemon();
 
-    const escapeChance = new Utils.NumberHolder(0);
+    const escapeChance = new NumberHolder(0);
 
     this.attemptRunAway(playerField, enemyField, escapeChance);
 
@@ -65,7 +65,7 @@ export class AttemptRunPhase extends PokemonPhase {
     this.end();
   }
 
-  attemptRunAway(playerField: PlayerPokemon[], enemyField: EnemyPokemon[], escapeChance: Utils.NumberHolder) {
+  attemptRunAway(playerField: PlayerPokemon[], enemyField: EnemyPokemon[], escapeChance: NumberHolder) {
     /** Sum of the speed of all enemy pokemon on the field */
     const enemySpeed = enemyField.reduce(
       (total: number, enemyPokemon: Pokemon) => total + enemyPokemon.getStat(Stat.SPD),
