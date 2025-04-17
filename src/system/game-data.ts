@@ -8,7 +8,7 @@ import { pokemonPrevolutions } from "#app/data/balance/pokemon-evolutions";
 import type PokemonSpecies from "#app/data/pokemon-species";
 import { allSpecies, getPokemonSpecies } from "#app/data/pokemon-species";
 import { speciesStarterCosts } from "#app/data/balance/starters";
-import * as Utils from "#app/utils";
+import { randInt, getEnumKeys, isLocal, executeIf, fixedInt, randSeedItem, NumberHolder } from "#app/utils";
 import Overrides from "#app/overrides";
 import PokemonData from "#app/system/pokemon-data";
 import PersistentModifierData from "#app/system/modifier-data";
@@ -37,6 +37,7 @@ import { setSettingGamepad, SettingGamepad, settingGamepadDefaults } from "#app/
 import type { SettingKeyboard } from "#app/system/settings/settings-keyboard";
 import { setSettingKeyboard } from "#app/system/settings/settings-keyboard";
 import { TagAddedEvent, TerrainChangedEvent, WeatherChangedEvent } from "#app/events/arena";
+// biome-ignore lint/style/noNamespaceImport: Something weird is going on here and I don't want to touch it
 import * as Modifier from "#app/modifier/modifier";
 import { StatusEffect } from "#enums/status-effect";
 import ChallengeData from "#app/system/challenge-data";
@@ -365,8 +366,8 @@ export class GameData {
     this.loadSettings();
     this.loadGamepadSettings();
     this.loadMappingConfigs();
-    this.trainerId = Utils.randInt(65536, undefined, "Trainer ID");
-    this.secretId = Utils.randInt(65536, undefined, "Secret ID");
+    this.trainerId = randInt(65536, undefined, "Trainer ID");
+    this.secretId = randInt(65536, undefined, "Secret ID");
     this.starterData = {};
     this.gameStats = new GameStats();
     this.runHistory = {};
@@ -594,7 +595,7 @@ export class GameData {
         }
 
         if (systemData.voucherCounts) {
-          Utils.getEnumKeys(VoucherType).forEach(key => {
+          getEnumKeys(VoucherType).forEach(key => {
             const index = VoucherType[key];
             this.voucherCounts[index] = systemData.voucherCounts[index] || 0;
           });
@@ -622,7 +623,7 @@ export class GameData {
    * At the moment, only retrievable from locale cache
    */
   async getRunHistoryData(): Promise<RunHistoryData> {
-    if (!Utils.isLocal) {
+    if (!isLocal) {
       /**
        * Networking Code DO NOT DELETE!
        * Note: Might have to be migrated to `pokerogue-api.ts`
@@ -1040,6 +1041,7 @@ export class GameData {
   }
 
   getSession(slotId: number, autoSlot?: integer): Promise<SessionSaveData | null> {
+    // biome-ignore lint/suspicious/noAsyncPromiseExecutor: <explanation>
     return new Promise(async (resolve, reject) => {
       if (slotId < 0) {
         return resolve(null);
@@ -1096,6 +1098,7 @@ export class GameData {
   }
 
   loadSession(slotId: number, sessionData?: SessionSaveData, autoSlot?: integer): Promise<boolean> {
+    // biome-ignore lint/suspicious/noAsyncPromiseExecutor: <explanation>
     return new Promise(async (resolve, reject) => {
       try {
         const initSessionFromData = async (sessionData: SessionSaveData) => {
@@ -1436,7 +1439,7 @@ export class GameData {
 
   saveAll(skipVerification = false, sync = false, useCachedSession = false, useCachedSystem = false): Promise<boolean> {
     return new Promise<boolean>(resolve => {
-      Utils.executeIf(!skipVerification, updateUserInfo).then(success => {
+      executeIf(!skipVerification, updateUserInfo).then(success => {
         if (success !== null && !success) {
           return resolve(false);
         }
@@ -1453,12 +1456,11 @@ export class GameData {
               ),
             ) // TODO: is this bang correct?
           : this.getSessionSaveData();
-
         const maxIntAttrValue = 0x80000000;
         const systemData = useCachedSystem
           ? this.parseSystemData(decrypt(localStorage.getItem(`data_${loggedInUser?.username}`)!, bypassLogin))
           : this.getSystemSaveData(); // TODO: is this bang correct?
-
+        
         const request = {
           system: systemData,
           session: sessionData,
@@ -1475,7 +1477,6 @@ export class GameData {
             bypassLogin,
           ),
         );
-
         localStorage.setItem(
           `sessionData${globalScene.sessionSlotId ? globalScene.sessionSlotId : ""}_${loggedInUser?.username}`,
           encrypt(JSON.stringify(sessionData), bypassLogin),
@@ -1616,7 +1617,7 @@ export class GameData {
           }
 
           const displayError = (error: string) =>
-            globalScene.ui.showText(error, null, () => globalScene.ui.showText("", 0), Utils.fixedInt(1500));
+            globalScene.ui.showText(error, null, () => globalScene.ui.showText("", 0), fixedInt(1500));
           dataName = dataName!; // tell TS compiler that dataName is defined!
 
           if (!valid) {
@@ -1624,7 +1625,7 @@ export class GameData {
               `Your ${dataName} data could not be loaded. It may be corrupted.`,
               null,
               () => globalScene.ui.showText("", 0),
-              Utils.fixedInt(1500),
+              fixedInt(1500),
             );
           }
 
@@ -1717,7 +1718,7 @@ export class GameData {
       () => {
         const neutralNatures = [Nature.HARDY, Nature.DOCILE, Nature.SERIOUS, Nature.BASHFUL, Nature.QUIRKY];
         for (let s = 0; s < defaultStarterSpecies.length; s++) {
-          defaultStarterNatures.push(Utils.randSeedItem(neutralNatures, "Random neutral nature"));
+          defaultStarterNatures.push(randSeedItem(neutralNatures, "Random neutral nature"));
         }
       },
       0,
@@ -2218,7 +2219,7 @@ export class GameData {
       value = decrementValue(value);
     }
 
-    const cost = new Utils.NumberHolder(value);
+    const cost = new NumberHolder(value);
     applyChallenges(ChallengeType.STARTER_COST, speciesId, cost);
 
     return cost.value;
@@ -2246,7 +2247,7 @@ export class GameData {
         entry.hatchedCount = 0;
       }
       if (!entry.hasOwnProperty("natureAttr") || (entry.caughtAttr && !entry.natureAttr)) {
-        entry.natureAttr = this.defaultDexData?.[k].natureAttr || 1 << Utils.randInt(25, 1, "Random bit shift");
+        entry.natureAttr = this.defaultDexData?.[k].natureAttr || 1 << randInt(25, 1, "Random bit shift");
       }
     }
   }

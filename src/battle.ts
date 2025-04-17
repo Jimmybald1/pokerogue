@@ -1,6 +1,14 @@
 import { globalScene } from "#app/global-scene";
 import type { Command } from "./ui/command-ui-handler";
-import * as Utils from "./utils";
+import {
+  randomString,
+  getEnumValues,
+  NumberHolder,
+  randSeedInt,
+  shiftCharCodes,
+  randSeedItem,
+  randInt,
+} from "#app/utils";
 import Trainer, { TrainerVariant } from "./field/trainer";
 import type { GameMode } from "./game-mode";
 import { MoneyMultiplierModifier, PokemonHeldItemModifier } from "./modifier/modifier";
@@ -101,7 +109,7 @@ export default class Battle {
   public postBattleLoot: PokemonHeldItemModifier[] = [];
   public escapeAttempts = 0;
   public lastMove: Moves;
-  public battleSeed: string = Utils.randomString(16, true);
+  public battleSeed: string = randomString(16, true);
   private battleSeedState: string | null = null;
   public moneyScattered = 0;
   /** Primarily for double battles, keeps track of last enemy and player pokemon that triggered its ability or used a move */
@@ -183,8 +191,8 @@ export default class Battle {
 
   incrementTurn(): void {
     this.turn++;
-    this.turnCommands = Object.fromEntries(Utils.getEnumValues(BattlerIndex).map(bt => [bt, null]));
-    this.preTurnCommands = Object.fromEntries(Utils.getEnumValues(BattlerIndex).map(bt => [bt, null]));
+    this.turnCommands = Object.fromEntries(getEnumValues(BattlerIndex).map(bt => [bt, null]));
+    this.preTurnCommands = Object.fromEntries(getEnumValues(BattlerIndex).map(bt => [bt, null]));
     this.battleSeedState = null;
   }
 
@@ -213,7 +221,7 @@ export default class Battle {
   }
 
   pickUpScatteredMoney(): void {
-    const moneyAmount = new Utils.NumberHolder(globalScene.currentBattle.moneyScattered);
+    const moneyAmount = new NumberHolder(globalScene.currentBattle.moneyScattered);
     globalScene.applyModifiers(MoneyMultiplierModifier, true, moneyAmount);
 
     if (globalScene.arena.getTag(ArenaTagType.HAPPY_HOUR)) {
@@ -459,17 +467,17 @@ export default class Battle {
     if (this.battleSeedState) {
       Phaser.Math.RND.state(this.battleSeedState);
     } else {
-      Phaser.Math.RND.sow([ Utils.shiftCharCodes(this.battleSeed, this.turn << 6) ]);
+      Phaser.Math.RND.sow([ shiftCharCodes(this.battleSeed, this.turn << 6) ]);
       if (doCatchLogging) {
         console.log("Battle Seed:", this.battleSeed);
       }
     }
     for (var i = 0; i < offset; i++) {
       // Perform useless rolls to offset RNG counter
-      Utils.randSeedInt(5, undefined, "[RNG offset]");
+      randSeedInt(5, undefined, "[RNG offset]");
     }
     for (var i = 0; i < count; i++) {
-      out.push(Utils.randSeedInt(range, min, `[${i + 1}/${count}] ${reason}`));
+      out.push(randSeedInt(range, min, `[${i + 1}/${count}] ${reason}`));
     }
     if (doCatchLogging) {
       console.log("[SIMULATED] " + reason + " (x" + count + (offset ? " + offset " + offset : "") + ")", out);
@@ -481,7 +489,7 @@ export default class Battle {
   }
 
   /**
-   * Generates a random number using the current battle's seed. Calls {@linkcode Utils.randSeedInt}
+   * Generates a random number using the current battle's seed. Calls {@linkcode randSeedInt}
    * @param range How large of a range of random numbers to choose from. If {@linkcode range} <= 1, returns {@linkcode min}
    * @param min The minimum integer to pick, default `0`
    * @returns A random integer between {@linkcode min} and ({@linkcode min} + {@linkcode range} - 1)
@@ -496,14 +504,14 @@ export default class Battle {
     if (this.battleSeedState) {
       Phaser.Math.RND.state(this.battleSeedState);
     } else {
-      Phaser.Math.RND.sow([Utils.shiftCharCodes(this.battleSeed, this.turn << 6)]);
+      Phaser.Math.RND.sow([shiftCharCodes(this.battleSeed, this.turn << 6)]);
       if (doCatchLogging) {
         console.log("Battle Seed:", this.battleSeed);
       }
     }
     globalScene.rngCounter = this.rngCounter++;
     globalScene.rngSeedOverride = this.battleSeed;
-    const ret = Utils.randSeedInt(range, min, reason);
+    const ret = randSeedInt(range, min, reason);
     this.battleSeedState = Phaser.Math.RND.state();
     Phaser.Math.RND.state(state);
     //scene.setScoreText("RNG: " + tempRngCounter + " (Last sim: " + this.rngCounter + ")")
@@ -590,19 +598,19 @@ export function getRandomTrainerFunc(
   seedOffset = 0,
 ): GetTrainerFunc {
   return () => {
-    const rand = Utils.randSeedInt(trainerPool.length);
+    const rand = randSeedInt(trainerPool.length);
     const trainerTypes: TrainerType[] = [];
 
     globalScene.executeWithSeedOffset(() => {
       for (const trainerPoolEntry of trainerPool) {
-        const trainerType = Array.isArray(trainerPoolEntry) ? Utils.randSeedItem(trainerPoolEntry, "Random trainer helper function") : trainerPoolEntry;
+        const trainerType = Array.isArray(trainerPoolEntry) ? randSeedItem(trainerPoolEntry, "Random trainer helper function") : trainerPoolEntry;
         trainerTypes.push(trainerType);
       }
     }, seedOffset);
 
     let trainerGender = TrainerVariant.DEFAULT;
     if (randomGender) {
-      trainerGender = Utils.randInt(2, undefined, "Random trainer helper function") === 0 ? TrainerVariant.FEMALE : TrainerVariant.DEFAULT;
+      trainerGender = randInt(2, undefined, "Random trainer helper function") === 0 ? TrainerVariant.FEMALE : TrainerVariant.DEFAULT;
     }
 
     /* 1/3 chance for evil team grunts to be double battles */
@@ -621,7 +629,7 @@ export function getRandomTrainerFunc(
     const isEvilTeamGrunt = evilTeamGrunts.includes(trainerTypes[rand]);
 
     if (trainerConfigs[trainerTypes[rand]].hasDouble && isEvilTeamGrunt) {
-      return new Trainer(trainerTypes[rand], Utils.randInt(3, undefined, "Evil grunt selection") === 0 ? TrainerVariant.DOUBLE : trainerGender);
+      return new Trainer(trainerTypes[rand], randInt(3, undefined, "Evil grunt selection") === 0 ? TrainerVariant.DOUBLE : trainerGender);
     }
 
     return new Trainer(trainerTypes[rand], trainerGender);
@@ -644,7 +652,7 @@ export const classicFixedBattles: FixedBattleConfigs = {
   [ClassicFixedBossWaves.TOWN_YOUNGSTER]: new FixedBattleConfig()
     .setBattleType(BattleType.TRAINER)
     .setGetTrainerFunc(
-      () => new Trainer(TrainerType.YOUNGSTER, Utils.randSeedInt(2, undefined, "Youngster gender") ? TrainerVariant.FEMALE : TrainerVariant.DEFAULT),
+      () => new Trainer(TrainerType.YOUNGSTER, randSeedInt(2, undefined, "Youngster gender") ? TrainerVariant.FEMALE : TrainerVariant.DEFAULT),
     ),
   [ClassicFixedBossWaves.RIVAL_1]: new FixedBattleConfig()
     .setBattleType(BattleType.TRAINER)

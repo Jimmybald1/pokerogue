@@ -1,5 +1,11 @@
 import { globalScene } from "#app/global-scene";
-import { applyPreSwitchOutAbAttrs, PostDamageForceSwitchAbAttr, PreSwitchOutAbAttr } from "#app/data/ability";
+import {
+  applyPreSummonAbAttrs,
+  applyPreSwitchOutAbAttrs,
+  PostDamageForceSwitchAbAttr,
+  PreSummonAbAttr,
+  PreSwitchOutAbAttr,
+} from "#app/data/abilities/ability";
 import { allMoves, ForceSwitchOutAttr } from "#app/data/moves/move";
 import { getPokeballTintColor } from "#app/data/pokeball";
 import { SpeciesFormChangeActiveTrigger } from "#app/data/pokemon-forms";
@@ -100,7 +106,7 @@ export class SwitchSummonPhase extends SummonPhase {
     );
     globalScene.playSound("se/pb_rel");
     pokemon.hideInfo();
-    pokemon.tint(getPokeballTintColor(pokemon.pokeball), 1, 250, "Sine.easeIn");
+    pokemon.tint(getPokeballTintColor(pokemon.getPokeball(true)), 1, 250, "Sine.easeIn");
     globalScene.tweens.add({
       targets: pokemon,
       duration: 250,
@@ -121,6 +127,7 @@ export class SwitchSummonPhase extends SummonPhase {
       LoggerTools.logActions(globalScene.currentBattle.waveIndex, `Pre-Switch ${this.lastPokemon.name} to ${switchedInPokemon.name}`);
     }
 
+    applyPreSummonAbAttrs(PreSummonAbAttr, switchedInPokemon);
     applyPreSwitchOutAbAttrs(PreSwitchOutAbAttr, this.lastPokemon);
     if (this.switchType === SwitchType.BATON_PASS && switchedInPokemon) {
       (this.player ? globalScene.getEnemyField() : globalScene.getPlayerField()).forEach(enemyPokemon =>

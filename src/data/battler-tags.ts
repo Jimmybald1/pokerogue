@@ -1,13 +1,13 @@
 import { globalScene } from "#app/global-scene";
 import {
-  allAbilities,
   applyAbAttrs,
   BlockNonDirectDamageAbAttr,
   FlinchEffectAbAttr,
   ProtectStatAbAttr,
   ConditionalUserFieldProtectStatAbAttr,
   ReverseDrainAbAttr,
-} from "#app/data/ability";
+} from "#app/data/abilities/ability";
+import { allAbilities } from "./data-lists";
 import { ChargeAnim, CommonAnim, CommonBattleAnim, MoveChargeAnim } from "#app/data/battle-anims";
 import type Move from "#app/data/moves/move";
 import {
@@ -42,7 +42,7 @@ import { Species } from "#enums/species";
 import { EFFECTIVE_STATS, getStatKey, Stat, type BattleStat, type EffectiveStat } from "#enums/stat";
 import { StatusEffect } from "#enums/status-effect";
 import { WeatherType } from "#enums/weather-type";
-import * as Utils from "../utils";
+import { isNullOrUndefined } from "#app/utils";
 
 export enum BattlerTagLapseType {
   FAINT,
@@ -302,7 +302,7 @@ export class DisabledTag extends MoveRestrictionBattlerTag {
     super.onAdd(pokemon);
 
     const move = pokemon.getLastXMoves(-1).find(m => !m.virtual);
-    if (Utils.isNullOrUndefined(move) || move.move === Moves.STRUGGLE || move.move === Moves.NONE) {
+    if (isNullOrUndefined(move) || move.move === Moves.STRUGGLE || move.move === Moves.NONE) {
       return;
     }
 

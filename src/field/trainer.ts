@@ -11,7 +11,7 @@ import { TrainerSlot } from "#enums/trainer-slot";
 import { TrainerPoolTier } from "#enums/trainer-pool-tier";
 import { TeraAIMode } from "#enums/tera-ai-mode";
 import type { EnemyPokemon } from "#app/field/pokemon";
-import * as Utils from "#app/utils";
+import { randSeedWeightedItem, randSeedItem, randSeedInt } from "#app/utils";
 import type { PersistentModifier } from "#app/modifier/modifier";
 import { ArenaTagSide, ArenaTrapTag } from "#app/data/arena-tag";
 import { getIsInitialized, initI18n } from "#app/plugins/i18n";
@@ -58,7 +58,7 @@ export default class Trainer extends Phaser.GameObjects.Container {
     this.partyTemplateIndex = Math.min(
       partyTemplateIndex !== undefined
         ? partyTemplateIndex
-        : Utils.randSeedWeightedItem(this.config.partyTemplates.map((_, i) => i)),
+        : randSeedWeightedItem(this.config.partyTemplates.map((_, i) => i)),
       this.config.partyTemplates.length - 1,
     );
     const classKey = `trainersCommon:${TrainerType[trainerType]}`;
@@ -71,7 +71,7 @@ export default class Trainer extends Phaser.GameObjects.Container {
             ? ".FEMALE"
             : ".MALE"
           : "";
-        const trainerKey = Utils.randSeedItem(
+        const trainerKey = randSeedItem(
           Object.keys(i18next.t(`${classKey}${genderKey}`, { returnObjects: true })),
           "Trainer name 1",
         );
@@ -88,7 +88,7 @@ export default class Trainer extends Phaser.GameObjects.Container {
           }
         } else {
           const partnerGenderKey = i18next.exists(`${classKey}.FEMALE`) ? ".FEMALE" : "";
-          const partnerTrainerKey = Utils.randSeedItem(
+          const partnerTrainerKey = randSeedItem(
             Object.keys(
               i18next.t(`${classKey}${partnerGenderKey}`, {
                 returnObjects: true,
@@ -531,7 +531,7 @@ export default class Trainer extends Phaser.GameObjects.Container {
 
         // If useNewSpeciesPool is true, we need to generate a new species from the new species pool, otherwise we generate a random species
         let species = useNewSpeciesPool
-          ? getPokemonSpecies(newSpeciesPool[Math.floor(Utils.randSeedInt(newSpeciesPool.length))])
+          ? getPokemonSpecies(newSpeciesPool[Math.floor(randSeedInt(newSpeciesPool.length))])
           : template.isSameSpecies(index) && index > offset
             ? getPokemonSpecies(
                 battle.enemyParty[offset].species.getTrainerSpeciesForLevel(
@@ -572,7 +572,7 @@ export default class Trainer extends Phaser.GameObjects.Container {
 
     let baseSpecies: PokemonSpecies;
     if (this.config.speciesPools) {
-      const tierValue = Utils.randSeedInt(512, undefined, "Randomly selecting species for trainer party");
+      const tierValue = randSeedInt(512, undefined, "Randomly selecting species for trainer party");
       let tier =
         tierValue >= 156
           ? TrainerPoolTier.COMMON
@@ -591,7 +591,7 @@ export default class Trainer extends Phaser.GameObjects.Container {
         tier--;
       }
       const tierPool = this.config.speciesPools[tier];
-      baseSpecies = getPokemonSpecies(Utils.randSeedItem(tierPool, "Random party member species"));
+      baseSpecies = getPokemonSpecies(randSeedItem(tierPool, "Random party member species"));
     } else {
       baseSpecies = globalScene.randomSpecies(battle.waveIndex, level, false, this.config.speciesFilter);
     }
@@ -730,7 +730,7 @@ export default class Trainer extends Phaser.GameObjects.Container {
     if (maxScorePartyMemberIndexes.length > 1) {
       let rand: number;
       globalScene.executeWithSeedOffset(
-        () => (rand = Utils.randSeedInt(maxScorePartyMemberIndexes.length, undefined, "Randomly selecting who to send out next")),
+        () => (rand = randSeedInt(maxScorePartyMemberIndexes.length, undefined, "Randomly selecting who to send out next")),
         globalScene.currentBattle.turn << 2,
       );
       return maxScorePartyMemberIndexes[rand!];

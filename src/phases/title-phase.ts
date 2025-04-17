@@ -36,7 +36,6 @@ import { Species } from "#app/enums/species";
 import { getPokemonNameWithAffix } from "#app/messages";
 import { Nature } from "#app/enums/nature";
 import { biomeLinks } from "#app/data/balance/biomes";
-import { allAbilities, applyAbAttrs, SyncEncounterNatureAbAttr } from "#app/data/ability";
 import { BattleSpec } from "#app/enums/battle-spec";
 import { Moves } from "#app/enums/moves";
 import { PokemonType } from "#app/enums/pokemon-type";
@@ -45,6 +44,8 @@ import type { PlayerPokemon } from "#app/field/pokemon";
 import { PokemonMove } from "#app/field/pokemon";
 import Overrides from "#app/overrides";
 import { TrainerSlot } from "#enums/trainer-slot";
+import { applyAbAttrs, SyncEncounterNatureAbAttr } from "#app/data/abilities/ability";
+import { allAbilities } from "#app/data/data-lists";
 
 export class TitlePhase extends Phase {
   private loaded = false;

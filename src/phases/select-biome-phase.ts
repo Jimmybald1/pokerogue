@@ -39,20 +39,12 @@ export class SelectBiomePhase extends BattlePhase {
         .map(b => (!Array.isArray(b) ? b : b[0]));
 
       if (biomes.length > 1 && globalScene.findModifier(m => m instanceof MapModifier)) {
-        const biomeChoices: Biome[] = (
-          !Array.isArray(biomeLinks[currentBiome])
-            ? [biomeLinks[currentBiome] as Biome]
-            : (biomeLinks[currentBiome] as (Biome | [Biome, number])[])
-        )
-          .filter(b => !Array.isArray(b) || !randSeedInt(b[1], undefined, "Choosing next biome for map"))
-          .map(b => (Array.isArray(b) ? b[0] : b));
-
-        const biomeSelectItems = biomeChoices.map(b => {
+        const biomeSelectItems = biomes.map(b => {
           const ret: OptionSelectItem = {
             label: getBiomeName(b),
             handler: () => {
               globalScene.ui.setMode(Mode.MESSAGE);
-              if (biomeChoices.length > 1 && b != Biome.END) {
+              if (biomes.length > 1 && b != Biome.END) {
                 LoggerTools.logActions(globalScene.currentBattle.waveIndex - 1, `Go to ${getBiomeName(b)}`);
               }
               setNextBiome(b);
