@@ -6,7 +6,7 @@ import { PokemonType } from "#enums/pokemon-type";
 import { Command } from "./command-ui-handler";
 import { UiMode } from "#enums/ui-mode";
 import UiHandler from "./ui-handler";
-import { getLocalizedSpriteKey, fixedInt, padInt } from "#app/utils/common";
+import { getLocalizedSpriteKey, fixedInt, padInt, NumberHolder, rangemap, isNullOrUndefined } from "#app/utils/common";
 import { MoveCategory } from "#enums/MoveCategory";
 import i18next from "i18next";
 import { Button } from "#enums/buttons";
@@ -435,7 +435,7 @@ export default class FightUiHandler extends UiHandler implements InfoToggle {
     }
 
     let dmgRange = 0.85;
-    const fixedDamage = new Utils.NumberHolder(0);
+    const fixedDamage = new NumberHolder(0);
     applyMoveAttrs(FixedDamageAttr, user, target, moveObj, fixedDamage);
     if (fixedDamage.value > 0) {
       dmgRange = 1;
@@ -444,8 +444,22 @@ export default class FightUiHandler extends UiHandler implements InfoToggle {
     const isGuaranteedCrit = target.isGuaranteedCrit(user, moveObj, true);
     const isTera = user.isTerastallized;
     user.isTerastallized = isTera ? isTera : this.fromCommand === Command.TERA; // If not yet terastallized, check if command wants to terastallize
-    let dmgLow = target.getAttackDamage(user, moveObj, false, false, isGuaranteedCrit, true).damage * dmgRange;
-    let dmgHigh = target.getAttackDamage(user, moveObj, false, false, isGuaranteedCrit, true).damage;
+    let dmgLow = target.getAttackDamage(
+      {
+        source: user, 
+        move: moveObj, 
+        isCritical: isGuaranteedCrit,
+        simulated: true,
+      }
+    ).damage * dmgRange;
+    let dmgHigh = target.getAttackDamage(
+      {
+        source: user, 
+        move: moveObj, 
+        isCritical: isGuaranteedCrit,
+        simulated: true,
+      }
+    ).damage;
     user.isTerastallized = isTera; // Revert to whatever the terastallize state was before
 
     if (this.logDamagePrediction) {
@@ -511,7 +525,7 @@ export default class FightUiHandler extends UiHandler implements InfoToggle {
     if (dmgLowF >= maxEHP) {
       koText = " KO";
     } else if (dmgHighF >= target.hp) {
-      var percentChance = Utils.rangemap(maxEHP, dmgLow, dmgHigh);
+      var percentChance = rangemap(maxEHP, dmgLow, dmgHigh);
       koText = " " + Math.floor(percentChance * 100) + "% KO";
     }
 
@@ -552,7 +566,7 @@ export default class FightUiHandler extends UiHandler implements InfoToggle {
         // Different segment, only high is a kill
         // ~% KO
         // show segment damage for low and damage range for high
-        var percentChance = Utils.rangemap(maxEHP, dmgLow, dmgHigh);
+        var percentChance = rangemap(maxEHP, dmgLow, dmgHigh);
         koText = " " + Math.floor(percentChance * 100) + "% KO";
 
         dmgLow = segmentClearedLow > 0 ? segmentRequirements[0] * segmentClearedLow : dmgLow;
@@ -596,7 +610,7 @@ export default class FightUiHandler extends UiHandler implements InfoToggle {
     if (this.logDamagePrediction) {
       console.log(`Max EHP: ${maxEHP}`);
     }
-    if (this.logDamagePrediction && !Utils.isNullOrUndefined(koText)) {
+    if (this.logDamagePrediction && !isNullOrUndefined(koText)) {
       console.log(`KO%: ${koText}`);
     }
 
