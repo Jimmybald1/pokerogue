@@ -1,5 +1,5 @@
 import { globalScene } from "#app/global-scene";
-import { fixedInt } from "#app/utils";
+import { fixedInt } from "#app/utils/common";
 import { BattlePhase } from "./battle-phase";
 import * as LoggerTools from "../logger";
 
@@ -22,7 +22,7 @@ export class PartyHealPhase extends BattlePhase {
     globalScene.ui.fadeOut(1000).then(() => {
       for (const pokemon of globalScene.getPlayerParty()) {
         pokemon.hp = pokemon.getMaxHp();
-        pokemon.resetStatus();
+        pokemon.resetStatus(true, false, false, true);
         for (const move of pokemon.moveset) {
           move.ppUsed = 0;
         }

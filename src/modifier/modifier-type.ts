@@ -114,7 +114,7 @@ import {
   NumberHolder,
   padInt,
   randSeedInt,
-} from "#app/utils";
+} from "#app/utils/common";
 import { Abilities } from "#enums/abilities";
 import { BattlerTagType } from "#enums/battler-tag-type";
 import { BerryType } from "#enums/berry-type";
@@ -128,7 +128,7 @@ import { getStatKey, Stat, TEMP_BATTLE_STATS } from "#enums/stat";
 import { StatusEffect } from "#enums/status-effect";
 import i18next from "i18next";
 import { timedEventManager } from "#app/global-event-manager";
-import  * as Utils from "#app/utils";
+import { TYPE_BOOST_ITEM_BOOST_PERCENT } from "#app/constants";
 
 const outputModifierData = false;
 const useMaxWeightForOutput = false;
@@ -323,7 +323,7 @@ class AddPokeballModifierType extends ModifierType {
     });
   }
   get identifier(): string {
-    return "PokeballModifier:" + Utils.getEnumKeys(PokeballType)[this.pokeballType];
+    return "PokeballModifier:" + getEnumKeys(PokeballType)[this.pokeballType];
   }
 
   getDescription(): string {
@@ -858,6 +858,7 @@ export class BerryModifierType extends PokemonHeldItemModifierType implements Ge
     );
 
     this.berryType = berryType;
+    this.id = "BERRY"; // needed to prevent harvest item deletion; remove after modifier rework
   }
 
   get name(): string {
@@ -865,7 +866,7 @@ export class BerryModifierType extends PokemonHeldItemModifierType implements Ge
   }
 
   get identifier(): string {
-    return "Berry:" + Utils.getEnumKeys(BerryType)[this.berryType];
+    return "Berry:" + getEnumKeys(BerryType)[this.berryType];
   }
 
   getDescription(): string {
@@ -921,7 +922,7 @@ export class AttackTypeBoosterModifierType
   }
 
   get identifier(): string {
-    return "MoveBooster:" + Utils.getEnumKeys(PokemonType)[this.moveType];
+    return "MoveBooster:" + getEnumKeys(PokemonType)[this.moveType];
   }
 
   getDescription(): string {
@@ -1033,7 +1034,7 @@ export class BaseStatBoosterModifierType
   }
 
   get identifier(): string {
-    return "StatBooster:" + Utils.getEnumKeys(Stat)[this.stat];
+    return "StatBooster:" + getEnumKeys(Stat)[this.stat];
   }
 
   getDescription(): string {
@@ -1317,7 +1318,7 @@ export class TmModifierType extends PokemonModifierType {
   }
 
   get identifier(): string {
-    return "TM:" + Utils.getEnumKeys(Moves)[this.moveId];
+    return "TM:" + getEnumKeys(Moves)[this.moveId];
   }
 
   getDescription(): string {
@@ -1378,7 +1379,7 @@ export class EvolutionItemModifierType extends PokemonModifierType implements Ge
   }
 
   get identifier(): string {
-    return "Evolution" + (this.evolutionItem > 50 ? "Rare" : "") + ":" + Utils.getEnumKeys(EvolutionItem)[this.evolutionItem];
+    return "Evolution" + (this.evolutionItem > 50 ? "Rare" : "") + ":" + getEnumKeys(EvolutionItem)[this.evolutionItem];
   }
 
   getDescription(): string {
@@ -1429,7 +1430,7 @@ export class FormChangeItemModifierType extends PokemonModifierType implements G
     return i18next.t(`modifierType:FormChangeItem.${FormChangeItem[this.formChangeItem]}`);
   }
   get identifier(): string {
-    return "FormChange:" + Utils.getEnumKeys(FormChangeItem)[this.formChangeItem];
+    return "FormChange:" + getEnumKeys(FormChangeItem)[this.formChangeItem];
   }
 
   getDescription(): string {
@@ -1469,7 +1470,7 @@ class AttackTypeBoosterModifierTypeGenerator extends ModifierTypeGenerator {
   constructor() {
     super((party: Pokemon[], pregenArgs?: any[]) => {
       if (pregenArgs && pregenArgs.length === 1 && pregenArgs[0] in PokemonType) {
-        return new AttackTypeBoosterModifierType(pregenArgs[0] as PokemonType, 20);
+        return new AttackTypeBoosterModifierType(pregenArgs[0] as PokemonType, TYPE_BOOST_ITEM_BOOST_PERCENT);
       }
 
       if (doModifierLogging) {
@@ -1528,9 +1529,7 @@ class AttackTypeBoosterModifierTypeGenerator extends ModifierTypeGenerator {
         weight += typeWeight;
       }
 
-      //console.log(fullweights.map((v, i) => i == randInt ? `> ${Utils.getEnumKeys(Type)[v]} <` : `${Utils.getEnumKeys(Type)[v]}`))
-
-      return new AttackTypeBoosterModifierType(type!, 20);
+      return new AttackTypeBoosterModifierType(type!, TYPE_BOOST_ITEM_BOOST_PERCENT);
     });
   }
 }
@@ -1696,7 +1695,7 @@ class TmModifierTypeGenerator extends ModifierTypeGenerator {
       }
 
       if (doModifierLogging) {
-        console.log("Generating item: TM (Tier: " + Utils.getEnumKeys(ModifierTier)[tier].toLowerCase() + ")");
+        console.log("Generating item: TM (Tier: " + getEnumKeys(ModifierTier)[tier].toLowerCase() + ")");
       }
 
       const partyMemberCompatibleTms = party.map(p => {
@@ -3709,7 +3708,7 @@ export function getDailyRunStarterModifiers(party: PlayerPokemon[]): PokemonHeld
   const ret: PokemonHeldItemModifier[] = [];
   for (const p of party) {
     for (let m = 0; m < 3; m++) {
-      const tierValue = Utils.randSeedInt(64, undefined, "Choosing modifier tier for daily items");
+      const tierValue = randSeedInt(64, undefined, "Choosing modifier tier for daily items");
 
       let tier: ModifierTier;
       if (tierValue > 25) {
@@ -3885,7 +3884,7 @@ function getNewModifierTypeOption(
 function getItemIndex(thresholds, tier) {
   const tierThresholds = Object.keys(thresholds[tier]);
   const totalWeight = parseInt(tierThresholds[tierThresholds.length - 1]);
-  const value = Utils.randSeedInt(totalWeight, undefined, "%HIDE");
+  const value = randSeedInt(totalWeight, undefined, "%HIDE");
   let index: integer;
   for (const t of tierThresholds) {
     const threshold = parseInt(t);

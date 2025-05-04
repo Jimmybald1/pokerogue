@@ -20,7 +20,7 @@ import { achvs } from "#app/system/achv";
 import type { PartyOption } from "#app/ui/party-ui-handler";
 import { PartyUiMode } from "#app/ui/party-ui-handler";
 import { SummaryUiMode } from "#app/ui/summary-ui-handler";
-import { Mode } from "#app/ui/ui";
+import { UiMode } from "#enums/ui-mode";
 import type { PokeballType } from "#enums/pokeball";
 import { StatusEffect } from "#enums/status-effect";
 import i18next from "i18next";
@@ -318,7 +318,7 @@ export class AttemptCapturePhase extends PokemonPhase {
                   // Ask if you want to make room
                   globalScene.pokemonInfoContainer.makeRoomForConfirmUi(1, true);
                   globalScene.ui.setMode(
-                    Mode.CONFIRM,
+                    UiMode.CONFIRM,
                     () => {
                       // YES
                       // Open up the party menu on the RELEASE setting
@@ -335,12 +335,12 @@ export class AttemptCapturePhase extends PokemonPhase {
                         pokemon,
                       );
                       globalScene.ui.setMode(
-                        Mode.SUMMARY,
+                        UiMode.SUMMARY,
                         newPokemon,
                         0,
                         SummaryUiMode.DEFAULT,
                         () => {
-                          globalScene.ui.setMode(Mode.MESSAGE).then(() => {
+                          globalScene.ui.setMode(UiMode.MESSAGE).then(() => {
                             promptRelease();
                           });
                         },
@@ -354,19 +354,26 @@ export class AttemptCapturePhase extends PokemonPhase {
                         form: pokemon.formIndex,
                         female: pokemon.gender === Gender.FEMALE,
                       };
-                      globalScene.ui.setOverlayMode(Mode.POKEDEX_PAGE, pokemon.species, attributes, null, null, () => {
-                        globalScene.ui.setMode(Mode.MESSAGE).then(() => {
-                          promptRelease();
-                        });
-                      });
+                      globalScene.ui.setOverlayMode(
+                        UiMode.POKEDEX_PAGE,
+                        pokemon.species,
+                        attributes,
+                        null,
+                        null,
+                        () => {
+                          globalScene.ui.setMode(UiMode.MESSAGE).then(() => {
+                            promptRelease();
+                          });
+                        },
+                      );
                     },
                     () => {
                       globalScene.ui.setMode(
-                        Mode.PARTY,
+                        UiMode.PARTY,
                         PartyUiMode.RELEASE,
                         this.fieldIndex,
                         (slotIndex: number, _option: PartyOption) => {
-                          globalScene.ui.setMode(Mode.MESSAGE).then(() => {
+                          globalScene.ui.setMode(UiMode.MESSAGE).then(() => {
                             if (slotIndex < 6) {
                               addToParty(slotIndex);
                             } else {
@@ -379,7 +386,7 @@ export class AttemptCapturePhase extends PokemonPhase {
                     () => {
                       // NO
                       LoggerTools.logActions(globalScene.currentBattle.waveIndex, "Do Not Keep " + pokemon.name);
-                      globalScene.ui.setMode(Mode.MESSAGE).then(() => {
+                      globalScene.ui.setMode(UiMode.MESSAGE).then(() => {
                         removePokemon();
                         end();
                       });

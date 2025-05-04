@@ -1,5 +1,6 @@
 import type { BattlerIndex } from "#app/battle";
-import { BattleType, ClassicFixedBossWaves } from "#app/battle";
+import { ClassicFixedBossWaves } from "#enums/fixed-boss-waves";
+import { BattleType } from "#enums/battle-type";
 import type { CustomModifierSettings } from "#app/modifier/modifier-type";
 import { modifierTypes } from "#app/modifier/modifier-type";
 import { BattleEndPhase } from "./battle-end-phase";
@@ -15,6 +16,7 @@ import * as LoggerTools from "../logger";
 import { handleMysteryEncounterVictory } from "#app/data/mystery-encounters/utils/encounter-phase-utils";
 import { globalScene } from "#app/global-scene";
 import { timedEventManager } from "#app/global-event-manager";
+import { SelectBiomePhase } from "./select-biome-phase";
 
 export class VictoryPhase extends PokemonPhase {
   /** If true, indicates that the phase is intended for EXP purposes only, and not to continue a battle to next phase */
@@ -113,6 +115,11 @@ export class VictoryPhase extends PokemonPhase {
             globalScene.pushPhase(new AddEnemyBuffModifierPhase());
           }
         }
+
+        if (globalScene.gameMode.hasRandomBiomes || globalScene.isNewBiome()) {
+          globalScene.pushPhase(new SelectBiomePhase());
+        }
+
         globalScene.pushPhase(new NewBattlePhase());
       } else {
         LoggerTools.logShop(globalScene.currentBattle.waveIndex, "");
