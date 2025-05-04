@@ -1,13 +1,11 @@
 //#region 00 Imports
 import i18next from "i18next";
-import * as Utils from "./utils";
 import type Pokemon from "./field/pokemon";
 import type { PlayerPokemon, EnemyPokemon } from "./field/pokemon";
 import { getNatureDecrease, getNatureIncrease, getNatureName } from "./data/nature";
 import type { OptionSelectItem } from "./ui/abstact-option-select-ui-handler";
 import type { PokemonHeldItemModifier } from "./modifier/modifier";
 import { BypassSpeedChanceModifier, EnemyAttackStatusEffectChanceModifier, ExtraModifierModifier } from "./modifier/modifier";
-import { Mode } from "./ui/ui";
 import type { TitlePhase } from "./phases/title-phase";
 import type Trainer from "./field/trainer";
 import { Species } from "./enums/species";
@@ -31,6 +29,8 @@ import type { Nature } from "./enums/nature";
 import { StatusEffect } from "./enums/status-effect";
 import { getCriticalCaptureChance } from "./data/pokeball";
 import { globalScene } from "./global-scene";
+import { BooleanHolder, getEnumKeys, getEnumValues, NumberHolder } from "./utils/common";
+import { UiMode } from "#enums/ui-mode";
 
 /*
 SECTIONS
@@ -96,8 +96,8 @@ export const Actions: string[] = [];
 export const enemyPlan: string[] = [];
 
 // Booleans
-export const SheetsMode = new Utils.BooleanHolder(false);
-export const isTransferAll: Utils.BooleanHolder = new Utils.BooleanHolder(false);
+export const SheetsMode = new BooleanHolder(false);
+export const isTransferAll: BooleanHolder = new BooleanHolder(false);
 
 // #endregion
 
@@ -1103,7 +1103,7 @@ export interface PokeData {
  */
 export function exportPokemon(pokemon: Pokemon, encounterRarity?: string): PokeData {
   return {
-    id: Utils.getEnumValues(Species).indexOf(pokemon.species.speciesId),
+    id: getEnumValues(Species).indexOf(pokemon.species.speciesId),
     name: pokemon.species.getName(),
     ability: pokemon.getAbility().name,
     isHiddenAbility: pokemon.hasAbility(pokemon.species.abilityHidden),
@@ -1131,7 +1131,7 @@ export function exportPokemonFromData(pokemon: PokemonData, encounterRarity?: st
   return {
     id: pokemon.species,
     name: P.species,
-    ability: Utils.getEnumKeys(Abilities)[P.getAbility(pokemon.abilityIndex)],
+    ability: getEnumKeys(Abilities)[P.getAbility(pokemon.abilityIndex)],
     isHiddenAbility: P.getAbility(pokemon.abilityIndex) === P.abilityHidden,
     passiveAbility: "Cannot pull Passive or Held Items from raw file data",
     nature: exportNature(pokemon.nature),
@@ -1220,7 +1220,7 @@ export function logTeam(floor: integer = globalScene.currentBattle.waveIndex) {
   console.log("Log Enemy Team");
   if (team[0]?.hasTrainer()) {
     //var sprite = globalScene.currentBattle.trainer.config.getSpriteKey()
-    //var trainerCat = Utils.getEnumKeys(TrainerType)[Utils.getEnumValues(TrainerType).indexOf(globalScene.currentBattle.trainer.config.trainerType)]
+    //var trainerCat = getEnumKeys(TrainerType)[getEnumValues(TrainerType).indexOf(globalScene.currentBattle.trainer.config.trainerType)]
     //setRow("e", floor + ",0," + sprite + ",trainer," + trainerCat + ",,,,,,,,,,,,", floor, 0)
   } else {
     for (let i = 0; i < team.length; i++) {
@@ -1534,7 +1534,7 @@ export function generateEditOption(i: integer, saves: any, phase: TitlePhase): O
     handler: () => {
       rarityslot[1] = logs[i][1];
       //globalScene.phaseQueue[0].end()
-      globalScene.ui.setMode(Mode.NAME_LOG, {
+      globalScene.ui.setMode(UiMode.NAME_LOG, {
         autofillfields: [
           (JSON.parse(localStorage.getItem(logs[i][1])!) as DRPD).title,
           (JSON.parse(localStorage.getItem(logs[i][1])!) as DRPD).authors.join(", "),
@@ -1607,7 +1607,7 @@ export function generateEditHandler(logId: string, callback: Function) {
   return (): boolean => {
     rarityslot[1] = logs[i][1];
     //globalScene.phaseQueue[0].end()
-    globalScene.ui.setMode(Mode.NAME_LOG, {
+    globalScene.ui.setMode(UiMode.NAME_LOG, {
       autofillfields: [
         (JSON.parse(localStorage.getItem(logs[i][1])!) as DRPD).title,
         (JSON.parse(localStorage.getItem(logs[i][1])!) as DRPD).authors.join(", "),
@@ -1659,7 +1659,7 @@ export function generateEditHandlerForLog(i: integer, callback: Function) {
   return (): boolean => {
     rarityslot[1] = logs[i][1];
     //globalScene.phaseQueue[0].end()
-    globalScene.ui.setMode(Mode.NAME_LOG, {
+    globalScene.ui.setMode(UiMode.NAME_LOG, {
       autofillfields: [
         (JSON.parse(localStorage.getItem(logs[i][1])!) as DRPD).title,
         (JSON.parse(localStorage.getItem(logs[i][1])!) as DRPD).authors.join(", "),
@@ -1985,12 +1985,12 @@ export const tierNames = [
  * @param modifierOverride
  * @returns
  */
-export function shinyCheckStep(predictionCost: Utils.NumberHolder, rerollOverride: integer, modifierOverride?: integer) {
+export function shinyCheckStep(predictionCost: NumberHolder, rerollOverride: integer, modifierOverride?: integer) {
   let minLuck = -1;
   const modifierPredictions: ModifierTypeOption[][] = [];
   const party = globalScene.getPlayerParty();
   regenerateModifierPoolThresholds(party, ModifierPoolType.PLAYER, rerollOverride);
-  const modifierCount = new Utils.NumberHolder(3);
+  const modifierCount = new NumberHolder(3);
   globalScene.applyModifiers(ExtraModifierModifier, true, modifierCount);
   if (modifierOverride) {
     //modifierCount.value = modifierOverride
@@ -2028,7 +2028,7 @@ export function runShinyCheck(mode: integer, wv?: integer) {
   } else {
     globalScene.resetSeed(wv);
   }
-  const predictionCost = new Utils.NumberHolder(0);
+  const predictionCost = new NumberHolder(0);
   let isOk = true;
   for (let i = 0; predictionCost.value < globalScene.money && i < 8; i++) {
     const r = shinyCheckStep(predictionCost, i);

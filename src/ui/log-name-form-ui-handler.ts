@@ -1,12 +1,10 @@
 import type { InputFieldConfig } from "./form-modal-ui-handler";
 import { FormModalUiHandler } from "./form-modal-ui-handler";
 import type { ModalConfig } from "./modal-ui-handler";
-import * as Utils from "../utils";
-import { Mode } from "./ui";
 import i18next from "i18next";
 import * as LoggerTools from "../logger";
-import { addTextObject, TextStyle } from "./text";
 import { globalScene } from "#app/global-scene";
+import { UiMode } from "#enums/ui-mode";
 
 export default class LogNameFormUiHandler extends FormModalUiHandler {
   name: string;
@@ -84,9 +82,9 @@ export default class LogNameFormUiHandler extends FormModalUiHandler {
         // Prevent overlapping overrides on action modification
         this.submitAction = originalLoginAction;
         this.sanitizeInputs();
-        globalScene.ui.setMode(Mode.LOADING, { buttonActions: []});
+        globalScene.ui.setMode(UiMode.LOADING, { buttonActions: []});
         const onFail = error => {
-          globalScene.ui.setMode(Mode.NAME_LOG, Object.assign(config, { errorMessage: error?.trim() }));
+          globalScene.ui.setMode(UiMode.NAME_LOG, Object.assign(config, { errorMessage: error?.trim() }));
           globalScene.ui.playError();
         };
         if (!this.inputs[0].text) {
