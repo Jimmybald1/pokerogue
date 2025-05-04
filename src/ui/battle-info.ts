@@ -1218,13 +1218,13 @@ export default class BattleInfo extends Phaser.GameObjects.Container {
     this.showingTeam = visible;
     this.scene.tweens.add({
       targets: this.teamIcons,
-      duration: Utils.fixedInt(125),
+      duration: fixedInt(125),
       ease: "Sine.easeInOut",
       alpha: visible ? 1 : 0
     });
     this.scene.tweens.add({
       targets: this.teamIconOver,
-      duration: Utils.fixedInt(125),
+      duration: fixedInt(125),
       ease: "Sine.easeInOut",
       alphaTopLeft: !this.teamIconsShow ? 0 : (visible ? 0.4 : 0),
       alphaTopRight: !this.teamIconsShow ? 0 : (visible ? 0.4 : 0),
@@ -1233,13 +1233,13 @@ export default class BattleInfo extends Phaser.GameObjects.Container {
     });
     this.scene.tweens.add({
       targets: [ this.championRibbon, this.ownedIcon ],
-      duration: Utils.fixedInt(125),
+      duration: fixedInt(125),
       ease: "Sine.easeInOut",
       alpha: visible && this.iconsActive ? 0 : this.statusIndicator.visible ? 0 : 1
     });
     this.scene.tweens.add({
       targets: this.statusIndicator,
-      duration: Utils.fixedInt(125),
+      duration: fixedInt(125),
       ease: "Sine.easeInOut",
       alpha: visible && this.iconsActive ? 0 : (this.lastStatus == 0 ? 0 : 1)
     });
