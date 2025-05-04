@@ -4,9 +4,9 @@ import { addTextObject, TextStyle } from "./text";
 import { getTypeDamageMultiplierColor } from "#app/data/type";
 import { PokemonType } from "#enums/pokemon-type";
 import { Command } from "./command-ui-handler";
-import { Mode } from "./ui";
+import { UiMode } from "#enums/ui-mode";
 import UiHandler from "./ui-handler";
-import * as Utils from "../utils";
+import { getLocalizedSpriteKey, fixedInt, padInt, NumberHolder, rangemap, isNullOrUndefined } from "#app/utils/common";
 import { MoveCategory } from "#enums/MoveCategory";
 import i18next from "i18next";
 import { Button } from "#enums/buttons";
@@ -16,7 +16,7 @@ import type { CommandPhase } from "#app/phases/command-phase";
 import { PokemonMultiHitModifierType } from "#app/modifier/modifier-type";
 import { StatusEffect } from "#app/enums/status-effect";
 import MoveInfoOverlay from "./move-info-overlay";
-import { BattleType } from "#app/battle";
+import { BattleType } from "#enums/battle-type";
 import { MultiHitType } from "#enums/MultiHitType";
 import { applyMoveAttrs, FixedDamageAttr, MultiHitAttr } from "#app/data/moves/move";
 
@@ -43,7 +43,7 @@ export default class FightUiHandler extends UiHandler implements InfoToggle {
   protected cursor2 = 0;
 
   constructor() {
-    super(Mode.FIGHT);
+    super(UiMode.FIGHT);
   }
 
   setup() {
@@ -60,7 +60,7 @@ export default class FightUiHandler extends UiHandler implements InfoToggle {
     this.typeIcon = globalScene.add.sprite(
       globalScene.scaledCanvas.width - 57,
       -36,
-      Utils.getLocalizedSpriteKey("types"),
+      getLocalizedSpriteKey("types"),
       "unknown",
     );
     this.typeIcon.setVisible(false);
@@ -133,7 +133,7 @@ export default class FightUiHandler extends UiHandler implements InfoToggle {
     messageHandler.commandWindow.setVisible(false);
     messageHandler.movesWindowContainer.setVisible(true);
     const pokemon = (globalScene.getCurrentPhase() as CommandPhase).getPokemon();
-    if (pokemon.battleSummonData.turnCount <= 1) {
+    if (pokemon.tempSummonData.turnCount <= 1) {
       this.setCursor(0);
     } else {
       this.setCursor(this.getCursor());
@@ -162,7 +162,7 @@ export default class FightUiHandler extends UiHandler implements InfoToggle {
         // Cannot back out of fight menu if skipToFightInput is enabled
         const { battleType, mysteryEncounter } = globalScene.currentBattle;
         if (battleType !== BattleType.MYSTERY_ENCOUNTER || !mysteryEncounter?.skipToFightInput) {
-          ui.setMode(Mode.COMMAND, this.fieldIndex);
+          ui.setMode(UiMode.COMMAND, this.fieldIndex);
           success = true;
         }
       }
@@ -205,7 +205,7 @@ export default class FightUiHandler extends UiHandler implements InfoToggle {
     }
     globalScene.tweens.add({
       targets: [this.movesContainer, this.cursorObj],
-      duration: Utils.fixedInt(125),
+      duration: fixedInt(125),
       ease: "Sine.easeInOut",
       alpha: visible ? 0 : 1,
     });
@@ -251,7 +251,7 @@ export default class FightUiHandler extends UiHandler implements InfoToggle {
     if (hasMove) {
       const pokemonMove = moveset[cursor];
       const moveType = pokemon.getMoveType(pokemonMove.getMove());
-      const textureKey = Utils.getLocalizedSpriteKey("types");
+      const textureKey = getLocalizedSpriteKey("types");
       this.typeIcon.setTexture(textureKey, PokemonType[moveType].toLowerCase()).setScale(0.8);
 
       const moveCategory = pokemonMove.getMove().category;
@@ -261,8 +261,8 @@ export default class FightUiHandler extends UiHandler implements InfoToggle {
       const maxPP = pokemonMove.getMovePp();
       const pp = maxPP - pokemonMove.ppUsed;
 
-      const ppLeftStr = Utils.padInt(pp, 2, "  ");
-      const ppMaxStr = Utils.padInt(maxPP, 2, "  ");
+      const ppLeftStr = padInt(pp, 2, "  ");
+      const ppMaxStr = padInt(maxPP, 2, "  ");
       this.ppText.setText(`${ppLeftStr}/${ppMaxStr}`);
       this.powerText.setText(`${power >= 0 ? power : "---"}`);
       this.accuracyText.setText(`${accuracy >= 0 ? accuracy : "---"}`);
@@ -317,7 +317,10 @@ export default class FightUiHandler extends UiHandler implements InfoToggle {
     const effectiveness = opponent.getMoveEffectiveness(
       pokemon,
       pokemonMove.getMove(),
-      !opponent.battleData?.abilityRevealed,
+      !opponent.waveData.abilityRevealed,
+      undefined,
+      undefined,
+      true,
     );
     if (effectiveness === undefined) {
       return undefined;
@@ -372,7 +375,14 @@ export default class FightUiHandler extends UiHandler implements InfoToggle {
 
     const moveColors = opponents
       .map(opponent =>
-        opponent.getMoveEffectiveness(pokemon, pokemonMove.getMove(), !opponent.battleData.abilityRevealed),
+        opponent.getMoveEffectiveness(
+          pokemon,
+          pokemonMove.getMove(),
+          !opponent.waveData.abilityRevealed,
+          undefined,
+          undefined,
+          true,
+        ),
       )
       .sort((a, b) => b - a)
       .map(effectiveness => getTypeDamageMultiplierColor(effectiveness ?? 0, "offense"));
@@ -425,7 +435,7 @@ export default class FightUiHandler extends UiHandler implements InfoToggle {
     }
 
     let dmgRange = 0.85;
-    const fixedDamage = new Utils.NumberHolder(0);
+    const fixedDamage = new NumberHolder(0);
     applyMoveAttrs(FixedDamageAttr, user, target, moveObj, fixedDamage);
     if (fixedDamage.value > 0) {
       dmgRange = 1;
@@ -434,8 +444,22 @@ export default class FightUiHandler extends UiHandler implements InfoToggle {
     const isGuaranteedCrit = target.isGuaranteedCrit(user, moveObj, true);
     const isTera = user.isTerastallized;
     user.isTerastallized = isTera ? isTera : this.fromCommand === Command.TERA; // If not yet terastallized, check if command wants to terastallize
-    let dmgLow = target.getAttackDamage(user, moveObj, false, false, isGuaranteedCrit, true).damage * dmgRange;
-    let dmgHigh = target.getAttackDamage(user, moveObj, false, false, isGuaranteedCrit, true).damage;
+    let dmgLow = target.getAttackDamage(
+      {
+        source: user, 
+        move: moveObj, 
+        isCritical: isGuaranteedCrit,
+        simulated: true,
+      }
+    ).damage * dmgRange;
+    let dmgHigh = target.getAttackDamage(
+      {
+        source: user, 
+        move: moveObj, 
+        isCritical: isGuaranteedCrit,
+        simulated: true,
+      }
+    ).damage;
     user.isTerastallized = isTera; // Revert to whatever the terastallize state was before
 
     if (this.logDamagePrediction) {
@@ -501,7 +525,7 @@ export default class FightUiHandler extends UiHandler implements InfoToggle {
     if (dmgLowF >= maxEHP) {
       koText = " KO";
     } else if (dmgHighF >= target.hp) {
-      var percentChance = Utils.rangemap(maxEHP, dmgLow, dmgHigh);
+      var percentChance = rangemap(maxEHP, dmgLow, dmgHigh);
       koText = " " + Math.floor(percentChance * 100) + "% KO";
     }
 
@@ -542,7 +566,7 @@ export default class FightUiHandler extends UiHandler implements InfoToggle {
         // Different segment, only high is a kill
         // ~% KO
         // show segment damage for low and damage range for high
-        var percentChance = Utils.rangemap(maxEHP, dmgLow, dmgHigh);
+        var percentChance = rangemap(maxEHP, dmgLow, dmgHigh);
         koText = " " + Math.floor(percentChance * 100) + "% KO";
 
         dmgLow = segmentClearedLow > 0 ? segmentRequirements[0] * segmentClearedLow : dmgLow;
@@ -586,7 +610,7 @@ export default class FightUiHandler extends UiHandler implements InfoToggle {
     if (this.logDamagePrediction) {
       console.log(`Max EHP: ${maxEHP}`);
     }
-    if (this.logDamagePrediction && !Utils.isNullOrUndefined(koText)) {
+    if (this.logDamagePrediction && !isNullOrUndefined(koText)) {
       console.log(`KO%: ${koText}`);
     }
 

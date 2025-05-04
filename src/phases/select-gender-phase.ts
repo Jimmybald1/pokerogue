@@ -2,20 +2,16 @@ import { globalScene } from "#app/global-scene";
 import { PlayerGender } from "#app/enums/player-gender";
 import { Phase } from "#app/phase";
 import { SettingKeys } from "#app/system/settings/settings";
-import { Mode } from "#app/ui/ui";
+import { UiMode } from "#enums/ui-mode";
 import i18next from "i18next";
 import * as LoggerTools from "../logger";
 
 export class SelectGenderPhase extends Phase {
-  constructor() {
-    super();
-  }
-
   start(): void {
     super.start();
 
     globalScene.ui.showText(i18next.t("menu:boyOrGirl"), null, () => {
-      globalScene.ui.setMode(Mode.OPTION_SELECT, {
+      globalScene.ui.setMode(UiMode.OPTION_SELECT, {
         options: [
           {
             label: i18next.t("settings:boy"),
@@ -41,7 +37,7 @@ export class SelectGenderPhase extends Phase {
   }
 
   end(): void {
-    globalScene.ui.setMode(Mode.MESSAGE);
+    globalScene.ui.setMode(UiMode.MESSAGE);
     super.end();
   }
 }

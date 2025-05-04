@@ -3,12 +3,13 @@ import type { BattlerIndex } from "#app/battle";
 import { PERMANENT_STATS, Stat } from "#app/enums/stat";
 import { getPokemonNameWithAffix } from "#app/messages";
 import { getTextColor, TextStyle } from "#app/ui/text";
-import { Mode } from "#app/ui/ui";
+import { UiMode } from "#enums/ui-mode";
 import i18next from "i18next";
 import { PokemonPhase } from "./pokemon-phase";
 import * as LoggerTools from "../logger";
 
 export class ScanIvsPhase extends PokemonPhase {
+  // biome-ignore lint/complexity/noUselessConstructor: This changes `battlerIndex` to be required
   constructor(battlerIndex: BattlerIndex) {
     super(battlerIndex);
   }
@@ -25,7 +26,8 @@ export class ScanIvsPhase extends PokemonPhase {
     const uiTheme = globalScene.uiTheme; // Assuming uiTheme is accessible
     for (let e = 0; e < enemyField.length; e++) {
       enemyIvs = enemyField[e].ivs;
-      const currentIvs = globalScene.gameData.dexData[enemyField[e].species.getRootSpeciesId()].ivs; // we are using getRootSpeciesId() here because we want to check against the baby form, not the mid form if it exists
+      // we are using getRootSpeciesId() here because we want to check against the baby form, not the mid form if it exists
+      const currentIvs = globalScene.gameData.dexData[enemyField[e].species.getRootSpeciesId()].ivs;
       statsContainer = enemyField[e].getBattleInfo().getStatsValueContainer().list as Phaser.GameObjects.Sprite[];
       statsContainerLabels = statsContainer.filter(m => m.name.indexOf("icon_stat_label") >= 0);
       for (let s = 0; s < statsContainerLabels.length; s++) {
@@ -50,9 +52,9 @@ export class ScanIvsPhase extends PokemonPhase {
         null,
         () => {
           globalScene.ui.setMode(
-            Mode.CONFIRM,
+            UiMode.CONFIRM,
             () => {
-              globalScene.ui.setMode(Mode.MESSAGE);
+              globalScene.ui.setMode(UiMode.MESSAGE);
               globalScene.ui.clearText();
               globalScene.ui
                 .getMessageHandler()
@@ -60,7 +62,7 @@ export class ScanIvsPhase extends PokemonPhase {
                 .then(() => this.end());
             },
             () => {
-              globalScene.ui.setMode(Mode.MESSAGE);
+              globalScene.ui.setMode(UiMode.MESSAGE);
               globalScene.ui.clearText();
               this.end();
             },

@@ -7,13 +7,13 @@ import {
   BlockStatusDamageAbAttr,
   PostDamageAbAttr,
   ReduceBurnDamageAbAttr,
-} from "#app/data/ability";
+} from "#app/data/abilities/ability";
 import { CommonBattleAnim, CommonAnim } from "#app/data/battle-anims";
 import { getStatusEffectActivationText } from "#app/data/status-effect";
 import { BattleSpec } from "#app/enums/battle-spec";
 import { StatusEffect } from "#app/enums/status-effect";
 import { getPokemonNameWithAffix } from "#app/messages";
-import * as Utils from "#app/utils";
+import { BooleanHolder, NumberHolder } from "#app/utils/common";
 import { PokemonPhase } from "./pokemon-phase";
 import * as LoggerTools from "../logger";
 
@@ -27,7 +27,7 @@ export class PostTurnStatusEffectPhase extends PokemonPhase {
     const pokemon = this.getPokemon();
     if (pokemon?.isActive(true) && pokemon.status && pokemon.status.isPostTurn() && !pokemon.switchOutStatus) {
       pokemon.status.incrementTurn();
-      const cancelled = new Utils.BooleanHolder(false);
+      const cancelled = new BooleanHolder(false);
       applyAbAttrs(BlockNonDirectDamageAbAttr, pokemon, cancelled);
       applyAbAttrs(BlockStatusDamageAbAttr, pokemon, cancelled);
 
@@ -35,7 +35,7 @@ export class PostTurnStatusEffectPhase extends PokemonPhase {
         globalScene.queueMessage(
           getStatusEffectActivationText(pokemon.status.effect, getPokemonNameWithAffix(pokemon)),
         );
-        const damage = new Utils.NumberHolder(0);
+        const damage = new NumberHolder(0);
         switch (pokemon.status.effect) {
           case StatusEffect.POISON:
             damage.value = Math.max(pokemon.getMaxHp() >> 3, 1);

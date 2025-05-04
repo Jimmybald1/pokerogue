@@ -5,10 +5,6 @@ import { globalScene } from "#app/global-scene";
 import * as LoggerTools from "../logger";
 
 export class SummonMissingPhase extends SummonPhase {
-  constructor(fieldIndex: number) {
-    super(fieldIndex);
-  }
-
   preSummon(): void {
     globalScene.ui.showText(
       i18next.t("battle:sendOutPokemon", {

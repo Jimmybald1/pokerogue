@@ -4,8 +4,8 @@ import { MoveResult } from "#app/field/pokemon";
 import { addBBCodeTextObject, addTextObject, getTextColor, TextStyle } from "#app/ui/text";
 import { Command } from "#app/ui/command-ui-handler";
 import MessageUiHandler from "#app/ui/message-ui-handler";
-import { Mode } from "#app/ui/ui";
-import * as Utils from "#app/utils";
+import { UiMode } from "#enums/ui-mode";
+import { BooleanHolder, toReadableString, randInt, getLocalizedSpriteKey } from "#app/utils/common";
 import {
   BerryModifier,
   PokemonFormChangeItemModifier,
@@ -19,7 +19,7 @@ import PokemonIconAnimHandler, { PokemonIconAnimMode } from "#app/ui/pokemon-ico
 import { pokemonEvolutions } from "#app/data/balance/pokemon-evolutions";
 import { addWindow } from "#app/ui/ui-theme";
 import { SpeciesFormChangeItemTrigger, FormChangeItem } from "#app/data/pokemon-forms";
-import { getVariantTint } from "#app/data/variant";
+import { getVariantTint } from "#app/sprites/variant";
 import { Button } from "#enums/buttons";
 import { applyChallenges, ChallengeType } from "#app/data/challenge";
 import MoveInfoOverlay from "#app/ui/move-info-overlay";
@@ -200,18 +200,14 @@ export default class PartyUiHandler extends MessageUiHandler {
 
   public static FilterNonFainted = (pokemon: PlayerPokemon) => {
     if (pokemon.isFainted()) {
-      return i18next.t("partyUiHandler:noEnergy", {
-        pokemonName: getPokemonNameWithAffix(pokemon),
-      });
+      return i18next.t("partyUiHandler:noEnergy", { pokemonName: getPokemonNameWithAffix(pokemon, false) });
     }
     return null;
   };
 
   public static FilterFainted = (pokemon: PlayerPokemon) => {
     if (!pokemon.isFainted()) {
-      return i18next.t("partyUiHandler:hasEnergy", {
-        pokemonName: getPokemonNameWithAffix(pokemon),
-      });
+      return i18next.t("partyUiHandler:hasEnergy", { pokemonName: getPokemonNameWithAffix(pokemon, false) });
     }
     return null;
   };
@@ -222,12 +218,10 @@ export default class PartyUiHandler extends MessageUiHandler {
    * @returns
    */
   private FilterChallengeLegal = (pokemon: PlayerPokemon) => {
-    const challengeAllowed = new Utils.BooleanHolder(true);
+    const challengeAllowed = new BooleanHolder(true);
     applyChallenges(ChallengeType.POKEMON_IN_BATTLE, pokemon, challengeAllowed);
     if (!challengeAllowed.value) {
-      return i18next.t("partyUiHandler:cantBeUsed", {
-        pokemonName: getPokemonNameWithAffix(pokemon),
-      });
+      return i18next.t("partyUiHandler:cantBeUsed", { pokemonName: getPokemonNameWithAffix(pokemon, false) });
     }
     return null;
   };
@@ -239,9 +233,7 @@ export default class PartyUiHandler extends MessageUiHandler {
       m => m instanceof PokemonHeldItemModifier && m.pokemonId === pokemon.id && m.matchType(modifier),
     ) as PokemonHeldItemModifier;
     if (matchingModifier && matchingModifier.stackCount === matchingModifier.getMaxStackCount()) {
-      return i18next.t("partyUiHandler:tooManyItems", {
-        pokemonName: getPokemonNameWithAffix(pokemon),
-      });
+      return i18next.t("partyUiHandler:tooManyItems", { pokemonName: getPokemonNameWithAffix(pokemon, false) });
     }
     return null;
   };
@@ -267,7 +259,7 @@ export default class PartyUiHandler extends MessageUiHandler {
   ];
 
   constructor() {
-    super(Mode.PARTY);
+    super(UiMode.PARTY);
   }
 
   setup() {
@@ -575,7 +567,7 @@ export default class PartyUiHandler extends MessageUiHandler {
           this.showText(filterResult as string, undefined, () => this.showText("", 0), undefined, true);
         } else if (option === PartyOption.SUMMARY) {
           ui.playSelect();
-          ui.setModeWithoutClear(Mode.SUMMARY, pokemon).then(() => this.clearOptions());
+          ui.setModeWithoutClear(UiMode.SUMMARY, pokemon).then(() => this.clearOptions());
           return true;
         } else if (option === PartyOption.POKEDEX) {
           ui.playSelect();
@@ -585,7 +577,7 @@ export default class PartyUiHandler extends MessageUiHandler {
             form: pokemon.formIndex,
             female: pokemon.gender === Gender.FEMALE,
           };
-          ui.setOverlayMode(Mode.POKEDEX_PAGE, pokemon.species, attributes).then(() => this.clearOptions());
+          ui.setOverlayMode(UiMode.POKEDEX_PAGE, pokemon.species, attributes).then(() => this.clearOptions());
           return true;
         } else if (option === PartyOption.UNPAUSE_EVOLUTION) {
           this.clearOptions();
@@ -594,7 +586,7 @@ export default class PartyUiHandler extends MessageUiHandler {
           this.showText(
             i18next.t(
               pokemon.pauseEvolutions ? "partyUiHandler:pausedEvolutions" : "partyUiHandler:unpausedEvolutions",
-              { pokemonName: getPokemonNameWithAffix(pokemon) },
+              { pokemonName: getPokemonNameWithAffix(pokemon, false) },
             ),
             undefined,
             () => this.showText("", 0),
@@ -607,26 +599,26 @@ export default class PartyUiHandler extends MessageUiHandler {
           this.showText(
             i18next.t("partyUiHandler:unspliceConfirmation", {
               fusionName: pokemon.fusionSpecies?.name,
-              pokemonName: pokemon.name,
+              pokemonName: pokemon.getName(),
             }),
             null,
             () => {
               ui.setModeWithoutClear(
-                Mode.CONFIRM,
+                UiMode.CONFIRM,
                 () => {
-                  const fusionName = pokemon.name;
+                  const fusionName = pokemon.getName();
                   pokemon.unfuse().then(() => {
                     this.clearPartySlots();
                     this.populatePartySlots();
-                    ui.setMode(Mode.PARTY);
+                    ui.setMode(UiMode.PARTY);
                     this.showText(
                       i18next.t("partyUiHandler:wasReverted", {
                         fusionName: fusionName,
-                        pokemonName: pokemon.name,
+                        pokemonName: pokemon.getName(false),
                       }),
                       undefined,
                       () => {
-                        ui.setMode(Mode.PARTY);
+                        ui.setMode(UiMode.PARTY);
                         this.showText("", 0);
                       },
                       null,
@@ -635,7 +627,7 @@ export default class PartyUiHandler extends MessageUiHandler {
                   });
                 },
                 () => {
-                  ui.setMode(Mode.PARTY);
+                  ui.setMode(UiMode.PARTY);
                   this.showText("", 0);
                 },
               );
@@ -648,19 +640,19 @@ export default class PartyUiHandler extends MessageUiHandler {
             this.blockInput = true;
             this.showText(
               i18next.t("partyUiHandler:releaseConfirmation", {
-                pokemonName: getPokemonNameWithAffix(pokemon),
+                pokemonName: getPokemonNameWithAffix(pokemon, false),
               }),
               null,
               () => {
                 this.blockInput = false;
                 ui.setModeWithoutClear(
-                  Mode.CONFIRM,
+                  UiMode.CONFIRM,
                   () => {
-                    ui.setMode(Mode.PARTY);
+                    ui.setMode(UiMode.PARTY);
                     this.doRelease(this.cursor);
                   },
                   () => {
-                    ui.setMode(Mode.PARTY);
+                    ui.setMode(UiMode.PARTY);
                     this.showText("", 0);
                   },
                 );
@@ -674,7 +666,7 @@ export default class PartyUiHandler extends MessageUiHandler {
           this.clearOptions();
           ui.playSelect();
           ui.setModeWithoutClear(
-            Mode.RENAME_POKEMON,
+            UiMode.RENAME_POKEMON,
             {
               buttonActions: [
                 (nickname: string) => {
@@ -683,10 +675,10 @@ export default class PartyUiHandler extends MessageUiHandler {
                   pokemon.updateInfo();
                   this.clearPartySlots();
                   this.populatePartySlots();
-                  ui.setMode(Mode.PARTY);
+                  ui.setMode(UiMode.PARTY);
                 },
                 () => {
-                  ui.setMode(Mode.PARTY);
+                  ui.setMode(UiMode.PARTY);
                 },
               ],
             },
@@ -807,7 +799,7 @@ export default class PartyUiHandler extends MessageUiHandler {
             selectCallback(6, PartyOption.CANCEL);
             ui.playSelect();
           } else {
-            ui.setMode(Mode.COMMAND, this.fieldIndex);
+            ui.setMode(UiMode.COMMAND, this.fieldIndex);
             ui.playSelect();
           }
         }
@@ -1217,7 +1209,7 @@ export default class PartyUiHandler extends MessageUiHandler {
               if (this.localizedOptions.includes(option)) {
                 optionName = i18next.t(`partyUiHandler:${PartyOption[option]}`);
               } else {
-                optionName = Utils.toReadableString(PartyOption[option]);
+                optionName = toReadableString(PartyOption[option]);
               }
             }
             break;
@@ -1315,7 +1307,7 @@ export default class PartyUiHandler extends MessageUiHandler {
     }
 
     this.showText(
-      this.getReleaseMessage(getPokemonNameWithAffix(globalScene.getPlayerParty()[slotIndex])),
+      this.getReleaseMessage(getPokemonNameWithAffix(globalScene.getPlayerParty()[slotIndex], false)),
       null,
       () => {
         this.clearPartySlots();
@@ -1339,7 +1331,7 @@ export default class PartyUiHandler extends MessageUiHandler {
   }
 
   getReleaseMessage(pokemonName: string): string {
-    const rand = Utils.randInt(128, undefined, "Random release message");
+    const rand = randInt(128, undefined, "Random release message");
     if (rand < 20) {
       return i18next.t("partyUiHandler:goodbye", { pokemonName: pokemonName });
     }
@@ -1527,7 +1519,7 @@ class PartySlot extends Phaser.GameObjects.Container {
     const slotInfoContainer = globalScene.add.container(0, 0);
     this.add(slotInfoContainer);
 
-    let displayName = this.pokemon.getNameToRender();
+    let displayName = this.pokemon.getNameToRender(false);
     let nameTextWidth: number;
 
     const nameSizeTest = addTextObject(0, 0, displayName, TextStyle.PARTY);
@@ -1598,7 +1590,7 @@ class PartySlot extends Phaser.GameObjects.Container {
     }
 
     if (this.pokemon.status) {
-      const statusIndicator = globalScene.add.sprite(0, 0, Utils.getLocalizedSpriteKey("statuses"));
+      const statusIndicator = globalScene.add.sprite(0, 0, getLocalizedSpriteKey("statuses"));
       statusIndicator.setFrame(StatusEffect[this.pokemon.status?.effect].toLowerCase());
       statusIndicator.setOrigin(0, 0);
       statusIndicator.setPositionRelative(slotLevelLabel, this.slotIndex >= battlerCount ? 43 : 55, 0);
@@ -1607,12 +1599,12 @@ class PartySlot extends Phaser.GameObjects.Container {
     }
 
     if (this.pokemon.isShiny()) {
-      const doubleShiny = this.pokemon.isFusion() && this.pokemon.shiny && this.pokemon.fusionShiny;
+      const doubleShiny = this.pokemon.isDoubleShiny(false);
 
       const shinyStar = globalScene.add.image(0, 0, `shiny_star_small${doubleShiny ? "_1" : ""}`);
       shinyStar.setOrigin(0, 0);
       shinyStar.setPositionRelative(this.slotName, -9, 3);
-      shinyStar.setTint(getVariantTint(!doubleShiny ? this.pokemon.getVariant() : this.pokemon.variant));
+      shinyStar.setTint(getVariantTint(this.pokemon.getBaseVariant(doubleShiny)));
 
       slotInfoContainer.add(shinyStar);
 
@@ -1620,7 +1612,9 @@ class PartySlot extends Phaser.GameObjects.Container {
         const fusionShinyStar = globalScene.add.image(0, 0, "shiny_star_small_2");
         fusionShinyStar.setOrigin(0, 0);
         fusionShinyStar.setPosition(shinyStar.x, shinyStar.y);
-        fusionShinyStar.setTint(getVariantTint(this.pokemon.fusionVariant));
+        fusionShinyStar.setTint(
+          getVariantTint(this.pokemon.summonData.illusion?.basePokemon.fusionVariant ?? this.pokemon.fusionVariant),
+        );
 
         slotInfoContainer.add(fusionShinyStar);
       }

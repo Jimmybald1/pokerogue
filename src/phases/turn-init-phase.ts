@@ -16,10 +16,6 @@ import { globalScene } from "#app/global-scene";
 import * as LoggerTools from "../logger";
 
 export class TurnInitPhase extends FieldPhase {
-  constructor() {
-    super();
-  }
-
   start() {
     super.start();
 

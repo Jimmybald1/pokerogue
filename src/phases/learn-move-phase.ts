@@ -8,7 +8,7 @@ import { getPokemonNameWithAffix } from "#app/messages";
 import Overrides from "#app/overrides";
 import EvolutionSceneHandler from "#app/ui/evolution-scene-handler";
 import { SummaryUiMode } from "#app/ui/summary-ui-handler";
-import { Mode } from "#app/ui/ui";
+import { UiMode } from "#enums/ui-mode";
 import i18next from "i18next";
 import { PlayerPartyMemberPokemonPhase } from "#app/phases/player-party-member-pokemon-phase";
 import type Pokemon from "#app/field/pokemon";
@@ -26,7 +26,7 @@ export enum LearnMoveType {
 
 export class LearnMovePhase extends PlayerPartyMemberPokemonPhase {
   private moveId: Moves;
-  private messageMode: Mode;
+  private messageMode: UiMode;
   private learnMoveType: LearnMoveType;
   private cost: number;
 
@@ -56,7 +56,7 @@ export class LearnMovePhase extends PlayerPartyMemberPokemonPhase {
     }
 
     this.messageMode =
-      globalScene.ui.getHandler() instanceof EvolutionSceneHandler ? Mode.EVOLUTION_SCENE : Mode.MESSAGE;
+      globalScene.ui.getHandler() instanceof EvolutionSceneHandler ? UiMode.EVOLUTION_SCENE : UiMode.MESSAGE;
     globalScene.ui.setMode(this.messageMode);
     // If the Pokemon has less than 4 moves, the new move is added to the largest empty moveset index
     // If it has 4 moves, the phase then checks if the player wants to replace the move itself.
@@ -91,7 +91,7 @@ export class LearnMovePhase extends PlayerPartyMemberPokemonPhase {
     await globalScene.ui.showTextPromise(preQText);
     await globalScene.ui.showTextPromise(shouldReplaceQ, undefined, false);
     await globalScene.ui.setModeWithoutClear(
-      Mode.CONFIRM,
+      UiMode.CONFIRM,
       () => this.forgetMoveProcess(move, pokemon), // Yes
       () => {
         // No
@@ -116,7 +116,7 @@ export class LearnMovePhase extends PlayerPartyMemberPokemonPhase {
     globalScene.ui.setMode(this.messageMode);
     await globalScene.ui.showTextPromise(i18next.t("battle:learnMoveForgetQuestion"), undefined, true);
     await globalScene.ui.setModeWithoutClear(
-      Mode.SUMMARY,
+      UiMode.SUMMARY,
       pokemon,
       SummaryUiMode.LEARN_MOVE,
       move,
@@ -154,7 +154,7 @@ export class LearnMovePhase extends PlayerPartyMemberPokemonPhase {
       false,
     );
     globalScene.ui.setModeWithoutClear(
-      Mode.CONFIRM,
+      UiMode.CONFIRM,
       () => {
         LoggerTools.logActions(globalScene.currentBattle.waveIndex, `Skip ${move.name}`);
         globalScene.ui.setMode(this.messageMode);
@@ -235,7 +235,7 @@ export class LearnMovePhase extends PlayerPartyMemberPokemonPhase {
         globalScene.triggerPokemonFormChange(pokemon, SpeciesFormChangeMoveLearnedTrigger, true);
         this.end();
       },
-      this.messageMode === Mode.EVOLUTION_SCENE ? 1000 : undefined,
+      this.messageMode === UiMode.EVOLUTION_SCENE ? 1000 : undefined,
       true,
     );
   }

@@ -2,15 +2,15 @@ import i18next from "i18next";
 import type BattleScene from "../battle-scene";
 import { Button } from "#enums/buttons";
 import type PokemonData from "../system/pokemon-data";
-import * as Utils from "../utils";
 import MessageUiHandler from "./message-ui-handler";
 import { TextStyle, addTextObject } from "./text";
-import { Mode } from "./ui";
 import { addWindow } from "./ui-theme";
 import * as LoggerTools from "../logger";
 import { Species } from "#app/enums/species";
 import { allSpecies, getPokemonSpecies } from "#app/data/pokemon-species";
 import { globalScene } from "#app/global-scene";
+import { UiMode } from "#enums/ui-mode";
+import { fixedInt, getEnumValues } from "#app/utils/common";
 
 const sessionSlotCount = 5;
 const gap = 20;
@@ -37,7 +37,7 @@ export default class LogSelectUiHandler extends MessageUiHandler {
   private extrasLabel: Phaser.GameObjects.Text;
 
   constructor() {
-    super(Mode.LOG_HANDLER);
+    super(UiMode.LOG_HANDLER);
   }
 
   setup() {
@@ -220,7 +220,7 @@ export default class LogSelectUiHandler extends MessageUiHandler {
       globalScene.tweens.add({
         targets: this.sessionSlotsContainer,
         y: this.sessionSlotsContainerInitialY - 56 * scrollCursor - ((this.cursor + this.scrollCursor) > 4 ? gap : 0),
-        duration: Utils.fixedInt(325),
+        duration: fixedInt(325),
         ease: "Sine.easeInOut"
       });
     }
@@ -318,20 +318,20 @@ class SessionSlot extends Phaser.GameObjects.Container {
         const iconContainer = globalScene.add.container(26 * i, 0);
         iconContainer.setScale(0.75);
 
-        //if (Utils.getEnumValues(Species)[p.id] == undefined)
+        //if (getEnumValues(Species)[p.id] == undefined)
         //return;
 
-        //if (getPokemonSpecies(Utils.getEnumValues(Species)[p.id]) == undefined)
+        //if (getPokemonSpecies(getEnumValues(Species)[p.id]) == undefined)
         //return;
 
-        if (allSpecies[Utils.getEnumValues(Species).indexOf(p.id)] == undefined) {
+        if (allSpecies[getEnumValues(Species).indexOf(p.id)] == undefined) {
           // Do nothing
           //console.log(p.id)
-          const icon = globalScene.addPkIcon(getPokemonSpecies(Utils.getEnumValues(Species)[p.id]), 0, 0, 0, 0, 0);
+          const icon = globalScene.addPkIcon(getPokemonSpecies(getEnumValues(Species)[p.id]), 0, 0, 0, 0, 0);
           iconContainer.add(icon);
         } else {
-          const icon = globalScene.addPkIcon(getPokemonSpecies(Utils.getEnumValues(Species)[p.id]), 0, 0, 0, 0, 0);
-          //const icon = globalScene.addPkIcon(getPokemonSpecies(Utils.getEnumValues(Species)[allSpecies[Utils.getEnumValues(Species).indexOf(p.id)].speciesId]), 0, 0, 0, 0, 0);
+          const icon = globalScene.addPkIcon(getPokemonSpecies(getEnumValues(Species)[p.id]), 0, 0, 0, 0, 0);
+          //const icon = globalScene.addPkIcon(getPokemonSpecies(getEnumValues(Species)[allSpecies[getEnumValues(Species).indexOf(p.id)].speciesId]), 0, 0, 0, 0, 0);
           iconContainer.add(icon);
         }
 
@@ -355,21 +355,21 @@ class SessionSlot extends Phaser.GameObjects.Container {
         const iconContainer = globalScene.add.container(26 * i, 0);
         iconContainer.setScale(0.75);
 
-        //if (Utils.getEnumValues(Species)[p.id] == undefined)
+        //if (getEnumValues(Species)[p.id] == undefined)
         //return;
 
-        //if (getPokemonSpecies(Utils.getEnumValues(Species)[p.id]) == undefined)
+        //if (getPokemonSpecies(getEnumValues(Species)[p.id]) == undefined)
         //return;
 
         const sp = getPokemonSpecies(pk.species);
-        if (allSpecies[Utils.getEnumValues(Species).indexOf(p.id)] == undefined) {
+        if (allSpecies[getEnumValues(Species).indexOf(p.id)] == undefined) {
           // Do nothing
           const icon = globalScene.addPkIcon(sp, pk.formIndex, 0, 0, 0, 0, undefined, pk.shiny, pk.variant);
           iconContainer.add(icon);
         } else {
-          //console.log(p.id, Utils.getEnumValues(Species)[p.id])
+          //console.log(p.id, getEnumValues(Species)[p.id])
           const icon = globalScene.addPkIcon(sp, pk.formIndex, 0, 0, 0, 0, undefined, pk.shiny, pk.variant);
-          //const icon = globalScene.addPkIcon(getPokemonSpecies(Utils.getEnumValues(Species)[allSpecies[Utils.getEnumValues(Species).indexOf(p.id)].speciesId]), 0, 0, 0, 0, 0);
+          //const icon = globalScene.addPkIcon(getPokemonSpecies(getEnumValues(Species)[allSpecies[getEnumValues(Species).indexOf(p.id)].speciesId]), 0, 0, 0, 0, 0);
           iconContainer.add(icon);
         }
 

@@ -2,17 +2,18 @@ import i18next from "i18next";
 import { globalScene } from "#app/global-scene";
 import { Button } from "#enums/buttons";
 import { GameMode } from "../game-mode";
+// biome-ignore lint/style/noNamespaceImport: See `src/system/game-data.ts`
+import * as Modifier from "#app/modifier/modifier";
 import type { SessionSaveData } from "../system/game-data";
 import type PokemonData from "../system/pokemon-data";
-import * as Utils from "../utils";
+import { isNullOrUndefined, fixedInt, getPlayTimeString, formatLargeNumber } from "#app/utils/common";
 import MessageUiHandler from "./message-ui-handler";
 import { TextStyle, addTextObject } from "./text";
-import { Mode } from "./ui";
+import { UiMode } from "#enums/ui-mode";
 import { addWindow } from "./ui-theme";
 import { allpanels, biomePanelIDs } from "../loading-scene";
 import { RunDisplayMode } from "#app/ui/run-info-ui-handler";
 import { getBiomeName } from "#app/data/balance/biomes";
-import * as Modifier from "../modifier/modifier";
 
 const SESSION_SLOTS_COUNT = 5;
 const SLOTS_ON_SCREEN = 3;
@@ -41,7 +42,7 @@ export default class SaveSlotSelectUiHandler extends MessageUiHandler {
   private sessionSlotsContainerInitialY: number;
 
   constructor() {
-    super(Mode.SAVE_SLOT);
+    super(UiMode.SAVE_SLOT);
   }
 
   setup() {
@@ -123,13 +124,13 @@ export default class SaveSlotSelectUiHandler extends MessageUiHandler {
                 this.saveSlotSelectCallback = null;
                 ui.revertMode();
                 ui.showText("", 0);
-                ui.setMode(Mode.MESSAGE);
+                ui.setMode(UiMode.MESSAGE);
                 originalCallback?.(cursor);
               };
               if (this.sessionSlots[cursor].hasData) {
                 ui.showText(i18next.t("saveSlotSelectUiHandler:overwriteData"), null, () => {
                   ui.setOverlayMode(
-                    Mode.CONFIRM,
+                    UiMode.CONFIRM,
                     () => {
                       globalScene.gameData.deleteSession(cursor).then(response => {
                         if (response === false) {
@@ -199,7 +200,7 @@ export default class SaveSlotSelectUiHandler extends MessageUiHandler {
         case Button.RIGHT:
           if (this.sessionSlots[cursorPosition].hasData && this.sessionSlots[cursorPosition].saveData) {
             globalScene.ui.setOverlayMode(
-              Mode.RUN_INFO,
+              UiMode.RUN_INFO,
               this.sessionSlots[cursorPosition].saveData,
               RunDisplayMode.SESSION_PREVIEW,
             );
@@ -298,7 +299,7 @@ export default class SaveSlotSelectUiHandler extends MessageUiHandler {
       }
       this.setArrowVisibility(hasData);
     }
-    if (!Utils.isNullOrUndefined(prevSlotIndex)) {
+    if (!isNullOrUndefined(prevSlotIndex)) {
       this.revertSessionSlot(prevSlotIndex);
     }
 
@@ -341,7 +342,7 @@ export default class SaveSlotSelectUiHandler extends MessageUiHandler {
       globalScene.tweens.add({
         targets: this.sessionSlotsContainer,
         y: this.sessionSlotsContainerInitialY - 56 * scrollCursor,
-        duration: Utils.fixedInt(325),
+        duration: fixedInt(325),
         ease: "Sine.easeInOut",
       });
     }
@@ -422,7 +423,7 @@ class SessionSlot extends Phaser.GameObjects.Container {
     const timestampLabel = addTextObject(8, 19, new Date(data.timestamp).toLocaleString(), TextStyle.WINDOW);
     this.add(timestampLabel);
 
-    const playTimeLabel = addTextObject(8, 33, Utils.getPlayTimeString(data.playTime) + "    " + (getBiomeName(data.arena.biome) == "Construction Site" ? "Construction" : getBiomeName(data.arena.biome)), TextStyle.WINDOW);
+    const playTimeLabel = addTextObject(8, 33, getPlayTimeString(data.playTime) + "    " + (getBiomeName(data.arena.biome) == "Construction Site" ? "Construction" : getBiomeName(data.arena.biome)), TextStyle.WINDOW);
     this.add(playTimeLabel);
 
     console.log(biomePanelIDs[data.arena.biome]);
@@ -445,7 +446,7 @@ class SessionSlot extends Phaser.GameObjects.Container {
       const text = addTextObject(
         32,
         20,
-        `${i18next.t("saveSlotSelectUiHandler:lv")}${Utils.formatLargeNumber(pokemon.level, 1000)}`,
+        `${i18next.t("saveSlotSelectUiHandler:lv")}${formatLargeNumber(pokemon.level, 1000)}`,
         TextStyle.PARTY,
         { fontSize: "54px", color: "#f8f8f8" },
       );

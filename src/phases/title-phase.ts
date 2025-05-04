@@ -1,6 +1,6 @@
 import { loggedInUser } from "#app/account";
 import type Battle from "#app/battle";
-import { BattleType } from "#app/battle";
+import { BattleType } from "#enums/battle-type";
 import { fetchDailyRunSeed, getDailyRunStarters } from "#app/data/daily-run";
 import { Gender } from "#app/data/gender";
 import { getBiomeKey } from "#app/field/arena";
@@ -20,8 +20,8 @@ import { Unlockables } from "#app/system/unlockables";
 import { vouchers } from "#app/system/voucher";
 import type { OptionSelectConfig, OptionSelectItem } from "#app/ui/abstact-option-select-ui-handler";
 import { SaveSlotUiMode } from "#app/ui/save-slot-select-ui-handler";
-import { Mode } from "#app/ui/ui";
-import * as Utils from "#app/utils";
+import { UiMode } from "#enums/ui-mode";
+import { isLocal, isLocalServerConnected, isNullOrUndefined, randSeedInt } from "#app/utils/common";
 import i18next from "i18next";
 import { CheckSwitchPhase } from "./check-switch-phase";
 import { EncounterPhase } from "./encounter-phase";
@@ -36,7 +36,6 @@ import { Species } from "#app/enums/species";
 import { getPokemonNameWithAffix } from "#app/messages";
 import { Nature } from "#app/enums/nature";
 import { biomeLinks } from "#app/data/balance/biomes";
-import { allAbilities, applyAbAttrs, SyncEncounterNatureAbAttr } from "#app/data/ability";
 import { BattleSpec } from "#app/enums/battle-spec";
 import { Moves } from "#app/enums/moves";
 import { PokemonType } from "#app/enums/pokemon-type";
@@ -45,17 +44,13 @@ import type { PlayerPokemon } from "#app/field/pokemon";
 import { PokemonMove } from "#app/field/pokemon";
 import Overrides from "#app/overrides";
 import { TrainerSlot } from "#enums/trainer-slot";
+import { applyAbAttrs, SyncEncounterNatureAbAttr } from "#app/data/abilities/ability";
+import { allAbilities } from "#app/data/data-lists";
 
 export class TitlePhase extends Phase {
-  private loaded: boolean;
+  private loaded = false;
   private lastSessionData: SessionSaveData;
   public gameMode: GameModes;
-
-  constructor() {
-    super();
-
-    this.loaded = false;
-  }
 
   confirmSlot = (message: string, slotFilter: (i: integer) => boolean, callback: (i: integer) => void) => {
     const p = this;
@@ -83,7 +78,7 @@ export class TitlePhase extends Phase {
         }]),
         //xOffset: 98
       };
-      globalScene.ui.setOverlayMode(Mode.MENU_OPTION_SELECT, config);
+      globalScene.ui.setOverlayMode(UiMode.MENU_OPTION_SELECT, config);
     });
   };
 
@@ -223,7 +218,7 @@ export class TitlePhase extends Phase {
   }
 
   showLoggerOptions(txt: string, options: OptionSelectItem[]): boolean {
-    globalScene.ui.showText("Export or clear game logs.", null, () => globalScene.ui.setOverlayMode(Mode.OPTION_SELECT, { options: options }));
+    globalScene.ui.showText("Export or clear game logs.", null, () => globalScene.ui.setOverlayMode(UiMode.OPTION_SELECT, { options: options }));
     return true;
   }
 
@@ -259,7 +254,7 @@ export class TitlePhase extends Phase {
         return true;
       }
     });
-    globalScene.ui.showText("Export or clear game logs.", null, () => globalScene.ui.setOverlayMode(Mode.OPTION_SELECT, { options: options }));
+    globalScene.ui.showText("Export or clear game logs.", null, () => globalScene.ui.setOverlayMode(UiMode.OPTION_SELECT, { options: options }));
     return true;
   }
   logRenameMenu(): boolean {
@@ -295,7 +290,7 @@ export class TitlePhase extends Phase {
         return true;
       }
     });
-    globalScene.ui.showText("Export, rename, or delete logs.", null, () => globalScene.ui.setOverlayMode(Mode.OPTION_SELECT, { options: options }));
+    globalScene.ui.showText("Export, rename, or delete logs.", null, () => globalScene.ui.setOverlayMode(UiMode.OPTION_SELECT, { options: options }));
     return true;
   }
 
@@ -379,7 +374,7 @@ export class TitlePhase extends Phase {
         handler: () => {
           const setModeAndEnd = (gameMode: GameModes) => {
             this.gameMode = gameMode;
-            globalScene.ui.setMode(Mode.MESSAGE);
+            globalScene.ui.setMode(UiMode.MESSAGE);
             globalScene.ui.clearText();
             this.end();
           };
@@ -440,7 +435,7 @@ export class TitlePhase extends Phase {
               return true;
             }
           });
-          globalScene.ui.showText(i18next.t("menu:selectGameMode"), null, () => globalScene.ui.setOverlayMode(Mode.OPTION_SELECT, { options: options }));
+          globalScene.ui.showText(i18next.t("menu:selectGameMode"), null, () => globalScene.ui.setOverlayMode(UiMode.OPTION_SELECT, { options: options }));
         } else {
           const options: OptionSelectItem[] = [
             {
@@ -469,7 +464,7 @@ export class TitlePhase extends Phase {
               },
             });
             globalScene.ui.showText(i18next.t("menu:selectGameMode"), null, () =>
-            globalScene.ui.setOverlayMode(Mode.OPTION_SELECT, {
+            globalScene.ui.setOverlayMode(UiMode.OPTION_SELECT, {
               options: options,
             }),
           );
@@ -511,14 +506,14 @@ export class TitlePhase extends Phase {
             return true;
           }
         });
-        globalScene.ui.showText("Shop Scouting", null, () => globalScene.ui.setOverlayMode(Mode.OPTION_SELECT, { options: shopOptions }));
+        globalScene.ui.showText("Shop Scouting", null, () => globalScene.ui.setOverlayMode(UiMode.OPTION_SELECT, { options: shopOptions }));
         return true;
       }
     }, {
       label: "Manage Logs",
       handler: () => {
         //return this.logRenameMenu()
-        globalScene.ui.setOverlayMode(Mode.LOG_HANDLER,
+        globalScene.ui.setOverlayMode(UiMode.LOG_HANDLER,
           (k: string) => {
             if (k === undefined) {
               return this.showOptions();
@@ -539,7 +534,7 @@ export class TitlePhase extends Phase {
       options.push({
         label: i18next.t("menu:loadGame"),
         handler: () => {
-          globalScene.ui.setOverlayMode(Mode.SAVE_SLOT, SaveSlotUiMode.LOAD, (slotId: number, autoSlot: integer) => {
+          globalScene.ui.setOverlayMode(UiMode.SAVE_SLOT, SaveSlotUiMode.LOAD, (slotId: number, autoSlot: integer) => {
             if (slotId === -1) {
               return this.showOptions();
             }
@@ -551,7 +546,7 @@ export class TitlePhase extends Phase {
       {
         label: i18next.t("menu:runHistory"),
         handler: () => {
-          globalScene.ui.setOverlayMode(Mode.RUN_HISTORY);
+          globalScene.ui.setOverlayMode(UiMode.RUN_HISTORY);
           return true;
         },
         keepOpen: true,
@@ -559,7 +554,7 @@ export class TitlePhase extends Phase {
       {
         label: i18next.t("menu:settings"),
         handler: () => {
-          globalScene.ui.setOverlayMode(Mode.SETTINGS);
+          globalScene.ui.setOverlayMode(UiMode.SETTINGS);
           return true;
         },
         keepOpen: true,
@@ -570,12 +565,12 @@ export class TitlePhase extends Phase {
       noCancel: true,
       yOffset: 47,
     };
-    globalScene.ui.setMode(Mode.TITLE, config);
+    globalScene.ui.setMode(UiMode.TITLE, config);
   }
 
   loadSaveSlot(slotId: number, autoSlot?: integer): void {
     globalScene.sessionSlotId = slotId > -1 || !loggedInUser ? slotId : loggedInUser.lastSessionSlot;
-    globalScene.ui.setMode(Mode.MESSAGE);
+    globalScene.ui.setMode(UiMode.MESSAGE);
     globalScene.ui.resetModeChain();
     globalScene.gameData
       .loadSession(slotId, slotId === -1 ? this.lastSessionData : undefined, autoSlot)
@@ -595,7 +590,7 @@ export class TitlePhase extends Phase {
 
   initDailyRun(): void {
     globalScene.ui.clearText();
-    globalScene.ui.setMode(Mode.SAVE_SLOT, SaveSlotUiMode.SAVE, (slotId: number) => {
+    globalScene.ui.setMode(UiMode.SAVE_SLOT, SaveSlotUiMode.SAVE, (slotId: number) => {
       globalScene.clearPhaseQueue();
       if (slotId === -1) {
         globalScene.pushPhase(new TitlePhase());
@@ -675,7 +670,7 @@ export class TitlePhase extends Phase {
       };
 
       // If Online, calls seed fetch from db to generate daily run. If Offline, generates a daily run based on current date.
-      if (!Utils.isLocal || Utils.isLocalServerConnected) {
+      if (!isLocal || isLocalServerConnected) {
         fetchDailyRunSeed()
           .then(seed => {
             if (seed) {
@@ -689,7 +684,7 @@ export class TitlePhase extends Phase {
           });
       } else {
         let seed: string = btoa(new Date().toISOString().substring(0, 10));
-        if (!Utils.isNullOrUndefined(Overrides.DAILY_RUN_SEED_OVERRIDE)) {
+        if (!isNullOrUndefined(Overrides.DAILY_RUN_SEED_OVERRIDE)) {
           seed = Overrides.DAILY_RUN_SEED_OVERRIDE;
         }
         generateDaily(seed);
@@ -728,7 +723,7 @@ export class TitlePhase extends Phase {
           }]),
           xOffset: 98
         };
-        ui.setOverlayMode(Mode.MENU_OPTION_SELECT, config);
+        ui.setOverlayMode(UiMode.MENU_OPTION_SELECT, config);
       });
     };
     ui.showText("This feature is incomplete.", null, () => {
@@ -1323,7 +1318,7 @@ export class TitlePhase extends Phase {
       biomeChoices = (!Array.isArray(biomeLinks[biome])
         ? [ biomeLinks[biome] as Biome ]
         : biomeLinks[biome] as (Biome | [Biome, integer])[])
-        .filter((b, i) => !Array.isArray(b) || !Utils.randSeedInt(b[1], undefined, "Choosing next biome for map"))
+        .filter((b, i) => !Array.isArray(b) || !randSeedInt(b[1], undefined, "Choosing next biome for map"))
         .map(b => Array.isArray(b) ? b[0] : b);
     }, waveIndex + 11);
     console.log(biomeChoices);
