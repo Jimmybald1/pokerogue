@@ -46,7 +46,7 @@ export class SelectBiomePhase extends BattlePhase {
             handler: () => {
               globalScene.ui.setMode(UiMode.MESSAGE);
               if (biomes.length > 1 && b != Biome.END) {
-                LoggerTools.logActions(globalScene.currentBattle.waveIndex - 1, `Go to ${getBiomeName(b)}`);
+                LoggerTools.logActions(globalScene.currentBattle.waveIndex, `Go to ${getBiomeName(b)}`);
               }
               setNextBiome(b);
               return true;
