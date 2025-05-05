@@ -957,6 +957,9 @@ export class TitlePhase extends Phase {
       globalScene.RemoveModifiers();
 
       // globalScene.InsertDynamaxBand();
+      // globalScene.InsertMegaBracelet();
+      // globalScene.InsertLockCapsule();
+      // globalScene.InsertTeraOrb();
       // globalScene.InsertIVScanner();
 
       const rogueItem = g();
@@ -1295,6 +1298,8 @@ export class TitlePhase extends Phase {
         }
       }
     });
+
+    globalScene.resetSeed();
   }
 
   GenerateBiomes(biome: Biome, waveIndex: integer) {
@@ -1312,16 +1317,11 @@ export class TitlePhase extends Phase {
       return;
     }
 
-    // Get next biomes by offsetting the seed to the x1 wave and then rolling for the biome selections.
-    let biomeChoices: Biome[] = [];
-    globalScene.executeWithSeedOffset(() => {
-      biomeChoices = (!Array.isArray(biomeLinks[biome])
-        ? [ biomeLinks[biome] as Biome ]
-        : biomeLinks[biome] as (Biome | [Biome, integer])[])
-        .filter((b, i) => !Array.isArray(b) || !randSeedInt(b[1], undefined, "Choosing next biome for map"))
-        .map(b => Array.isArray(b) ? b[0] : b);
-    }, waveIndex + 11);
-    console.log(biomeChoices);
+    const biomeChoices: Biome[] = (!Array.isArray(biomeLinks[biome])
+      ? [ biomeLinks[biome] as Biome ]
+      : biomeLinks[biome] as (Biome | [Biome, integer])[])
+        .filter(b => !Array.isArray(b) || !randSeedInt(b[1], undefined, "Choosing next biome"))
+        .map(b => (!Array.isArray(b) ? b : b[0]));
 
     // Recursively generate next biomes
     for (const b of biomeChoices) {
