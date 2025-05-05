@@ -1,5 +1,4 @@
 import { MoneyFormat } from "#enums/money-format";
-import * as LoggerTools from "./logger";
 import { Moves } from "#enums/moves";
 import i18next from "i18next";
 import { pokerogueApi } from "#app/plugins/api/pokerogue-api";
