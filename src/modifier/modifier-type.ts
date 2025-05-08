@@ -3822,7 +3822,7 @@ function getNewModifierTypeOption(
       }
       tier += upgradeCount;
     }
-  } else if (retryCount === 10 && tier) {
+  } else if (retryCount >= 100 && tier) {
     retryCount = 0;
     tier--;
   }
