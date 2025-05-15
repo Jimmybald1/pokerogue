@@ -80,9 +80,9 @@ export function randSeedGauss(stdev: number, mean = 0, reason?: string): number 
   const result = z * stdev + mean;
   if (reason != "%HIDE" && doRNGLogging) {
     if (reason) {
-      console.log(reason, result);
+      console.log(reason, result, stdev, mean);
     } else if (doUnlabeledRNGLogging) {
-      console.error("unlabeled randSeedInt", result);
+      console.error("unlabeled randSeedInt", result, stdev, mean);
     }
   }
   return result;
@@ -110,7 +110,7 @@ export function randInt(range: number, min = 0, reason?: string): number {
   }
   const V = Math.floor(Math.random() * range) + min;
   if (reason != "%HIDE" && doRNGLogging && doUnseededRNGLogging) {
-    console.log("[unseeded] " + (reason ? reason : "randInt"), V);
+    console.log("[unseeded] " + (reason ? reason : "randInt"), V, range, min);
   }
   return V;
 }
@@ -128,9 +128,9 @@ export function randSeedInt(range: number, min = 0, reason?: string): number {
   const V = Phaser.Math.RND.integerInRange(min, range - 1 + min);
   if (reason != "%HIDE" && doRNGLogging) {
     if (reason) {
-      console.log(reason, V);
+      console.log(reason, V, range, min);
     } else if (doUnlabeledRNGLogging) {
-      console.error("unlabeled randSeedInt", V);
+      console.error("unlabeled randSeedInt", V, range, min);
     }
   }
   return V;
