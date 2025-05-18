@@ -43,7 +43,7 @@ export class AttemptCapturePhase extends PokemonPhase {
   }
 
   roll(y?: integer) {
-    const roll = (this.getPokemon() as EnemyPokemon).randSeedInt(65536, undefined, "Capture roll");
+    const roll = (this.getPokemon() as EnemyPokemon).randBattleSeedInt(65536, undefined, "Capture roll");
     if (y != undefined) {
       console.log(roll, y, roll < y);
     } else {
@@ -78,7 +78,7 @@ export class AttemptCapturePhase extends PokemonPhase {
     const modifiedCatchRate = Math.round((((_3m - _2h) * catchRate * pokeballMultiplier) / _3m) * statusMultiplier);
     const shakeProbability = Math.round(65536 / Math.pow(255 / modifiedCatchRate, 0.1875)); // Formula taken from gen 6
     const criticalCaptureChance = getCriticalCaptureChance(modifiedCatchRate);
-    const isCritical = pokemon.randSeedInt(256) < criticalCaptureChance;
+    const isCritical = pokemon.randBattleSeedInt(256) < criticalCaptureChance;
     const fpOffset = pokemon.getFieldPositionOffset();
 
     LoggerTools.logActions(globalScene.currentBattle.waveIndex, getPokeballName(this.pokeballType));
