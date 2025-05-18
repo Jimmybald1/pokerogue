@@ -35,7 +35,7 @@ export class AttemptRunPhase extends PokemonPhase {
 
     applyAbAttrs(RunSuccessAbAttr, playerPokemon, null, false, escapeChance);
 
-    if (playerPokemon.randSeedInt(100, undefined, "Run away chance") < escapeChance.value && !this.forceFailEscape) {
+    if (playerPokemon.randBattleSeedInt(100, undefined, "Run away chance") < escapeChance.value && !this.forceFailEscape) {
       enemyField.forEach(enemyPokemon => applyPreLeaveFieldAbAttrs(PreLeaveFieldAbAttr, enemyPokemon));
 
       globalScene.playSound("se/flee");

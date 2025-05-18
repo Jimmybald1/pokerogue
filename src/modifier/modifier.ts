@@ -1548,7 +1548,7 @@ export class SurviveDamageModifier extends PokemonHeldItemModifier {
    * @returns `true` if the survive damage has been applied
    */
   override apply(pokemon: Pokemon, surviveDamage: BooleanHolder): boolean {
-    if (!surviveDamage.value && pokemon.randSeedInt(10, undefined, "Chance to endure an attack") < this.getStackCount()) {
+    if (!surviveDamage.value && pokemon.randBattleSeedInt(10, undefined, "Chance to endure an attack") < this.getStackCount()) {
       surviveDamage.value = true;
 
       globalScene.queueMessage(
@@ -1594,7 +1594,7 @@ export class BypassSpeedChanceModifier extends PokemonHeldItemModifier {
    * @returns `true` if {@linkcode BypassSpeedChanceModifier} has been applied
    */
   override apply(pokemon: Pokemon, doBypassSpeed: BooleanHolder): boolean {
-    if (!doBypassSpeed.value && pokemon.randSeedInt(10, undefined, "Chance to activate Quick Claw") < this.getStackCount()) {
+    if (!doBypassSpeed.value && pokemon.randBattleSeedInt(10, undefined, "Chance to activate Quick Claw") < this.getStackCount()) {
       doBypassSpeed.value = true;
       const isCommandFight =
         globalScene.currentBattle.turnCommands[pokemon.getBattlerIndex()]?.command === Command.FIGHT;
@@ -1658,7 +1658,7 @@ export class FlinchChanceModifier extends PokemonHeldItemModifier {
   override apply(pokemon: Pokemon, flinched: BooleanHolder): boolean {
     // The check for pokemon.summonData is to ensure that a crash doesn't occur when a Pokemon with King's Rock procs a flinch
     // TODO: Since summonData is always defined now, we can probably remove this
-    if (pokemon.summonData && !flinched.value && pokemon.randSeedInt(100, undefined, "Chance to flinch") < this.getStackCount() * this.chance) {
+    if (pokemon.summonData && !flinched.value && pokemon.randBattleSeedInt(100, undefined, "Chance to flinch") < this.getStackCount() * this.chance) {
       flinched.value = true;
       return true;
     }
@@ -1927,7 +1927,7 @@ export class PreserveBerryModifier extends PersistentModifier {
    * @returns always `true`
    */
   override apply(pokemon: Pokemon, doPreserve: BooleanHolder): boolean {
-    doPreserve.value ||= pokemon.randSeedInt(10, undefined, "Chance to preserve berry") < this.getStackCount() * 3;
+    doPreserve.value ||= pokemon.randBattleSeedInt(10, undefined, "Chance to preserve berry") < this.getStackCount() * 3;
 
     return true;
   }
@@ -3240,7 +3240,7 @@ export abstract class HeldItemTransferModifier extends PokemonHeldItemModifier {
       return false;
     }
 
-    const targetPokemon = opponents[pokemon.randSeedInt(opponents.length, undefined, "Chance to steal item")];
+    const targetPokemon = opponents[pokemon.randBattleSeedInt(opponents.length, undefined, "Chance to steal item")];
 
     const transferredItemCount = this.getTransferredItemCount();
     if (!transferredItemCount) {
@@ -3272,7 +3272,7 @@ export abstract class HeldItemTransferModifier extends PokemonHeldItemModifier {
           break;
         }
       }
-      const randItemIndex = pokemon.randSeedInt(itemModifiers.length, undefined, "Choosing an item to steal");
+      const randItemIndex = pokemon.randBattleSeedInt(itemModifiers.length, undefined, "Choosing an item to steal");
       const randItem = itemModifiers[randItemIndex];
       if (globalScene.tryTransferHeldItemModifier(randItem, pokemon, false)) {
         transferredModifierTypes.push(randItem.type);
@@ -3737,7 +3737,7 @@ export class EnemyEndureChanceModifier extends EnemyPersistentModifier {
    * @returns `true` if {@linkcode Pokemon} endured
    */
   override apply(target: Pokemon): boolean {
-    if (target.waveData.endured || target.randSeedInt(100) >= this.chance * this.getStackCount()) {
+    if (target.waveData.endured || target.randBattleSeedInt(100) >= this.chance * this.getStackCount()) {
       return false;
     }
 
