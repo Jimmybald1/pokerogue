@@ -128,9 +128,9 @@ export function randSeedInt(range: number, min = 0, reason?: string): number {
   const V = Phaser.Math.RND.integerInRange(min, range - 1 + min);
   if (reason != "%HIDE" && doRNGLogging) {
     if (reason) {
-      console.log(reason, V, range, min);
+      console.log(reason, V, `${min} - ${range - 1 + min}`);
     } else if (doUnlabeledRNGLogging) {
-      console.error("unlabeled randSeedInt", V, range, min);
+      console.error("unlabeled randSeedInt", V, `${min} - ${range - 1 + min}`);
     }
   }
   return V;
