@@ -2155,7 +2155,7 @@ export function findBest(pokemon: EnemyPokemon, override?: boolean) {
     const rawRate = v[0];
     const catchRate = v[1];
     const critRate = v[2];
-    if (globalScene.pokeballCounts[i] == 0 && !override) {
+    if (globalScene.pokeballCounts[v[3]] == 0 && !override) {
       if (catchDebug) {
         console.log("  Skipped because the player doesn't have any of this ball");
       }
