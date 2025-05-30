@@ -816,6 +816,7 @@ export class TitlePhase extends Phase {
 
     const ethers = [
       (pokemon: PlayerPokemon) => {
+        this.SetFullPP(pokemon);
         return 0;
       },
       (pokemon: PlayerPokemon) => {
