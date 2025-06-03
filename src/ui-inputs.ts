@@ -163,13 +163,13 @@ export class UiInputs {
 
   buttonInfo(pressed = true): void {
     if (globalScene.showMovesetFlyout) {
-      for (const p of globalScene.getField().filter(p => p?.isActive(true))) {
+      for (const p of globalScene.getEnemyField().filter(p => p?.isActive(true))) {
         p.toggleFlyout(pressed);
       }
     }
 
     if (globalScene.showTeams) {
-      for (const p of globalScene.getField().filter(p => p?.isActive(true))) {
+      for (const p of globalScene.getEnemyField().filter(p => p?.isActive(true))) {
         p.toggleTeamTray(pressed);
       }
     }
