@@ -174,7 +174,9 @@ export function randSeedItem<T>(items: T[], reason?: string): T {
 export function randSeedWeightedItem<T>(items: T[], reason?: string): T {
   function rpick() {
     const V = Phaser.Math.RND.weightedPick(items);
-    console.log(reason ? reason : "randSeedWeightedItem");
+    if (doRNGLogging) {
+      console.log(reason ? reason : "randSeedWeightedItem");
+    }
     return V;
   }
   return items.length === 1 ? items[0] : rpick();
