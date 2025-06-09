@@ -173,7 +173,9 @@ export function randSeedItem<T>(items: T[], reason?: string): T {
 export function randSeedWeightedItem<T>(items: T[], reason?: string): T {
   function rpick() {
     const V = Phaser.Math.RND.weightedPick(items);
-    console.log(reason ? reason : "randSeedWeightedItem");
+    if (doRNGLogging) {
+      console.log(reason ? reason : "randSeedWeightedItem");
+    }
     return V;
   }
   return items.length === 1 ? items[0] : rpick();
@@ -191,7 +193,9 @@ export function randSeedShuffle<T>(items: T[]): T[] {
   const newArray = items.slice(0);
   for (let i = items.length - 1; i > 0; i--) {
     const j = Phaser.Math.RND.integerInRange(0, i);
-    console.log("randSeedShuffle", j);
+    if (doRNGLogging) {
+      console.log("randSeedShuffle", j);
+    }
     [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
   }
   return newArray;
