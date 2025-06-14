@@ -1290,7 +1290,7 @@ export class TitlePhase extends Phase {
         `Form: ${atlaspath} Species ID: ${enemy.species.speciesId} Stats: ${enemy.stats} IVs: ${enemy.ivs} Ability: ${enemy.getAbility().name} ` +
         `Passive Ability: ${enemy.getPassiveAbility().name} Nature: ${Nature[enemy.nature]} Gender: ${Gender[enemy.gender]} Rarity: ${LoggerTools.rarities[e]} AbilityIndex: ${enemy.abilityIndex} ` +
         `ID: ${enemy.id} Type: ${enemy.getTypes().map(t => PokemonType[t]).join(",")} Moves: ${enemy.getMoveset().map(m => Moves[m?.moveId ?? 0]).join(",")} HARolls: ${LoggerTools.haChances[e].join(",")} ` +
-        `Hidden Ability: ${allAbilities[enemy.species.abilityHidden].name}`;
+        `Hidden Ability: ${allAbilities[enemy.getSpeciesForm().abilityHidden].name}`;
         this.encounterList.push(text);
         console.log(text);
         if (battle.waveIndex == 50) {
