@@ -9,6 +9,7 @@ import i18next from "i18next";
 import { FieldPhase } from "./field-phase";
 import { globalScene } from "#app/global-scene";
 import * as LoggerTools from "../logger";
+import { EnemyCommandPhase } from "./enemy-command-phase";
 
 export class TurnInitPhase extends FieldPhase {
   public readonly phaseName = "TurnInitPhase";
@@ -74,9 +75,15 @@ export class TurnInitPhase extends FieldPhase {
     globalScene.getField().forEach((pokemon, i) => {
       if (pokemon?.isActive()) {
         if (!pokemon.isPlayer()) {
-          pokemon.flyout.setText();
+          (pokemon as EnemyPokemon).toggleFlyout(false);
           pokemon.resetTurnData();
-          globalScene.phaseManager.pushNew("EnemyCommandPhase", i - BattlerIndex.ENEMY);
+
+          const enemyCommandPhase = new EnemyCommandPhase(i - BattlerIndex.ENEMY, true);
+          enemyCommandPhase.start();
+
+          // Reset all commands and rng, but dont increment the actual turn
+          globalScene.currentBattle.incrementTurn();
+          globalScene.currentBattle.turn--;
         }
       }
     });

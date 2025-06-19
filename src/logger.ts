@@ -69,7 +69,7 @@ export const acceptedVersions = [
 ];
 
 /** Toggles console messages about catch prediction. */
-const catchDebug: boolean = true;
+const catchDebug: boolean = false;
 
 // Value holders
 /** Holds the encounter rarities for the Pokemon in this wave. */

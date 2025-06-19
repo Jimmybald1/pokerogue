@@ -8,6 +8,8 @@ import i18next from "i18next";
 import { BattlePhase } from "./battle-phase";
 import { getNatureName } from "#app/data/nature";
 import { SwitchType } from "#enums/switch-type";
+import { EnemyCommandPhase } from "./enemy-command-phase";
+import { BattlerIndex } from "#enums/battler-index";
 
 export class CheckSwitchPhase extends BattlePhase {
   public readonly phaseName = "CheckSwitchPhase";
@@ -77,6 +79,24 @@ export class CheckSwitchPhase extends BattlePhase {
       pk.toggleFlyout(true);
       pk.setBattleInfoFlyout(getNatureName(pk.nature), ivDesc, pk.getAbility().name, pk.getPassiveAbility().name, pk.abilityIndex);
     }
+
+    // Pathing tool function
+    // Activate enemy command phase for move and catch prediction
+    globalScene.getField().forEach((pokemon, i) => {
+      if (pokemon?.isActive()) {
+        if (!pokemon.isPlayer()) {
+          pokemon.flyout.setText();
+          pokemon.resetTurnData();
+
+          const enemyCommandPhase = new EnemyCommandPhase(i - BattlerIndex.ENEMY, true);
+          enemyCommandPhase.start();
+
+          // Reset all commands and rng, but dont increment the actual turn
+          globalScene.currentBattle.incrementTurn();
+          globalScene.currentBattle.turn--;
+        }
+      }
+    });
 
     globalScene.ui.showText(
       i18next.t("battle:switchQuestion", {

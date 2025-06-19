@@ -1327,9 +1327,11 @@ export default class BattleScene extends SceneBase {
         }
       });
     }
-    if (txt.length > 2) {
-      txt = ["Turn: " + this.currentBattle.turn];
-    }
+
+    // if (txt.length > 2) {
+    //   txt = ["Turn: " + this.currentBattle.turn];
+    // }
+    
     this.arenaFlyout.updateFieldText();
 
     this.setScoreText(txt.join(" / "));

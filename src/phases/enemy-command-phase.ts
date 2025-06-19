@@ -20,14 +20,17 @@ export class EnemyCommandPhase extends FieldPhase {
   public readonly phaseName = "EnemyCommandPhase";
   protected fieldIndex: number;
   protected skipTurn = false;
+  private simulated: boolean;
 
-  constructor(fieldIndex: number) {
+  constructor(fieldIndex: number, simulated: boolean = false) {
     super();
 
     this.fieldIndex = fieldIndex;
     if (globalScene.currentBattle.mysteryEncounter?.skipEnemyBattleTurns) {
       this.skipTurn = true;
     }
+
+    this.simulated = simulated;
   }
 
   start() {
@@ -90,7 +93,11 @@ export class EnemyCommandPhase extends FieldPhase {
 
             enemyPokemon.flyout.setText();
 
-            globalScene.updateCatchRate();
+            // Pathing tool function
+            // dont end the phase
+            if (this.simulated) {
+              return;
+            }
 
             return this.end();
           }
@@ -132,14 +139,21 @@ export class EnemyCommandPhase extends FieldPhase {
       targetLabels[1] += " (L)";
       targetLabels[2] += " (R)";
     }
+
     console.log(enemyPokemon.name + " selects:", mv.getName() + " → " + nextMove.targets.map((m) => targetLabels[m + 1]));
     globalScene.currentBattle.enemySwitchCounter = Math.max(globalScene.currentBattle.enemySwitchCounter - 1, 0);
 
-    LoggerTools.enemyPlan[this.fieldIndex * 2] = mv.getName();
-    LoggerTools.enemyPlan[this.fieldIndex * 2 + 1] = "→ " + nextMove.targets.map((m) => targetLabels[m + 1]);
     globalScene.arenaFlyout.updateFieldText();
 
+    // Pathing tool function
+    // update catch rate
     globalScene.updateCatchRate();
+
+    // Pathing tool function
+    // dont end the phase
+    if (this.simulated) {
+      return;
+    }
 
     this.end();
   }
