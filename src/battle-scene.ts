@@ -2169,6 +2169,7 @@ export default class BattleScene extends SceneBase {
     });
   }
 
+  // Pathing tool function
   togglePathingToolUI(): void {
     this.pathingToolUI = !this.pathingToolUI;
     if (this.pathingToolUI) {
