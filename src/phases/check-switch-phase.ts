@@ -85,7 +85,6 @@ export class CheckSwitchPhase extends BattlePhase {
     globalScene.getField().forEach((pokemon, i) => {
       if (pokemon?.isActive()) {
         if (!pokemon.isPlayer()) {
-          pokemon.flyout.setText();
           pokemon.resetTurnData();
 
           const enemyCommandPhase = new EnemyCommandPhase(i - BattlerIndex.ENEMY, true);
