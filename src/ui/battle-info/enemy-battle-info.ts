@@ -180,6 +180,19 @@ export class EnemyBattleInfo extends BattleInfo {
     }
   }
 
+  // Pathing tool function
+  setBattleInfoFlyout(natureName: string, ivDesc: string, abilityName: string, passiveName: string, abilityIndex: number): void {
+    this.flyoutMenu.flyoutText[0].text = natureName;
+    this.flyoutMenu.flyoutText[1].text = ivDesc;
+    this.flyoutMenu.flyoutText[2].text = abilityName;
+    this.flyoutMenu.flyoutText[3].text = passiveName;
+    if (abilityIndex == 2) { // Hidden Ability
+      this.flyoutMenu.flyoutText[2].setColor("#e8e8a8");
+      this.flyoutMenu.flyoutText[2].text += " (HA)";
+    }
+    // this.flyoutMenu.setText();
+  }
+
   updateBossSegments(pokemon: EnemyPokemon): void {
     const boss = !!pokemon.bossSegments;
 

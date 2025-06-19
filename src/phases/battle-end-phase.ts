@@ -1,11 +1,11 @@
+import * as LoggerTools from "../logger";
 import { globalScene } from "#app/global-scene";
-import { applyPostBattleAbAttrs, PostBattleAbAttr } from "#app/data/abilities/ability";
+import { applyPostBattleAbAttrs } from "#app/data/abilities/apply-ab-attrs";
 import { LapsingPersistentModifier, LapsingPokemonHeldItemModifier } from "#app/modifier/modifier";
 import { BattlePhase } from "./battle-phase";
-import { GameOverPhase } from "./game-over-phase";
-import * as LoggerTools from "../logger";
 
 export class BattleEndPhase extends BattlePhase {
+  public readonly phaseName = "BattleEndPhase";
   /** If true, will increment battles won */
   isVictory: boolean;
 
@@ -19,8 +19,8 @@ export class BattleEndPhase extends BattlePhase {
     super.start();
 
     // cull any extra `BattleEnd` phases from the queue.
-    globalScene.phaseQueue = globalScene.phaseQueue.filter(phase => {
-      if (phase instanceof BattleEndPhase) {
+    globalScene.phaseManager.phaseQueue = globalScene.phaseManager.phaseQueue.filter(phase => {
+      if (phase.is("BattleEndPhase")) {
         this.isVictory ||= phase.isVictory;
         return false;
       }
@@ -28,8 +28,8 @@ export class BattleEndPhase extends BattlePhase {
     });
     // `phaseQueuePrepend` is private, so we have to use this inefficient loop.
     while (
-      globalScene.tryRemoveUnshiftedPhase(phase => {
-        if (phase instanceof BattleEndPhase) {
+      globalScene.phaseManager.tryRemoveUnshiftedPhase(phase => {
+        if (phase.is("BattleEndPhase")) {
           this.isVictory ||= phase.isVictory;
           return true;
         }
@@ -55,8 +55,8 @@ export class BattleEndPhase extends BattlePhase {
 
     // Endless graceful end
     if (globalScene.gameMode.isEndless && globalScene.currentBattle.waveIndex >= 5850) {
-      globalScene.clearPhaseQueue();
-      globalScene.unshiftPhase(new GameOverPhase(true));
+      globalScene.phaseManager.clearPhaseQueue();
+      globalScene.phaseManager.unshiftNew("GameOverPhase", true);
     }
 
     for (const pokemon of globalScene.getField()) {
@@ -66,7 +66,7 @@ export class BattleEndPhase extends BattlePhase {
     }
 
     for (const pokemon of globalScene.getPokemonAllowedInBattle()) {
-      applyPostBattleAbAttrs(PostBattleAbAttr, pokemon, false, this.isVictory);
+      applyPostBattleAbAttrs("PostBattleAbAttr", pokemon, false, this.isVictory);
     }
 
     if (globalScene.currentBattle.moneyScattered) {

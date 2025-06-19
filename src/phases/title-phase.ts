@@ -1,86 +1,45 @@
+import * as LoggerTools from "../logger";
 import { loggedInUser } from "#app/account";
-import type Battle from "#app/battle";
 import { BattleType } from "#enums/battle-type";
 import { fetchDailyRunSeed, getDailyRunStarters } from "#app/data/daily-run";
 import { Gender } from "#app/data/gender";
 import { getBiomeKey } from "#app/field/arena";
-import { GameMode, GameModes, getGameMode } from "#app/game-mode";
+import { GameMode, getGameMode } from "#app/game-mode";
+import { GameModes } from "#enums/game-modes";
 import type { Modifier } from "#app/modifier/modifier";
-import type { ModifierTypeOption } from "#app/modifier/modifier-type";
-import {
-  getDailyRunStarterModifiers,
-  getPlayerModifierTypeOptions,
-  ModifierPoolType,
-  modifierTypes,
-  regenerateModifierPoolThresholds,
-} from "#app/modifier/modifier-type";
+import { getDailyRunStarterModifiers, getPlayerModifierTypeOptions, ModifierTypeOption, regenerateModifierPoolThresholds } from "#app/modifier/modifier-type";
+import { allAbilities, allSpecies, modifierTypes } from "#app/data/data-lists";
+import { ModifierPoolType } from "#enums/modifier-pool-type";
 import { Phase } from "#app/phase";
 import type { SessionSaveData } from "#app/system/game-data";
-import { Unlockables } from "#app/system/unlockables";
+import { Unlockables } from "#enums/unlockables";
 import { vouchers } from "#app/system/voucher";
 import type { OptionSelectConfig, OptionSelectItem } from "#app/ui/abstact-option-select-ui-handler";
 import { SaveSlotUiMode } from "#app/ui/save-slot-select-ui-handler";
 import { UiMode } from "#enums/ui-mode";
 import { isLocal, isLocalServerConnected, isNullOrUndefined, randSeedInt } from "#app/utils/common";
 import i18next from "i18next";
-import { CheckSwitchPhase } from "./check-switch-phase";
-import { EncounterPhase } from "./encounter-phase";
-import { SelectChallengePhase } from "./select-challenge-phase";
-import { SelectStarterPhase } from "./select-starter-phase";
-import { SummonPhase } from "./summon-phase";
 import { globalScene } from "#app/global-scene";
-import * as LoggerTools from "../logger";
-import { Biome } from "#app/enums/biome";
-import { GameDataType } from "#app/enums/game-data-type";
-import { Species } from "#app/enums/species";
-import { getPokemonNameWithAffix } from "#app/messages";
-import { Nature } from "#app/enums/nature";
-import { biomeLinks } from "#app/data/balance/biomes";
-import { BattleSpec } from "#app/enums/battle-spec";
-import { Moves } from "#app/enums/moves";
-import { PokemonType } from "#app/enums/pokemon-type";
-import { allSpecies } from "#app/data/pokemon-species";
-import type { PlayerPokemon } from "#app/field/pokemon";
-import { PokemonMove } from "#app/field/pokemon";
 import Overrides from "#app/overrides";
+import { SpeciesId } from "#enums/species-id";
+import { PlayerPokemon } from "#app/field/pokemon";
+import { PokemonMove } from "#app/data/moves/pokemon-move";
+import { MoveId } from "#enums/move-id";
+import { getPokemonNameWithAffix } from "#app/messages";
+import { Nature } from "#enums/nature";
+import { PokemonType } from "#enums/pokemon-type";
+import Battle from "#app/battle";
+import { BiomeId } from "#enums/biome-id";
 import { TrainerSlot } from "#enums/trainer-slot";
-import { applyAbAttrs, SyncEncounterNatureAbAttr } from "#app/data/abilities/ability";
-import { allAbilities } from "#app/data/data-lists";
+import { BattleSpec } from "#enums/battle-spec";
+import { applyAbAttrs } from "#app/data/abilities/apply-ab-attrs";
+import { biomeLinks } from "#app/data/balance/biomes";
 
 export class TitlePhase extends Phase {
+  public readonly phaseName = "TitlePhase";
   private loaded = false;
   private lastSessionData: SessionSaveData;
   public gameMode: GameModes;
-
-  confirmSlot = (message: string, slotFilter: (i: integer) => boolean, callback: (i: integer) => void) => {
-    const p = this;
-    globalScene.ui.revertMode();
-    globalScene.ui.showText(message, null, () => {
-      const config: OptionSelectConfig = {
-        options: new Array(5).fill(null).map((_, i) => i).filter(slotFilter).map(i => {
-          const data = LoggerTools.parseSlotData(i);
-          return {
-            //label: `${i18next.t("menuUiHandler:slot", {slotNumber: i+1})}`,
-            label: (data ? `${i18next.t("menuUiHandler:slot", { slotNumber: i + 1 })}${data.description.substring(1)}` : `${i18next.t("menuUiHandler:slot", { slotNumber: i + 1 })}`),
-            handler: () => {
-              callback(i);
-              globalScene.ui.revertMode();
-              globalScene.ui.showText("", 0);
-              return true;
-            }
-          };
-        }).concat([{
-          label: i18next.t("menuUiHandler:cancel"),
-          handler: () => {
-            p.callEnd();
-            return true;
-          }
-        }]),
-        //xOffset: 98
-      };
-      globalScene.ui.setOverlayMode(UiMode.MENU_OPTION_SELECT, config);
-    });
-  };
 
   start(): void {
     super.start();
@@ -107,266 +66,16 @@ export class TitlePhase extends Phase {
       });
   }
 
-  getLastSave(log?: boolean, dailyOnly?: boolean, noDaily?: boolean): SessionSaveData | undefined {
-    const saves: Array<Array<any>> = [];
-    for (let i = 0; i < 5; i++) {
-      const s = LoggerTools.parseSlotData(i);
-      if (s != undefined) {
-        if ((!noDaily && !dailyOnly) || (s.gameMode == GameModes.DAILY && dailyOnly) || (s.gameMode != GameModes.DAILY && noDaily)) {
-          saves.push([ i, s, s.timestamp ]);
-        }
-      }
-    }
-    saves.sort((a, b): integer => {
-      return b[2] - a[2];
-    });
-    if (log) {
-      console.log(saves);
-    }
-    if (saves == undefined) {
-      return undefined;
-    }
-    if (saves[0] == undefined) {
-      return undefined;
-    }
-    return saves[0][1];
-  }
-  getLastSavesOfEach(log?: boolean): SessionSaveData[] | undefined {
-    const saves: Array<Array<SessionSaveData | number>> = [];
-    for (var i = 0; i < 5; i++) {
-      const s = LoggerTools.parseSlotData(i);
-      if (s != undefined) {
-        saves.push([ i, s, s.timestamp ]);
-      }
-    }
-    saves.sort((a, b): integer => {
-      return (b[2] as number) - (a[2] as number);
-    });
-    if (log) {
-      console.log(saves);
-    }
-    if (saves == undefined) {
-      return undefined;
-    }
-    if (saves[0] == undefined) {
-      return undefined;
-    }
-    const validSaves: Array<Array<SessionSaveData | number>> = [];
-    let hasNormal = false;
-    let hasDaily = false;
-    for (var i = 0; i < saves.length; i++) {
-      if ((saves[i][1] as SessionSaveData).gameMode == GameModes.DAILY && !hasDaily) {
-        hasDaily = true;
-        validSaves.push(saves[i]);
-      }
-      if ((saves[i][1] as SessionSaveData).gameMode != GameModes.DAILY && !hasNormal) {
-        hasNormal = true;
-        validSaves.push(saves[i]);
-      }
-    }
-    console.log(saves, validSaves);
-    if (validSaves.length == 0) {
-      return undefined;
-    }
-    return validSaves.map(f => f[1] as SessionSaveData);
-  }
-  getSaves(log?: boolean, dailyOnly?: boolean): SessionSaveData[] | undefined {
-    const saves: Array<Array<any>> = [];
-    for (let i = 0; i < 5; i++) {
-      const s = LoggerTools.parseSlotData(i);
-      if (s != undefined) {
-        if (!dailyOnly || s.gameMode == GameModes.DAILY) {
-          saves.push([ i, s, s.timestamp ]);
-        }
-      }
-    }
-    saves.sort((a, b): integer => {
-      return b[2] - a[2];
-    });
-    if (log) {
-      console.log(saves);
-    }
-    if (saves == undefined) {
-      return undefined;
-    }
-    return saves.map(f => f[1]);
-  }
-  getSavesUnsorted(log?: boolean, dailyOnly?: boolean): SessionSaveData[] | undefined {
-    const saves: Array<Array<any>> = [];
-    for (let i = 0; i < 5; i++) {
-      const s = LoggerTools.parseSlotData(i);
-      if (s != undefined) {
-        if (!dailyOnly || s.gameMode == GameModes.DAILY) {
-          saves.push([ i, s, s.timestamp ]);
-        }
-      }
-    }
-    if (log) {
-      console.log(saves);
-    }
-    if (saves == undefined) {
-      return undefined;
-    }
-    return saves.map(f => f[1]);
-  }
-
-  callEnd(): boolean {
-    globalScene.clearPhaseQueue();
-    globalScene.pushPhase(new TitlePhase());
-    super.end();
-    return true;
-  }
-
-  showLoggerOptions(txt: string, options: OptionSelectItem[]): boolean {
-    globalScene.ui.showText("Export or clear game logs.", null, () => globalScene.ui.setOverlayMode(UiMode.OPTION_SELECT, { options: options }));
-    return true;
-  }
-
-  logMenu(): boolean {
-    const options: OptionSelectItem[] = [];
-    LoggerTools.getLogs();
-    for (let i = 0; i < LoggerTools.logs.length; i++) {
-      if (localStorage.getItem(LoggerTools.logs[i][1]) != null) {
-        options.push(LoggerTools.generateOption(i, this.getSaves()) as OptionSelectItem);
-      } else {
-        //options.push(LoggerTools.generateAddOption(i, globalScene, this))
-      }
-    }
-    options.push({
-      label: "Delete all",
-      handler: () => {
-        for (let i = 0; i < LoggerTools.logs.length; i++) {
-          if (localStorage.getItem(LoggerTools.logs[i][1]) != null) {
-            localStorage.removeItem(LoggerTools.logs[i][1]);
-          }
-        }
-        globalScene.clearPhaseQueue();
-        globalScene.pushPhase(new TitlePhase());
-        super.end();
-        return true;
-      }
-    }, {
-      label: i18next.t("menu:cancel"),
-      handler: () => {
-        globalScene.clearPhaseQueue();
-        globalScene.pushPhase(new TitlePhase());
-        super.end();
-        return true;
-      }
-    });
-    globalScene.ui.showText("Export or clear game logs.", null, () => globalScene.ui.setOverlayMode(UiMode.OPTION_SELECT, { options: options }));
-    return true;
-  }
-  logRenameMenu(): boolean {
-    const options: OptionSelectItem[] = [];
-    LoggerTools.getLogs();
-    globalScene.newArena(Biome.FACTORY);
-    for (let i = 0; i < LoggerTools.logs.length; i++) {
-      if (localStorage.getItem(LoggerTools.logs[i][1]) != null) {
-        options.push(LoggerTools.generateEditOption(i, this.getSaves(), this) as OptionSelectItem);
-      } else {
-        //options.push(LoggerTools.generateAddOption(i, globalScene, this))
-      }
-    }
-    options.push({
-      label: "Delete all",
-      handler: () => {
-        for (let i = 0; i < LoggerTools.logs.length; i++) {
-          if (localStorage.getItem(LoggerTools.logs[i][1]) != null) {
-            localStorage.removeItem(LoggerTools.logs[i][1]);
-          }
-        }
-        globalScene.clearPhaseQueue();
-        globalScene.pushPhase(new TitlePhase());
-        super.end();
-        return true;
-      }
-    }, {
-      label: i18next.t("menu:cancel"),
-      handler: () => {
-        globalScene.clearPhaseQueue();
-        globalScene.pushPhase(new TitlePhase());
-        super.end();
-        return true;
-      }
-    });
-    globalScene.ui.showText("Export, rename, or delete logs.", null, () => globalScene.ui.setOverlayMode(UiMode.OPTION_SELECT, { options: options }));
-    return true;
-  }
-
   showOptions(): void {
     const options: OptionSelectItem[] = [];
-    if (false) {
-      if (loggedInUser && loggedInUser!.lastSessionSlot > -1) {
-        options.push({
-          label: i18next.t("continue", { ns: "menu" }),
-          handler: () => {
-            this.loadSaveSlot(this.lastSessionData ? -1 : loggedInUser!.lastSessionSlot);
-            return true;
-          }
-        });
-      }
-    }
-    // Replaces 'Continue' with all Daily Run saves, sorted by when they last saved
-    // If there are no daily runs, it instead shows the most recently saved run
-    // If this fails too, there are no saves, and the option does not appear
-    const lastsaves = this.getSaves(false, true); // Gets all Daily Runs sorted by last play time
-    const lastsave = this.getLastSave(); // Gets the last save you played
-    const ls1 = this.getLastSave(false, true);
-    const ls2 = this.getLastSavesOfEach();
-    globalScene.quickloadDisplayMode = "Both";
-    switch (true) {
-      case (globalScene.quickloadDisplayMode == "Daily" && ls1 != undefined):
-        options.push({
-          label: (ls1.description ? ls1.description : "[???]"),
-          handler: () => {
-            this.loadSaveSlot(ls1!.slot);
-            return true;
-          }
-        });
-        break;
-      case globalScene.quickloadDisplayMode == "Dailies" && lastsaves != undefined && ls1 != undefined:
-        lastsaves.forEach(lastsave1 => {
-          options.push({
-            label: (lastsave1.description ? lastsave1.description : "[???]"),
-            handler: () => {
-              this.loadSaveSlot(lastsave1.slot);
-              return true;
-            }
-          });
-        });
-        break;
-      case lastsave != undefined && (globalScene.quickloadDisplayMode == "Latest" || ((globalScene.quickloadDisplayMode == "Daily" || globalScene.quickloadDisplayMode == "Dailies") && ls1 == undefined)):
-        options.push({
-          label: (lastsave.description ? lastsave.description : "[???]"),
-          handler: () => {
-            this.loadSaveSlot(lastsave!.slot);
-            return true;
-          }
-        });
-        break;
-      case globalScene.quickloadDisplayMode == "Both" && ls2 != undefined:
-        ls2.forEach(lastsave2 => {
-          options.push({
-            label: (lastsave2.description ? lastsave2.description : "[???]"),
-            handler: () => {
-              this.loadSaveSlot(lastsave2.slot);
-              return true;
-            }
-          });
-        });
-        break;
-      default: // If set to "Off" or all above conditions failed
-        if (loggedInUser && loggedInUser.lastSessionSlot > -1) {
-          options.push({
-            label: i18next.t("continue", { ns: "menu" }),
-            handler: () => {
-              this.loadSaveSlot(this.lastSessionData ? -1 : loggedInUser!.lastSessionSlot);
-              return true;
-            },
-          });
-        }
-        break;
+    if (loggedInUser && loggedInUser.lastSessionSlot > -1) {
+      options.push({
+        label: i18next.t("continue", { ns: "menu" }),
+        handler: () => {
+          this.loadSaveSlot(this.lastSessionData || !loggedInUser ? -1 : loggedInUser.lastSessionSlot);
+          return true;
+        },
+      });
     }
     options.push(
       {
@@ -418,127 +127,32 @@ export class TitlePhase extends Phase {
                 },
               });
             }
-            options.push({
-            label: i18next.t("menuUiHandler:importSession"),
-            handler: () => {
-              this.confirmSlot(i18next.t("menuUiHandler:importSlotSelect"), () => true, slotId => globalScene.gameData.importData(GameDataType.SESSION, slotId));
-              return true;
-            },
-            keepOpen: true
-          });
+          }
           options.push({
             label: i18next.t("menu:cancel"),
             handler: () => {
-              globalScene.clearPhaseQueue();
-              globalScene.pushPhase(new TitlePhase());
+              globalScene.phaseManager.clearPhaseQueue();
+              globalScene.phaseManager.pushNew("TitlePhase");
               super.end();
               return true;
-            }
-          });
-          globalScene.ui.showText(i18next.t("menu:selectGameMode"), null, () => globalScene.ui.setOverlayMode(UiMode.OPTION_SELECT, { options: options }));
-        } else {
-          const options: OptionSelectItem[] = [
-            {
-              label: GameMode.getModeName(GameModes.CLASSIC),
-              handler: () => {
-                setModeAndEnd(GameModes.CLASSIC);
-                return true;
-              }
-            }
-          ];
-          options.push({
-            label: i18next.t("menuUiHandler:importSession"),
-            handler: () => {
-              this.confirmSlot(i18next.t("menuUiHandler:importSlotSelect"), () => true, slotId => globalScene.gameData.importData(GameDataType.SESSION, slotId));
-              return true;
             },
-            keepOpen: true
           });
-            options.push({
-              label: i18next.t("menu:cancel"),
-              handler: () => {
-                globalScene.clearPhaseQueue();
-                globalScene.pushPhase(new TitlePhase());
-                super.end();
-                return true;
-              },
-            });
-            globalScene.ui.showText(i18next.t("menu:selectGameMode"), null, () =>
+          globalScene.ui.showText(i18next.t("menu:selectGameMode"), null, () =>
             globalScene.ui.setOverlayMode(UiMode.OPTION_SELECT, {
               options: options,
             }),
           );
-        }
-        return true;
-      }
-    }, {
-      label: "Scouting",
-      handler: () => {
-        globalScene.ui.showText("Encounter Scouting", null, () => this.InitScouting(0));
-        return true;
-      }
-    }, {
-      label: "Shop Scouting",
-      handler: () => {
-        const shopOptions: OptionSelectItem[] = [];
-        shopOptions.push({
-          label: "Shop no evo",
-          handler: () => {
-            this.InitShopScouting(0);
-            return true;
-          }
-        }, {
-          label: "Shop lvl evo",
-          handler: () => {
-            this.InitShopScouting(1);
-            return true;
-          }
-        }, {
-          label: "Shop 1x item evo",
-          handler: () => {
-            this.InitShopScouting(2);
-            return true;
-          }
-        }, {
-          label: "Shop 2x item evo",
-          handler: () => {
-            this.InitShopScouting(3);
-            return true;
-          }
-        });
-        globalScene.ui.showText("Shop Scouting", null, () => globalScene.ui.setOverlayMode(UiMode.OPTION_SELECT, { options: shopOptions }));
-        return true;
-      }
-    }, {
-      label: "Manage Logs",
-      handler: () => {
-        //return this.logRenameMenu()
-        globalScene.ui.setOverlayMode(UiMode.LOG_HANDLER,
-          (k: string) => {
-            if (k === undefined) {
-              return this.showOptions();
-            }
-            console.log(k);
-            this.showOptions();
-          }, () => {
-            this.showOptions();
-          });
           return true;
         },
-      }, {
-      label: "Manage Logs (Old Menu)",
-      handler: () => {
-        return this.logRenameMenu();
-      }
-    });
-      options.push({
+      },
+      {
         label: i18next.t("menu:loadGame"),
         handler: () => {
-          globalScene.ui.setOverlayMode(UiMode.SAVE_SLOT, SaveSlotUiMode.LOAD, (slotId: number, autoSlot: integer) => {
+          globalScene.ui.setOverlayMode(UiMode.SAVE_SLOT, SaveSlotUiMode.LOAD, (slotId: number) => {
             if (slotId === -1) {
               return this.showOptions();
             }
-            this.loadSaveSlot(slotId, autoSlot);
+            this.loadSaveSlot(slotId);
           });
           return true;
         },
@@ -568,12 +182,12 @@ export class TitlePhase extends Phase {
     globalScene.ui.setMode(UiMode.TITLE, config);
   }
 
-  loadSaveSlot(slotId: number, autoSlot?: integer): void {
+  loadSaveSlot(slotId: number): void {
     globalScene.sessionSlotId = slotId > -1 || !loggedInUser ? slotId : loggedInUser.lastSessionSlot;
     globalScene.ui.setMode(UiMode.MESSAGE);
     globalScene.ui.resetModeChain();
     globalScene.gameData
-      .loadSession(slotId, slotId === -1 ? this.lastSessionData : undefined, autoSlot)
+      .loadSession(slotId, slotId === -1 ? this.lastSessionData : undefined)
       .then((success: boolean) => {
         if (success) {
           this.loaded = true;
@@ -591,9 +205,9 @@ export class TitlePhase extends Phase {
   initDailyRun(): void {
     globalScene.ui.clearText();
     globalScene.ui.setMode(UiMode.SAVE_SLOT, SaveSlotUiMode.SAVE, (slotId: number) => {
-      globalScene.clearPhaseQueue();
+      globalScene.phaseManager.clearPhaseQueue();
       if (slotId === -1) {
-        globalScene.pushPhase(new TitlePhase());
+        globalScene.phaseManager.pushNew("TitlePhase");
         return super.end();
       }
       globalScene.sessionSlotId = slotId;
@@ -691,72 +305,29 @@ export class TitlePhase extends Phase {
       }
     });
   }
-  setupDaily(): void {
-    // TODO
-    const saves = this.getSaves();
-    const saveNames = new Array(5).fill("");
-    for (let i = 0; i < saves!.length; i++) {
-      saveNames[saves![i][0]] = saves![i][1].description;
-    }
-    const ui = globalScene.ui;
-    const confirmSlot = (message: string, slotFilter: (i: integer) => boolean, callback: (i: integer) => void) => {
-      ui.revertMode();
-      ui.showText(message, null, () => {
-        const config: OptionSelectConfig = {
-          options: new Array(5).fill(null).map((_, i) => i).filter(slotFilter).map(i => {
-            return {
-              label: (i + 1) + " " + saveNames[i],
-              handler: () => {
-                callback(i);
-                ui.revertMode();
-                ui.showText("", 0);
-                return true;
-              }
-            };
-          }).concat([{
-            label: i18next.t("menuUiHandler:cancel"),
-            handler: () => {
-              ui.revertMode();
-              ui.showText("", 0);
-              return true;
-            }
-          }]),
-          xOffset: 98
-        };
-        ui.setOverlayMode(UiMode.MENU_OPTION_SELECT, config);
-      });
-    };
-    ui.showText("This feature is incomplete.", null, () => {
-      globalScene.clearPhaseQueue();
-      globalScene.pushPhase(new TitlePhase());
-      super.end();
-      return true;
-    });
-    return;
-    confirmSlot("Select a slot to replace.", () => true, slotId => globalScene.gameData.importData(GameDataType.SESSION, slotId));
-  }
+
   end(): void {
     if (!this.loaded && !globalScene.gameMode.isDaily) {
       globalScene.arena.preloadBgm();
       globalScene.gameMode = getGameMode(this.gameMode);
       if (this.gameMode === GameModes.CHALLENGE) {
-        globalScene.pushPhase(new SelectChallengePhase());
+        globalScene.phaseManager.pushNew("SelectChallengePhase");
       } else {
-        globalScene.pushPhase(new SelectStarterPhase());
+        globalScene.phaseManager.pushNew("SelectStarterPhase");
       }
       globalScene.newArena(globalScene.gameMode.getStartingBiome());
     } else {
       globalScene.playBgm();
     }
 
-    globalScene.pushPhase(new EncounterPhase(this.loaded));
+    globalScene.phaseManager.pushNew("EncounterPhase", this.loaded);
 
     if (this.loaded) {
       const availablePartyMembers = globalScene.getPokemonAllowedInBattle().length;
 
-      globalScene.pushPhase(new SummonPhase(0, true, true));
+      globalScene.phaseManager.pushNew("SummonPhase", 0, true, true);
       if (globalScene.currentBattle.double && availablePartyMembers > 1) {
-        globalScene.pushPhase(new SummonPhase(1, true, true));
+        globalScene.phaseManager.pushNew("SummonPhase", 1, true, true);
       }
 
       if (
@@ -765,9 +336,9 @@ export class TitlePhase extends Phase {
       ) {
         const minPartySize = globalScene.currentBattle.double ? 2 : 1;
         if (availablePartyMembers > minPartySize) {
-          globalScene.pushPhase(new CheckSwitchPhase(0, globalScene.currentBattle.double));
+          globalScene.phaseManager.pushNew("CheckSwitchPhase", 0, globalScene.currentBattle.double);
           if (globalScene.currentBattle.double) {
-            globalScene.pushPhase(new CheckSwitchPhase(1, globalScene.currentBattle.double));
+            globalScene.phaseManager.pushNew("CheckSwitchPhase", 1, globalScene.currentBattle.double);
           }
         }
       }
@@ -804,14 +375,14 @@ export class TitlePhase extends Phase {
     const party = globalScene.getPlayerParty();
 
     const comps = [
-      [ Species.MEW, Species.MEW, Species.MEW, Species.MEW, Species.MEW, Species.MEW ],
-      [ Species.MEW, Species.MEW, Species.MEW, Species.MEW, Species.MEW, Species.BULBASAUR ],
-      [ Species.MEW, Species.MEW, Species.MEW, Species.MEW, Species.MEW, Species.JIGGLYPUFF ],
-      [ Species.MEW, Species.MEW, Species.MEW, Species.MEW, Species.MEW, Species.POLIWHIRL ],
-      // [Species.MEW, Species.MEW, Species.MEW, Species.MEW, Species.SWELLOW, Species.MEW],
-      // [Species.MEW, Species.MEW, Species.MEW, Species.MEW, Species.SWELLOW, Species.BULBASAUR],
-      // [Species.MEW, Species.MEW, Species.MEW, Species.MEW, Species.SWELLOW, Species.JIGGLYPUFF],
-      // [Species.MEW, Species.MEW, Species.MEW, Species.MEW, Species.SWELLOW, Species.POLIWHIRL],
+      [ SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW ],
+      [ SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.BULBASAUR ],
+      [ SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.JIGGLYPUFF ],
+      [ SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.POLIWHIRL ],
+      // [SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.SWELLOW, SpeciesId.MEW],
+      // [SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.SWELLOW, SpeciesId.BULBASAUR],
+      // [SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.SWELLOW, SpeciesId.JIGGLYPUFF],
+      // [SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.SWELLOW, SpeciesId.POLIWHIRL],
     ];
 
     const ethers = [
@@ -998,16 +569,16 @@ export class TitlePhase extends Phase {
     while (party.length > 0);
   }
 
-  FillParty(party: PlayerPokemon[], comp: Species[], level: integer) {
-    comp.forEach((s: Species) => {
+  FillParty(party: PlayerPokemon[], comp: SpeciesId[], level: integer) {
+    comp.forEach((s: SpeciesId) => {
       this.AddPokemon(party, s, level);
     });
   }
 
-  AddPokemon(party: PlayerPokemon[], species: Species, level: integer) {
-    const pokemon = allSpecies.filter(sp => sp.speciesId == species)[0];
+  AddPokemon(party: PlayerPokemon[], speciesId: SpeciesId, level: integer) {
+    const pokemon = allSpecies.filter(sp => sp.speciesId == speciesId)[0];
     const playerPokemon = globalScene.addPlayerPokemon(pokemon, level);
-    playerPokemon.moveset = [ new PokemonMove(Moves.TACKLE), new PokemonMove(Moves.SPLASH), new PokemonMove(Moves.SPLASH), new PokemonMove(Moves.SPLASH) ];
+    playerPokemon.moveset = [ new PokemonMove(MoveId.TACKLE), new PokemonMove(MoveId.SPLASH), new PokemonMove(MoveId.SPLASH), new PokemonMove(MoveId.SPLASH) ];
     party.push(playerPokemon);
   }
 
@@ -1177,11 +748,11 @@ export class TitlePhase extends Phase {
       starters.push(`Pokemon: ${getPokemonNameWithAffix(p)} ` +
         `Form: ${p.getSpeciesForm().getSpriteAtlasPath(false, p.formIndex)} Species ID: ${p.species.speciesId} Stats: ${p.stats} IVs: ${p.ivs} Ability: ${p.getAbility().name} ` +
         `Passive Ability: ${p.getPassiveAbility().name} Nature: ${Nature[p.nature]} Gender: ${Gender[p.gender]} Rarity: undefined AbilityIndex: ${p.abilityIndex} ` +
-        `ID: ${p.id} Type: ${p.getTypes().map(t => PokemonType[t]).join(",")} Moves: ${p.getMoveset().map(m => Moves[m?.moveId ?? 0]).join(",")}`);
+        `ID: ${p.id} Type: ${p.getTypes().map(t => PokemonType[t]).join(",")} Moves: ${p.getMoveset().map(m => MoveId[m?.moveId ?? 0]).join(",")}`);
     });
 
     this.ClearParty(party);
-    this.FillParty(party, [ Species.VENUSAUR ], 20);
+    this.FillParty(party, [ SpeciesId.VENUSAUR ], 20);
 
     var output: string[][] = [];
     output.push([ "startstarters" ]);
@@ -1252,7 +823,7 @@ export class TitlePhase extends Phase {
     }
 
     if (!nolog && battle?.trainer != null) {
-      this.encounterList.push(`Wave: ${globalScene.currentBattle.waveIndex} Biome: ${Biome[globalScene.arena.biomeType]} Trainer: ${battle.trainer.config.name}`);
+      this.encounterList.push(`Wave: ${globalScene.currentBattle.waveIndex} Biome: ${BiomeId[globalScene.arena.biomeType]} Trainer: ${battle.trainer.config.name}`);
     }
 
     battle.enemyLevels?.forEach((level, e) => {
@@ -1266,7 +837,7 @@ export class TitlePhase extends Phase {
           battle.enemyParty[e].ivs = new Array(6).fill(31);
         }
         globalScene.getPlayerParty().slice(0, !battle.double ? 1 : 2).reverse().forEach(playerPokemon => {
-          applyAbAttrs(SyncEncounterNatureAbAttr, playerPokemon, null, false, battle.enemyParty[e]);
+          applyAbAttrs("SyncEncounterNatureAbAttr", playerPokemon, null, false, battle.enemyParty[e]);
         });
       }
 
@@ -1277,7 +848,7 @@ export class TitlePhase extends Phase {
         if (enemy.species.speciesId > 1025) {
           // Using nicknames here because i want the getPokemonNameWithAffix so i have Wild/Foe information
           // Nicknames are stored in base 64? so convert btoa here
-          enemy.nickname = btoa(Species[enemy.species.speciesId]);
+          enemy.nickname = btoa(SpeciesId[enemy.species.speciesId]);
         }
 
         // Male/Female sprites for Jellicent, Pyroar and Meowstic...
@@ -1286,16 +857,16 @@ export class TitlePhase extends Phase {
         }
 
         // Store encounters in a list, basically CSV (uses regex in sheets), but readable as well
-        const text = `Wave: ${globalScene.currentBattle.waveIndex} Biome: ${Biome[globalScene.arena.biomeType]} Pokemon: ${getPokemonNameWithAffix(enemy)} ` +
+        const text = `Wave: ${globalScene.currentBattle.waveIndex} Biome: ${BiomeId[globalScene.arena.biomeType]} Pokemon: ${getPokemonNameWithAffix(enemy)} ` +
         `Form: ${atlaspath} Species ID: ${enemy.species.speciesId} Stats: ${enemy.stats} IVs: ${enemy.ivs} Ability: ${enemy.getAbility().name} ` +
         `Passive Ability: ${enemy.getPassiveAbility().name} Nature: ${Nature[enemy.nature]} Gender: ${Gender[enemy.gender]} Rarity: ${LoggerTools.rarities[e]} AbilityIndex: ${enemy.abilityIndex} ` +
-        `ID: ${enemy.id} Type: ${enemy.getTypes().map(t => PokemonType[t]).join(",")} Moves: ${enemy.getMoveset().map(m => Moves[m?.moveId ?? 0]).join(",")} HARolls: ${LoggerTools.haChances[e].join(",")} ` +
+        `ID: ${enemy.id} Type: ${enemy.getTypes().map(t => PokemonType[t]).join(",")} Moves: ${enemy.getMoveset().map(m => MoveId[m?.moveId ?? 0]).join(",")} HARolls: ${LoggerTools.haChances[e].join(",")} ` +
         `Hidden Ability: ${allAbilities[enemy.getSpeciesForm().abilityHidden].name}`;
         this.encounterList.push(text);
         console.log(text);
         if (battle.waveIndex == 50) {
           // separate print so its easier to find for discord pin
-          console.log(enemy.getMoveset().map(m => Moves[m?.moveId ?? 0]));
+          console.log(enemy.getMoveset().map(m => MoveId[m?.moveId ?? 0]));
         }
       }
     });
@@ -1303,8 +874,8 @@ export class TitlePhase extends Phase {
     globalScene.resetSeed();
   }
 
-  GenerateBiomes(biome: Biome, waveIndex: integer) {
-    globalScene.newArena(biome);
+  GenerateBiomes(biomeId: BiomeId, waveIndex: integer) {
+    globalScene.newArena(biomeId);
     globalScene.currentBattle.waveIndex = waveIndex;
     globalScene.arena.updatePoolsForTimeOfDay();
 
@@ -1318,9 +889,9 @@ export class TitlePhase extends Phase {
       return;
     }
 
-    const biomeChoices: Biome[] = (!Array.isArray(biomeLinks[biome])
-      ? [ biomeLinks[biome] as Biome ]
-      : biomeLinks[biome] as (Biome | [Biome, integer])[])
+    const biomeChoices: BiomeId[] = (!Array.isArray(biomeLinks[biomeId])
+      ? [ biomeLinks[biomeId] as BiomeId ]
+      : biomeLinks[biomeId] as (BiomeId | [BiomeId, integer])[])
         .filter(b => !Array.isArray(b) || !randSeedInt(b[1], undefined, "Choosing next biome"))
         .map(b => (!Array.isArray(b) ? b : b[0]));
 
@@ -1329,7 +900,7 @@ export class TitlePhase extends Phase {
       // If waveindex is not the same anymore, that means a different path ended and we continue with a new branch
       if (globalScene.currentBattle.waveIndex != waveIndex) {
         // Back to x9 wave to generate the x0 wave again, that sets the correct rng
-        globalScene.newArena(biome);
+        globalScene.newArena(biomeId);
         globalScene.currentBattle.waveIndex = waveIndex + 9;
         this.GenerateBattle(true);
       }

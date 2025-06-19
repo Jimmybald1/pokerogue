@@ -4,6 +4,7 @@ import { BattlePhase } from "./battle-phase";
 import * as LoggerTools from "../logger";
 
 export class PartyHealPhase extends BattlePhase {
+  public readonly phaseName = "PartyHealPhase";
   private resumeBgm: boolean;
 
   constructor(resumeBgm: boolean) {

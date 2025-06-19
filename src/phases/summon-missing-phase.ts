@@ -5,6 +5,7 @@ import { globalScene } from "#app/global-scene";
 import * as LoggerTools from "../logger";
 
 export class SummonMissingPhase extends SummonPhase {
+  public readonly phaseName = "SummonMissingPhase";
   preSummon(): void {
     globalScene.ui.showText(
       i18next.t("battle:sendOutPokemon", {

@@ -6,6 +6,7 @@ import i18next from "i18next";
 import * as LoggerTools from "../logger";
 
 export class EndCardPhase extends Phase {
+  public readonly phaseName = "EndCardPhase";
   public endCard: Phaser.GameObjects.Image;
   public text: Phaser.GameObjects.Text;
   start(): void {

@@ -57,10 +57,6 @@ export default abstract class AbstractOptionSelectUiHandler extends UiHandler {
   protected defaultTextStyle: TextStyle = TextStyle.WINDOW;
   protected textContent: string;
 
-  constructor(mode: UiMode | null) {
-    super(mode);
-  }
-
   abstract getWindowWidth(): number;
 
   getWindowHeight(): number {

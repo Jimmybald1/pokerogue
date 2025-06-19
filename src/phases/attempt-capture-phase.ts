@@ -1,4 +1,4 @@
-import { BattlerIndex } from "#app/battle";
+import { BattlerIndex } from "#enums/battler-index";
 import { PLAYER_PARTY_MAX_SIZE } from "#app/constants";
 import { SubstituteTag } from "#app/data/battler-tags";
 import {
@@ -15,7 +15,6 @@ import type { EnemyPokemon } from "#app/field/pokemon";
 import { getPokemonNameWithAffix } from "#app/messages";
 import { PokemonHeldItemModifier } from "#app/modifier/modifier";
 import { PokemonPhase } from "#app/phases/pokemon-phase";
-import { VictoryPhase } from "#app/phases/victory-phase";
 import { achvs } from "#app/system/achv";
 import type { PartyOption } from "#app/ui/party-ui-handler";
 import { PartyUiMode } from "#app/ui/party-ui-handler";
@@ -29,11 +28,9 @@ import { Gender } from "#app/data/gender";
 import * as LoggerTools from "../logger";
 
 export class AttemptCapturePhase extends PokemonPhase {
-  /** The Pokeball being used. */
+  public readonly phaseName = "AttemptCapturePhase";
   private pokeballType: PokeballType;
-  /** The Pokeball sprite. */
   private pokeball: Phaser.GameObjects.Sprite;
-  /** The sprite's original Y position. */
   private originalY: number;
 
   constructor(targetIndex: number, pokeballType: PokeballType) {
@@ -276,7 +273,7 @@ export class AttemptCapturePhase extends PokemonPhase {
       null,
       () => {
         const end = () => {
-          globalScene.unshiftPhase(new VictoryPhase(this.battlerIndex));
+          globalScene.phaseManager.unshiftNew("VictoryPhase", this.battlerIndex);
           globalScene.pokemonInfoContainer.hide();
           this.removePb();
           this.end();

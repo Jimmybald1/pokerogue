@@ -7,6 +7,7 @@ import i18next from "i18next";
 import * as LoggerTools from "../logger";
 
 export class SelectGenderPhase extends Phase {
+  public readonly phaseName = "SelectGenderPhase";
   start(): void {
     super.start();
 

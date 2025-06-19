@@ -4,6 +4,7 @@ import { BattlePhase } from "./battle-phase";
 import * as LoggerTools from "../logger";
 
 export class ShowTrainerPhase extends BattlePhase {
+  public readonly phaseName = "ShowTrainerPhase";
   start() {
     super.start();
 

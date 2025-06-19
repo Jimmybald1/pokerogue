@@ -1,10 +1,11 @@
 import { globalScene } from "#app/global-scene";
-import { applyAbAttrs, PostBiomeChangeAbAttr } from "#app/data/abilities/ability";
+import { applyAbAttrs } from "#app/data/abilities/apply-ab-attrs";
 import { getRandomWeatherType } from "#app/data/weather";
 import { NextEncounterPhase } from "./next-encounter-phase";
 import * as LoggerTools from "../logger";
 
 export class NewBiomeEncounterPhase extends NextEncounterPhase {
+  public readonly phaseName = "NewBiomeEncounterPhase";
   doEncounter(): void {
     globalScene.playBgm(undefined, true);
 
@@ -14,7 +15,7 @@ export class NewBiomeEncounterPhase extends NextEncounterPhase {
       if (pokemon) {
         pokemon.resetBattleAndWaveData();
         if (pokemon.isOnField()) {
-          applyAbAttrs(PostBiomeChangeAbAttr, pokemon, null);
+          applyAbAttrs("PostBiomeChangeAbAttr", pokemon, null);
         }
       }
     }

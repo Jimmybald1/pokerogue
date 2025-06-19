@@ -1,12 +1,14 @@
 import { globalScene } from "#app/global-scene";
-import type { BattlerIndex } from "#app/battle";
+import type { BattlerIndex } from "#enums/battler-index";
 import { BattleSpec } from "#enums/battle-spec";
-import { type DamageResult, HitResult } from "#app/field/pokemon";
+import type { DamageResult } from "#app/field/pokemon";
+import { HitResult } from "#enums/hit-result";
 import { fixedInt } from "#app/utils/common";
 import { PokemonPhase } from "#app/phases/pokemon-phase";
 import * as LoggerTools from "../logger";
 
 export class DamageAnimPhase extends PokemonPhase {
+  public readonly phaseName = "DamageAnimPhase";
   private amount: number;
   private damageResult: DamageResult;
   private critical: boolean;

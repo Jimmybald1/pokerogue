@@ -7,6 +7,7 @@ import { BattlePhase } from "./battle-phase";
 import * as LoggerTools from "../logger";
 
 export class MoneyRewardPhase extends BattlePhase {
+  public readonly phaseName = "MoneyRewardPhase";
   private moneyMultiplier: number;
 
   constructor(moneyMultiplier: number) {

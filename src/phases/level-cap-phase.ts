@@ -5,6 +5,7 @@ import { FieldPhase } from "./field-phase";
 import * as LoggerTools from "../logger";
 
 export class LevelCapPhase extends FieldPhase {
+  public readonly phaseName = "LevelCapPhase";
   start(): void {
     super.start();
 

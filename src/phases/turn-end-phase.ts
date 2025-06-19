@@ -1,5 +1,5 @@
-import { applyPostTurnAbAttrs, PostTurnAbAttr } from "#app/data/abilities/ability";
-import { BattlerTagLapseType } from "#app/data/battler-tags";
+import { applyPostTurnAbAttrs } from "#app/data/abilities/apply-ab-attrs";
+import { BattlerTagLapseType } from "#enums/battler-tag-lapse-type";
 import { TerrainType } from "#app/data/terrain";
 import { WeatherType } from "#app/enums/weather-type";
 import { TurnEndEvent } from "#app/events/battle-scene";
@@ -14,11 +14,11 @@ import {
 } from "#app/modifier/modifier";
 import i18next from "i18next";
 import { FieldPhase } from "./field-phase";
-import { PokemonHealPhase } from "./pokemon-heal-phase";
 import { globalScene } from "#app/global-scene";
 import * as LoggerTools from "../logger";
 
 export class TurnEndPhase extends FieldPhase {
+  public readonly phaseName = "TurnEndPhase";
   start() {
     super.start();
 
@@ -27,7 +27,7 @@ export class TurnEndPhase extends FieldPhase {
     globalScene.currentBattle.incrementTurn();
     globalScene.eventTarget.dispatchEvent(new TurnEndEvent(globalScene.currentBattle.turn));
 
-    globalScene.hideAbilityBar();
+    globalScene.phaseManager.hideAbilityBar();
 
     const handlePokemon = (pokemon: Pokemon) => {
       if (!pokemon.switchOutStatus) {
@@ -36,15 +36,14 @@ export class TurnEndPhase extends FieldPhase {
         globalScene.applyModifiers(TurnHealModifier, pokemon.isPlayer(), pokemon);
 
         if (globalScene.arena.terrain?.terrainType === TerrainType.GRASSY && pokemon.isGrounded()) {
-          globalScene.unshiftPhase(
-            new PokemonHealPhase(
-              pokemon.getBattlerIndex(),
-              Math.max(pokemon.getMaxHp() >> 4, 1),
-              i18next.t("battle:turnEndHpRestore", {
-                pokemonName: getPokemonNameWithAffix(pokemon),
-              }),
-              true,
-            ),
+          globalScene.phaseManager.unshiftNew(
+            "PokemonHealPhase",
+            pokemon.getBattlerIndex(),
+            Math.max(pokemon.getMaxHp() >> 4, 1),
+            i18next.t("battle:turnEndHpRestore", {
+              pokemonName: getPokemonNameWithAffix(pokemon),
+            }),
+            true,
           );
         }
 
@@ -53,7 +52,7 @@ export class TurnEndPhase extends FieldPhase {
           globalScene.applyModifier(EnemyStatusEffectHealChanceModifier, false, pokemon);
         }
 
-        applyPostTurnAbAttrs(PostTurnAbAttr, pokemon);
+        applyPostTurnAbAttrs("PostTurnAbAttr", pokemon);
       }
 
       globalScene.applyModifiers(TurnStatusEffectModifier, pokemon.isPlayer(), pokemon);

@@ -3,7 +3,7 @@ import { TrainerSlot } from "#enums/trainer-slot";
 import { Phase } from "#app/phase";
 import * as LoggerTools from "../logger";
 
-export class BattlePhase extends Phase {
+export abstract class BattlePhase extends Phase {
   showEnemyTrainer(trainerSlot: TrainerSlot = TrainerSlot.NONE): void {
     if (!globalScene.currentBattle.trainer) {
       console.warn("Enemy trainer is missing!");

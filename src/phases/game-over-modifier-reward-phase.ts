@@ -5,6 +5,7 @@ import { ModifierRewardPhase } from "./modifier-reward-phase";
 import * as LoggerTools from "../logger";
 
 export class GameOverModifierRewardPhase extends ModifierRewardPhase {
+  public readonly phaseName = "GameOverModifierRewardPhase";
   doReward(): Promise<void> {
     return new Promise<void>(resolve => {
       const newModifier = this.modifierType.newModifier();
