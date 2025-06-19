@@ -169,6 +169,8 @@ import { timedEventManager } from "./global-event-manager";
 import { starterColors } from "./global-vars/starter-colors";
 import { startingWave } from "./starting-wave";
 import { PhaseManager } from "./phase-manager";
+import { EnemyCommandPhase } from "./phases/enemy-command-phase";
+import { BattlerIndex } from "#enums/battler-index";
 
 const DEBUG_RNG = false;
 
@@ -1331,7 +1333,7 @@ export default class BattleScene extends SceneBase {
     // if (txt.length > 2) {
     //   txt = ["Turn: " + this.currentBattle.turn];
     // }
-    
+
     this.arenaFlyout.updateFieldText();
 
     this.setScoreText(txt.join(" / "));
@@ -2143,6 +2145,28 @@ export default class BattleScene extends SceneBase {
 
   processInfoButton(pressed: boolean): void {
     this.arenaFlyout.toggleFlyout(pressed);
+  }
+
+  // Pathing tool function
+  // Activate enemy command phase for move and catch prediction
+  predictEnemy(): void {
+    this.getField().forEach((pokemon, i) => {
+      if (pokemon?.isActive() && !pokemon.isPlayer()) {
+        (pokemon as EnemyPokemon).toggleFlyout(false);
+        pokemon.resetTurnData();
+
+        const enemyCommandPhase = new EnemyCommandPhase(i - BattlerIndex.ENEMY, true);
+        enemyCommandPhase.start();
+
+        // Pathing tool function
+        // update catch rate
+        this.updateCatchRate();
+
+        // Reset all commands and rng, but dont increment the actual turn
+        this.currentBattle.incrementTurn();
+        this.currentBattle.turn--;
+      }
+    });
   }
 
   togglePathingToolUI(): void {

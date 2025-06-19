@@ -69,24 +69,8 @@ export class TurnInitPhase extends FieldPhase {
       this.end();
       return;
     }
-
-    // Pathing tool function
-    // Activate enemy command phase for move and catch prediction
-    globalScene.getField().forEach((pokemon, i) => {
-      if (pokemon?.isActive()) {
-        if (!pokemon.isPlayer()) {
-          (pokemon as EnemyPokemon).toggleFlyout(false);
-          pokemon.resetTurnData();
-
-          const enemyCommandPhase = new EnemyCommandPhase(i - BattlerIndex.ENEMY, true);
-          enemyCommandPhase.start();
-
-          // Reset all commands and rng, but dont increment the actual turn
-          globalScene.currentBattle.incrementTurn();
-          globalScene.currentBattle.turn--;
-        }
-      }
-    });
+    
+    globalScene.predictEnemy();
 
     globalScene.getField().forEach((pokemon, i) => {
       if (pokemon?.isActive()) {

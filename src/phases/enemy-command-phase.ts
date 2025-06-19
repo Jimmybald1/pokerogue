@@ -146,10 +146,6 @@ export class EnemyCommandPhase extends FieldPhase {
     globalScene.arenaFlyout.updateFieldText();
 
     // Pathing tool function
-    // update catch rate
-    globalScene.updateCatchRate();
-
-    // Pathing tool function
     // dont end the phase
     if (this.simulated) {
       return;
