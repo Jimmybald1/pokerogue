@@ -1318,17 +1318,6 @@ export default class BattleScene extends SceneBase {
     }
   }
 
-  doShinyCheck() {
-    this.waveShinyChecked = true;
-    const r = LoggerTools.runShinyCheck(1, this.currentBattle.waveIndex);
-    this.waveShinyFlag = r[0] as boolean;
-    this.waveShinyMinToBreak = r[1] as integer;
-    if (this.waveShinyFlag) {
-      this.arenaFlyout.display2();
-    }
-    LoggerTools.logLuck();
-  }
-
   updateCatchRate() {
     let txt = ["Turn: " + this.currentBattle.turn];
     if (!this.getEnemyField()[0].hasTrainer()) {

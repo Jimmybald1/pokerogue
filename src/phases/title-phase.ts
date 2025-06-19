@@ -131,9 +131,7 @@ export class TitlePhase extends Phase {
           options.push({
             label: i18next.t("menu:cancel"),
             handler: () => {
-              globalScene.phaseManager.clearPhaseQueue();
-              globalScene.phaseManager.pushNew("TitlePhase");
-              super.end();
+              this.callEnd();
               return true;
             },
           });
@@ -145,6 +143,69 @@ export class TitlePhase extends Phase {
           return true;
         },
       },
+      { // Pathing tool option
+        label: "Scouting",
+        handler: () => {
+          globalScene.ui.showText("Encounter Scouting", null, () => this.InitScouting(0));
+          return true;
+        }
+      }, 
+      { // Pathing tool option
+        label: "Shop Scouting",
+        handler: () => {
+          const shopOptions: OptionSelectItem[] = [];
+          shopOptions.push({
+            label: "Shop no evo",
+            handler: () => {
+              this.InitShopScouting(0);
+              return true;
+            }
+          }, {
+            label: "Shop lvl evo",
+            handler: () => {
+              this.InitShopScouting(1);
+              return true;
+            }
+          }, {
+            label: "Shop 1x item evo",
+            handler: () => {
+              this.InitShopScouting(2);
+              return true;
+            }
+          }, {
+            label: "Shop 2x item evo",
+            handler: () => {
+              this.InitShopScouting(3);
+              return true;
+            }
+          });
+          globalScene.ui.showText("Shop Scouting", null, () => globalScene.ui.setOverlayMode(UiMode.OPTION_SELECT, { options: shopOptions }));
+          return true;
+        }
+      }, 
+      { // Pathing tool option
+        label: "Manage Logs",
+        handler: () => {
+          //return this.logRenameMenu()
+          globalScene.ui.setOverlayMode(UiMode.LOG_HANDLER,
+            (k: string) => {
+              if (k === undefined) {
+                return this.showOptions();
+              }
+              console.log(k);
+              this.showOptions();
+            }, () => {
+              this.showOptions();
+            });
+          return true;
+        },
+      }, 
+      { // Pathing tool option
+        label: "Manage Logs (Old Menu)",
+        handler: () => {
+          return this.logRenameMenu();
+        }
+      }, 
       {
         label: i18next.t("menu:loadGame"),
         handler: () => {
@@ -351,6 +412,103 @@ export class TitlePhase extends Phase {
     }
 
     super.end();
+  }
+
+  callEnd(): boolean {
+    globalScene.phaseManager.clearPhaseQueue();
+    globalScene.phaseManager.pushPhase(new TitlePhase());
+    super.end();
+    return true;
+  }
+
+  showLoggerOptions(txt: string, options: OptionSelectItem[]): boolean {
+    globalScene.ui.showText("Export or clear game logs.", null, () => globalScene.ui.setOverlayMode(UiMode.OPTION_SELECT, { options: options }));
+    return true;
+  }
+
+  logMenu(): boolean {
+    const options: OptionSelectItem[] = [];
+    LoggerTools.getLogs();
+    for (let i = 0; i < LoggerTools.logs.length; i++) {
+      if (localStorage.getItem(LoggerTools.logs[i][1]) != null) {
+        options.push(LoggerTools.generateOption(i, this.getSaves()) as OptionSelectItem);
+      }
+    }
+    options.push({
+      label: "Delete all",
+      handler: () => {
+        for (let i = 0; i < LoggerTools.logs.length; i++) {
+          if (localStorage.getItem(LoggerTools.logs[i][1]) != null) {
+            localStorage.removeItem(LoggerTools.logs[i][1]);
+          }
+        }
+        this.callEnd();
+        return true;
+      }
+    }, {
+      label: i18next.t("menu:cancel"),
+      handler: () => {
+        this.callEnd();
+        return true;
+      }
+    });
+    globalScene.ui.showText("Export or clear game logs.", null, () => globalScene.ui.setOverlayMode(UiMode.OPTION_SELECT, { options: options }));
+    return true;
+  }
+
+  logRenameMenu(): boolean {
+    const options: OptionSelectItem[] = [];
+    LoggerTools.getLogs();
+    globalScene.newArena(BiomeId.FACTORY);
+    for (let i = 0; i < LoggerTools.logs.length; i++) {
+      if (localStorage.getItem(LoggerTools.logs[i][1]) != null) {
+        options.push(LoggerTools.generateEditOption(i, this.getSaves(), this) as OptionSelectItem);
+      } else {
+        //options.push(LoggerTools.generateAddOption(i, globalScene, this))
+      }
+    }
+    options.push({
+      label: "Delete all",
+      handler: () => {
+        for (let i = 0; i < LoggerTools.logs.length; i++) {
+          if (localStorage.getItem(LoggerTools.logs[i][1]) != null) {
+            localStorage.removeItem(LoggerTools.logs[i][1]);
+          }
+        }
+        this.callEnd();
+        return true;
+      }
+    }, {
+      label: i18next.t("menu:cancel"),
+      handler: () => {
+        this.callEnd();
+        return true;
+      }
+    });
+    globalScene.ui.showText("Export, rename, or delete logs.", null, () => globalScene.ui.setOverlayMode(UiMode.OPTION_SELECT, { options: options }));
+    return true;
+  }
+
+  getSaves(log?: boolean, dailyOnly?: boolean): SessionSaveData[] | undefined {
+    const saves: Array<Array<any>> = [];
+    for (let i = 0; i < 5; i++) {
+      const s = LoggerTools.parseSlotData(i);
+      if (s != undefined) {
+        if (!dailyOnly || s.gameMode == GameModes.DAILY) {
+          saves.push([ i, s, s.timestamp ]);
+        }
+      }
+    }
+    saves.sort((a, b): integer => {
+      return b[2] - a[2];
+    });
+    if (log) {
+      console.log(saves);
+    }
+    if (saves == undefined) {
+      return undefined;
+    }
+    return saves.map(f => f[1]);
   }
 
   InitShopScouting(method) {

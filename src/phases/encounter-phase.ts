@@ -33,7 +33,7 @@ import i18next from "i18next";
 import { WEIGHT_INCREMENT_ON_SPAWN_MISS } from "#app/constants";
 import { getNatureName } from "#app/data/nature";
 import * as LoggerTools from "../logger";
-import { GameModes } from "#app/game-mode";
+import { GameModes } from "#enums/game-modes";
 
 export class EncounterPhase extends BattlePhase {
   // Union type is necessary as this is subclassed, and typescript will otherwise complain

@@ -24,9 +24,9 @@ import { getNatureDecrease, getNatureIncrease, getNatureName } from "#app/data/n
 import * as LoggerTools from "../logger";
 import { Gender } from "#app/data/gender";
 import { getLuckString } from "#app/modifier/modifier-type";
-import { Species } from "#app/enums/species";
 import { Region } from "#app/data/pokemon-species";
 import { getBiomeName } from "#app/data/balance/biomes";
+import { SpeciesId } from "#enums/species-id";
 
 /** Enum used to differentiate {@linkcode Arena} effects */
 enum ArenaEffectType {
@@ -352,13 +352,13 @@ export class ArenaFlyout extends Phaser.GameObjects.Container {
           if (formtext == " (Normal)" || formtext == " (Hero of Many Battles)") {
             formtext = "";
           }
-          if (poke[i].species.speciesId == Species.MINIOR) {
+          if (poke[i].species.speciesId == SpeciesId.MINIOR) {
             formtext = " (" + poke[i].species.forms?.[poke[i].formIndex]?.formName.split(" ")[0] + ")";
           }
-          if (poke[i].species.speciesId == Species.SQUAWKABILLY) {
+          if (poke[i].species.speciesId == SpeciesId.SQUAWKABILLY) {
             formtext = " (" + poke[i].species.forms?.[poke[i].formIndex]?.formName.substring(0, poke[i].species.forms?.[poke[i].formIndex]?.formName.length - " Plumage".length) + ")";
           }
-          if (poke[i].species.speciesId == Species.ORICORIO) {
+          if (poke[i].species.speciesId == SpeciesId.ORICORIO) {
             formtext = " (" + poke[i].species.forms?.[poke[i].formIndex]?.formName.substring(0, poke[i].species.forms?.[poke[i].formIndex]?.formName.length - " Style".length) + ")";
           }
         }

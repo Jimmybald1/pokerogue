@@ -69,13 +69,24 @@ export class TurnInitPhase extends FieldPhase {
       return;
     }
 
+    // Pathing tool function
+    // Activate enemy command phase for move and catch prediction
+    globalScene.getField().forEach((pokemon, i) => {
+      if (pokemon?.isActive()) {
+        if (!pokemon.isPlayer()) {
+          pokemon.flyout.setText();
+          pokemon.resetTurnData();
+          globalScene.phaseManager.pushNew("EnemyCommandPhase", i - BattlerIndex.ENEMY);
+        }
+      }
+    });
+
     globalScene.getField().forEach((pokemon, i) => {
       if (pokemon?.isActive()) {
         if (pokemon.isPlayer()) {
           globalScene.currentBattle.addParticipant(pokemon as PlayerPokemon);
         }
 
-        // pokemon.flyout.setText();
         pokemon.resetTurnData();
 
         if (pokemon.isPlayer()) {
@@ -87,8 +98,6 @@ export class TurnInitPhase extends FieldPhase {
     });
 
     globalScene.phaseManager.pushNew("TurnStartPhase");
-
-    globalScene.updateCatchRate();
 
     this.end();
   }
