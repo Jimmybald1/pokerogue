@@ -995,7 +995,7 @@ export class TitlePhase extends Phase {
           battle.enemyParty[e].ivs = new Array(6).fill(31);
         }
         globalScene.getPlayerParty().slice(0, !battle.double ? 1 : 2).reverse().forEach(playerPokemon => {
-          applyAbAttrs("SyncEncounterNatureAbAttr", playerPokemon, null, false, battle.enemyParty[e]);
+          applyAbAttrs("SyncEncounterNatureAbAttr", { pokemon: playerPokemon, target: battle.enemyParty[e], passive: undefined });
         });
       }
 

@@ -1,5 +1,5 @@
 import * as LoggerTools from "../logger";
-import { applyAbAttrs, applyPreLeaveFieldAbAttrs } from "#app/data/abilities/apply-ab-attrs";
+import { applyAbAttrs } from "#app/data/abilities/apply-ab-attrs";
 import { Stat } from "#enums/stat";
 import { StatusEffect } from "#enums/status-effect";
 import type { PlayerPokemon, EnemyPokemon } from "#app/field/pokemon";
@@ -26,10 +26,10 @@ export class AttemptRunPhase extends PokemonPhase {
 
     this.attemptRunAway(playerField, enemyField, escapeChance);
 
-    applyAbAttrs("RunSuccessAbAttr", playerPokemon, null, false, escapeChance);
+    applyAbAttrs("RunSuccessAbAttr", { pokemon: playerPokemon, chance: escapeChance });
 
     if (playerPokemon.randBattleSeedInt(100, undefined, "Run away chance") < escapeChance.value && !this.forceFailEscape) {
-      enemyField.forEach(enemyPokemon => applyPreLeaveFieldAbAttrs("PreLeaveFieldAbAttr", enemyPokemon));
+      enemyField.forEach(enemyPokemon => applyAbAttrs("PreLeaveFieldAbAttr", { pokemon: enemyPokemon }));
 
       globalScene.playSound("se/flee");
       LoggerTools.logShop(globalScene.currentBattle.waveIndex, "Fled");
@@ -40,14 +40,11 @@ export class AttemptRunPhase extends PokemonPhase {
         alpha: 0,
         duration: 250,
         ease: "Sine.easeIn",
-        onComplete: () =>
-          // biome-ignore lint/complexity/noForEach: TODO
-          enemyField.forEach(enemyPokemon => enemyPokemon.destroy()),
+        onComplete: () => enemyField.forEach(enemyPokemon => enemyPokemon.destroy()),
       });
 
       globalScene.clearEnemyHeldItemModifiers();
 
-      // biome-ignore lint/complexity/noForEach: TODO
       enemyField.forEach(enemyPokemon => {
         enemyPokemon.hideInfo().then(() => enemyPokemon.destroy());
         enemyPokemon.hp = 0;

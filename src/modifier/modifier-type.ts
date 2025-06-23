@@ -1761,7 +1761,9 @@ class EvolutionItemModifierTypeGenerator extends ModifierTypeGenerator {
               pokemonEvolutions.hasOwnProperty(p.species.speciesId) &&
               (!p.pauseEvolutions ||
                 p.species.speciesId === SpeciesId.SLOWPOKE ||
-                p.species.speciesId === SpeciesId.EEVEE),
+                p.species.speciesId === SpeciesId.EEVEE ||
+                p.species.speciesId === SpeciesId.KIRLIA ||
+                p.species.speciesId === SpeciesId.SNORUNT),
           )
           .flatMap(p => {
             const evolutions = pokemonEvolutions[p.species.speciesId];
@@ -1775,7 +1777,9 @@ class EvolutionItemModifierTypeGenerator extends ModifierTypeGenerator {
               pokemonEvolutions.hasOwnProperty(p.fusionSpecies.speciesId) &&
               (!p.pauseEvolutions ||
                 p.fusionSpecies.speciesId === SpeciesId.SLOWPOKE ||
-                p.fusionSpecies.speciesId === SpeciesId.EEVEE),
+                p.fusionSpecies.speciesId === SpeciesId.EEVEE ||
+                p.fusionSpecies.speciesId === SpeciesId.KIRLIA ||
+                p.fusionSpecies.speciesId === SpeciesId.SNORUNT),
           )
           .flatMap(p => {
             const evolutions = pokemonEvolutions[p.fusionSpecies!.speciesId];
