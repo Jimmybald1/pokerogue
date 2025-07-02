@@ -543,6 +543,27 @@ export class TitlePhase extends Phase {
       // [SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.SWELLOW, SpeciesId.POLIWHIRL],
     ];
 
+    const revives = [
+      () => {
+        party[3].hp = party[3].getMaxHp();
+        party[4].hp = party[4].getMaxHp();
+        party[5].hp = party[5].getMaxHp();
+        return 0;
+      },
+      () => {
+        party[3].hp = 0;
+        return 1;
+      },
+      () => {
+        party[4].hp = 0;
+        return 2;
+      },
+      () => {
+        party[5].hp = 0;
+        return 3;
+      }
+    ]
+
     const ethers = [
       (pokemon: PlayerPokemon) => {
         this.SetFullPP(pokemon);
@@ -709,7 +730,11 @@ export class TitlePhase extends Phase {
           
           ethers.forEach(ether => {
             const e = ether(party[0]);
-            this.IteratePotions(party, 0, 0, 0, 0, 0, 0, e, text, mu.start, mu.end, mu.level, rogueItem);
+
+            revives.forEach(revive => {
+              const r = revive();
+              this.IteratePotions(party, 0, 0, 0, 0, 0, r, e, text, mu.start, mu.end, mu.level, rogueItem);
+            })
           });
         });
       });
@@ -858,9 +883,9 @@ export class TitlePhase extends Phase {
       this.IteratePotions(party, n + 1, pot + 1, suppot + 1, hyppot + 1, maxpot + 1, revive, eth, lure, start, end, level, rogueItem);
     }
 
-    // Revive
-    pokemon.hp = 0;
-    this.IteratePotions(party, n + 1, pot + 1, suppot + 1, hyppot + 1, maxpot + 1, revive + 1, eth, lure, start, end, level, rogueItem);
+    // // Revive
+    // pokemon.hp = 0;
+    // this.IteratePotions(party, n + 1, pot + 1, suppot + 1, hyppot + 1, maxpot + 1, revive + 1, eth, lure, start, end, level, rogueItem);
 
     // reset pokemon
     pokemon.hp = pokemon.getMaxHp();
