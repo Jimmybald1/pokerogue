@@ -6,7 +6,7 @@ import { Gender } from "#app/data/gender";
 import { getBiomeKey } from "#app/field/arena";
 import { GameMode, getGameMode } from "#app/game-mode";
 import { GameModes } from "#enums/game-modes";
-import type { Modifier } from "#app/modifier/modifier";
+import { overrideHeldItems, overrideModifiers, type Modifier } from "#app/modifier/modifier";
 import { getDailyRunStarterModifiers, getPlayerModifierTypeOptions, ModifierTypeOption, regenerateModifierPoolThresholds } from "#app/modifier/modifier-type";
 import { allAbilities, allSpecies, modifierTypes } from "#app/data/data-lists";
 import { ModifierPoolType } from "#enums/modifier-pool-type";
@@ -34,6 +34,9 @@ import { TrainerSlot } from "#enums/trainer-slot";
 import { BattleSpec } from "#enums/battle-spec";
 import { applyAbAttrs } from "#app/data/abilities/apply-ab-attrs";
 import { biomeLinks } from "#app/data/balance/biomes";
+import { getRandomWeatherType } from "#app/data/weather";
+import { TimeOfDay } from "#enums/time-of-day";
+import { WeatherType } from "#enums/weather-type";
 
 export class TitlePhase extends Phase {
   public readonly phaseName = "TitlePhase";
@@ -1053,6 +1056,22 @@ export class TitlePhase extends Phase {
         }
       }
     });
+    
+    if (!nolog && globalScene.currentBattle.waveIndex % 10 === 1) {
+      regenerateModifierPoolThresholds(
+        globalScene.getEnemyField(),
+        battle.battleType === BattleType.TRAINER ? ModifierPoolType.TRAINER : ModifierPoolType.WILD,
+      );
+      globalScene.generateEnemyModifiers();
+      overrideModifiers(false);
+
+      for (const enemy of globalScene.getEnemyField()) {
+        overrideHeldItems(enemy, false);
+      }
+
+      const weather = getRandomWeatherType(globalScene.arena);
+      this.encounterList.push(`Wave: ${globalScene.currentBattle.waveIndex} Biome: ${BiomeId[globalScene.arena.biomeType]} TimeOfDay: ${TimeOfDay[globalScene.arena.getTimeOfDay()]} Weather: ${WeatherType[weather]}`);
+    }
 
     globalScene.resetSeed();
   }
