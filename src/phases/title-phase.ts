@@ -1306,7 +1306,7 @@ export class TitlePhase extends Phase {
         }
 
         // Male/Female sprites for Frillish, Jellicent, Pyroar, Meowstic, Indeedee, Basculegion, Oinkologne...
-        if (["592","593","668","678","876","902","916",].includes(atlaspath)) {
+        if (["592","593","668","678","876","902","916"].includes(atlaspath)) {
           atlaspath += `-${Gender[enemy.gender].toLowerCase()}`;
         }
 
