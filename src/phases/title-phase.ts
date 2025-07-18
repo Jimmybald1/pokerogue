@@ -5,7 +5,7 @@ import { fetchDailyRunSeed, getDailyRunStarters } from "#app/data/daily-run";
 import { Gender } from "#app/data/gender";
 import { getBiomeKey } from "#app/field/arena";
 import { GameMode, GameModes, getGameMode } from "#app/game-mode";
-import type { Modifier } from "#app/modifier/modifier";
+import { overrideHeldItems, overrideModifiers, type Modifier } from "#app/modifier/modifier";
 import type { ModifierTypeOption } from "#app/modifier/modifier-type";
 import {
   getDailyRunStarterModifiers,
@@ -46,6 +46,9 @@ import Overrides from "#app/overrides";
 import { TrainerSlot } from "#enums/trainer-slot";
 import { applyAbAttrs, SyncEncounterNatureAbAttr } from "#app/data/abilities/ability";
 import { allAbilities } from "#app/data/data-lists";
+import { getRandomWeatherType } from "#app/data/weather";
+import { WeatherType } from "#enums/weather-type";
+import { TimeOfDay } from "#enums/time-of-day";
 
 export class TitlePhase extends Phase {
   private loaded = false;
@@ -1293,7 +1296,7 @@ export class TitlePhase extends Phase {
         globalScene.getPlayerParty().slice(0, !battle.double ? 1 : 2).reverse().forEach(playerPokemon => {
           applyAbAttrs(SyncEncounterNatureAbAttr, playerPokemon, null, false, battle.enemyParty[e]);
         });
-      }
+      }      
 
       if (!nolog) {
         const enemy = battle.enemyParty[e];
@@ -1324,6 +1327,22 @@ export class TitlePhase extends Phase {
         }
       }
     });
+    
+    if (!nolog && globalScene.currentBattle.waveIndex % 10 === 1) {
+      regenerateModifierPoolThresholds(
+        globalScene.getEnemyField(),
+        battle.battleType === BattleType.TRAINER ? ModifierPoolType.TRAINER : ModifierPoolType.WILD,
+      );
+      globalScene.generateEnemyModifiers();
+      overrideModifiers(false);
+
+      for (const enemy of globalScene.getEnemyField()) {
+        overrideHeldItems(enemy, false);
+      }
+
+      const weather = getRandomWeatherType(globalScene.arena);
+      this.encounterList.push(`Wave: ${globalScene.currentBattle.waveIndex} Biome: ${Biome[globalScene.arena.biomeType]} TimeOfDay: ${TimeOfDay[globalScene.arena.getTimeOfDay()]} Weather: ${WeatherType[weather]}`);
+    }
 
     globalScene.resetSeed();
   }
