@@ -1034,8 +1034,8 @@ export class TitlePhase extends Phase {
           enemy.nickname = btoa(SpeciesId[enemy.species.speciesId]);
         }
 
-        // Male/Female sprites for Jellicent, Pyroar and Meowstic...
-        if (atlaspath == "593" || atlaspath == "668" || atlaspath == "678") {
+        // Male/Female sprites for Frillish, Jellicent, Pyroar, Meowstic, Indeedee, Basculegion, Oinkologne...
+        if (["592","593","668","678","876","902","916",].includes(atlaspath)) {
           atlaspath += `-${Gender[enemy.gender].toLowerCase()}`;
         }
 
