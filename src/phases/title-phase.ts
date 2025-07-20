@@ -999,6 +999,7 @@ export class TitlePhase extends Phase {
 
   GenerateBattle(nolog: boolean = false) {
     console.log(`%%%%%  Wave: ${globalScene.currentBattle.waveIndex + 1}  %%%%%`);
+    const timeOfDay = globalScene.arena.getTimeOfDay();
     const battle = globalScene.newBattle() as Battle;
     while (LoggerTools.rarities.length > 0) {
       LoggerTools.rarities.pop();
@@ -1070,7 +1071,7 @@ export class TitlePhase extends Phase {
       }
 
       const weather = getRandomWeatherType(globalScene.arena);
-      this.encounterList.push(`Wave: ${globalScene.currentBattle.waveIndex} Biome: ${BiomeId[globalScene.arena.biomeType]} TimeOfDay: ${TimeOfDay[globalScene.arena.getTimeOfDay()]} Weather: ${WeatherType[weather]}`);
+      this.encounterList.push(`Wave: ${globalScene.currentBattle.waveIndex} Biome: ${BiomeId[globalScene.arena.biomeType]} TimeOfDay: ${TimeOfDay[timeOfDay]} Weather: ${WeatherType[weather]}`);
     }
 
     globalScene.resetSeed();
