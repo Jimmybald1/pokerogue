@@ -225,42 +225,6 @@ export class TurnStartPhase extends FieldPhase {
     // Log the player's actions
     LoggerTools.logActions(globalScene.currentBattle.waveIndex, LoggerTools.Actions.join(" & "));
 
-    globalScene.arenaFlyout.updateFieldText();
-
-    if (LoggerTools.Actions.length > 1 && !globalScene.currentBattle.double) {
-      console.error(`Removed second entry (${LoggerTools.Actions[1]}) because this is a Single Battle`);
-      LoggerTools.Actions.pop(); // If this is a single battle, but we somehow have two actions, delete the second
-    }
-    if (LoggerTools.Actions.length > 1 && (LoggerTools.Actions[0] == "" || LoggerTools.Actions[0] == "%SKIP" || LoggerTools.Actions[0] == undefined || LoggerTools.Actions[0] == null)) {
-      if (LoggerTools.Actions[0] == "") {
-        console.error(`Removed first entry (${LoggerTools.Actions[0]}) because it was empty`);
-      } else if (LoggerTools.Actions[0] == "%SKIP") {
-        console.error(`Removed first entry (${LoggerTools.Actions[0]}) because it was flagged to be skipped`);
-      } else if (LoggerTools.Actions[0] == undefined || LoggerTools.Actions[0] == null) {
-        console.error(`Removed first entry (${LoggerTools.Actions[0]}) because it had no value`);
-      }
-      LoggerTools.Actions.shift();
-    } // If the left slot isn't doing anything, delete its entry
-    if (LoggerTools.Actions.length > 1 && (LoggerTools.Actions[1] == "" || LoggerTools.Actions[1] == "%SKIP" || LoggerTools.Actions[1] == undefined || LoggerTools.Actions[1] == null)) {
-      if (LoggerTools.Actions[1] == "") {
-        console.error(`Removed second entry (${LoggerTools.Actions[1]}) because it was empty`);
-      } else if (LoggerTools.Actions[1] == "%SKIP") {
-        console.error(`Removed second entry (${LoggerTools.Actions[1]}) because it was flagged to be skipped`);
-      } else if (LoggerTools.Actions[1] == undefined || LoggerTools.Actions[1] == null) {
-        console.error(`Removed second entry (${LoggerTools.Actions[1]}) because it had no value`);
-      }
-      LoggerTools.Actions.pop();
-    }  // If the right slot isn't doing anything, delete its entry
-
-    // If there is nothing to be logged, end.
-    if (LoggerTools.Actions.length <= 1 && (LoggerTools.Actions[0] == "" || LoggerTools.Actions[0] == "%SKIP" || LoggerTools.Actions[0] == undefined || LoggerTools.Actions[0] == null)) {
-      this.end();
-      return;
-    }
-
-    // Log the player's actions
-    LoggerTools.logActions(globalScene.currentBattle.waveIndex, LoggerTools.Actions.join(" & "));
-
     /*
      * `this.end()` will call `PhaseManager#shiftPhase()`, which dumps everything from `phaseQueuePrepend`
      * (aka everything that is queued via `unshift()`) to the front of the queue and dequeues to start the next phase.
