@@ -203,7 +203,7 @@ export class Arena {
     }
 
     if (regen && (attempt || 0) < 10) {
-      console.log(waveIndex, BiomeId[this.biomeType], ret.name, level, "Incompatible level: regenerating...");
+      console.log(waveIndex, BiomeId[this.biomeType], ret.name, level, "Incompatible wave: regenerating...");
       return this.randomSpecies(waveIndex, level, (attempt || 0) + 1);
     }
 
