@@ -1,58 +1,51 @@
-import {
-  leaveEncounterWithoutBattle,
-  selectPokemonForOption,
-  setEncounterRewards,
-} from "#app/data/mystery-encounters/utils/encounter-phase-utils";
-import { TrainerSlot } from "#enums/trainer-slot";
-import { ModifierTier } from "#enums/modifier-tier";
-import { MusicPreference } from "#app/system/settings/settings";
-import type { ModifierTypeOption } from "#app/modifier/modifier-type";
-import { getPlayerModifierTypeOptions, regenerateModifierPoolThresholds } from "#app/modifier/modifier-type";
-import { ModifierPoolType } from "#enums/modifier-pool-type";
-import { MysteryEncounterType } from "#enums/mystery-encounter-type";
+import { CLASSIC_MODE_MYSTERY_ENCOUNTER_WAVES } from "#app/constants";
+import { timedEventManager } from "#app/global-event-manager";
 import { globalScene } from "#app/global-scene";
-import type MysteryEncounter from "#app/data/mystery-encounters/mystery-encounter";
-import { MysteryEncounterBuilder } from "#app/data/mystery-encounters/mystery-encounter";
-import { MysteryEncounterTier } from "#enums/mystery-encounter-tier";
-import { SpeciesId } from "#enums/species-id";
-import type PokemonSpecies from "#app/data/pokemon-species";
-import { getPokemonSpecies } from "#app/utils/pokemon-utils";
-import { allSpecies } from "#app/data/data-lists";
-import { getTypeRgb } from "#app/data/type";
-import { MysteryEncounterOptionBuilder } from "#app/data/mystery-encounters/mystery-encounter-option";
+import { allSpecies } from "#data/data-lists";
+import { Gender, getGenderSymbol } from "#data/gender";
+import { getNatureName } from "#data/nature";
+import { getPokeballAtlasKey, getPokeballTintColor } from "#data/pokeball";
+import type { PokemonSpecies } from "#data/pokemon-species";
+import { getTypeRgb } from "#data/type";
+import { ModifierPoolType } from "#enums/modifier-pool-type";
+import { ModifierTier } from "#enums/modifier-tier";
 import { MysteryEncounterOptionMode } from "#enums/mystery-encounter-option-mode";
-import {
-  NumberHolder,
-  isNullOrUndefined,
-  randInt,
-  randSeedInt,
-  randSeedShuffle,
-  randSeedItem,
-} from "#app/utils/common";
-import type { PlayerPokemon } from "#app/field/pokemon";
-import type Pokemon from "#app/field/pokemon";
-import { EnemyPokemon } from "#app/field/pokemon";
-import { PokemonMove } from "#app/data/moves/pokemon-move";
-import type { PokemonHeldItemModifier } from "#app/modifier/modifier";
+import { MysteryEncounterTier } from "#enums/mystery-encounter-tier";
+import { MysteryEncounterType } from "#enums/mystery-encounter-type";
+import type { PokeballType } from "#enums/pokeball";
+import { SpeciesId } from "#enums/species-id";
+import { TrainerSlot } from "#enums/trainer-slot";
+import { TrainerType } from "#enums/trainer-type";
+import { doShinySparkleAnim } from "#field/anims";
+import type { PlayerPokemon, Pokemon } from "#field/pokemon";
+import { EnemyPokemon } from "#field/pokemon";
+import type { PokemonHeldItemModifier } from "#modifiers/modifier";
 import {
   HiddenAbilityRateBoosterModifier,
   PokemonFormChangeItemModifier,
   ShinyRateBoosterModifier,
   SpeciesStatBoosterModifier,
-} from "#app/modifier/modifier";
-import type { OptionSelectItem } from "#app/ui/abstact-option-select-ui-handler";
-import PokemonData from "#app/system/pokemon-data";
+} from "#modifiers/modifier";
+import type { ModifierTypeOption } from "#modifiers/modifier-type";
+import { getPlayerModifierTypeOptions, regenerateModifierPoolThresholds } from "#modifiers/modifier-type";
+import { PokemonMove } from "#moves/pokemon-move";
+import { getEncounterText, showEncounterText } from "#mystery-encounters/encounter-dialogue-utils";
+import {
+  leaveEncounterWithoutBattle,
+  selectPokemonForOption,
+  setEncounterRewards,
+} from "#mystery-encounters/encounter-phase-utils";
+import { addPokemonDataToDexAndValidateAchievements } from "#mystery-encounters/encounter-pokemon-utils";
+import type { MysteryEncounter } from "#mystery-encounters/mystery-encounter";
+import { MysteryEncounterBuilder } from "#mystery-encounters/mystery-encounter";
+import { MysteryEncounterOptionBuilder } from "#mystery-encounters/mystery-encounter-option";
+import { PartySizeRequirement } from "#mystery-encounters/mystery-encounter-requirements";
+import { PokemonData } from "#system/pokemon-data";
+import { MusicPreference } from "#system/settings";
+import type { OptionSelectItem } from "#ui/abstract-option-select-ui-handler";
+import { isNullOrUndefined, NumberHolder, randInt, randSeedInt, randSeedItem, randSeedShuffle } from "#utils/common";
+import { getPokemonSpecies } from "#utils/pokemon-utils";
 import i18next from "i18next";
-import { Gender, getGenderSymbol } from "#app/data/gender";
-import { getNatureName } from "#app/data/nature";
-import { getPokeballAtlasKey, getPokeballTintColor } from "#app/data/pokeball";
-import { getEncounterText, showEncounterText } from "#app/data/mystery-encounters/utils/encounter-dialogue-utils";
-import { CLASSIC_MODE_MYSTERY_ENCOUNTER_WAVES } from "#app/constants";
-import { addPokemonDataToDexAndValidateAchievements } from "#app/data/mystery-encounters/utils/encounter-pokemon-utils";
-import type { PokeballType } from "#enums/pokeball";
-import { doShinySparkleAnim } from "#app/field/anims";
-import { TrainerType } from "#enums/trainer-type";
-import { timedEventManager } from "#app/global-event-manager";
 
 /** the i18n namespace for the encounter */
 const namespace = "mysteryEncounters/globalTradeSystem";
@@ -159,12 +152,13 @@ export const GlobalTradeSystemEncounter: MysteryEncounter = MysteryEncounterBuil
     return true;
   })
   .withOption(
-    MysteryEncounterOptionBuilder.newOptionWithMode(MysteryEncounterOptionMode.DEFAULT)
+    MysteryEncounterOptionBuilder.newOptionWithMode(MysteryEncounterOptionMode.DISABLED_OR_DEFAULT)
+      .withSceneRequirement(new PartySizeRequirement([2, 6], true)) // Requires 2 valid party members
       .withHasDexProgress(true)
       .withDialogue({
         buttonLabel: `${namespace}:option.1.label`,
         buttonTooltip: `${namespace}:option.1.tooltip`,
-        secondOptionPrompt: `${namespace}:option.1.trade_options_prompt`,
+        secondOptionPrompt: `${namespace}:option.1.tradeOptionsPrompt`,
       })
       .withPreOptionPhase(async (): Promise<boolean> => {
         const encounter = globalScene.currentBattle.mysteryEncounter!;
@@ -254,7 +248,7 @@ export const GlobalTradeSystemEncounter: MysteryEncounter = MysteryEncounterBuil
         // Show the trade animation
         await showTradeBackground();
         await doPokemonTradeSequence(tradedPokemon, newPlayerPokemon);
-        await showEncounterText(`${namespace}:trade_received`, null, 0, true, 4000);
+        await showEncounterText(`${namespace}:tradeReceived`, null, 0, true, 4000);
         globalScene.playBgm(encounter.misc.bgmKey);
         await addPokemonDataToDexAndValidateAchievements(newPlayerPokemon);
         await hideTradeBackground();
@@ -265,7 +259,8 @@ export const GlobalTradeSystemEncounter: MysteryEncounter = MysteryEncounterBuil
       .build(),
   )
   .withOption(
-    MysteryEncounterOptionBuilder.newOptionWithMode(MysteryEncounterOptionMode.DEFAULT)
+    MysteryEncounterOptionBuilder.newOptionWithMode(MysteryEncounterOptionMode.DISABLED_OR_DEFAULT)
+      .withSceneRequirement(new PartySizeRequirement([2, 6], true)) // Requires 2 valid party members
       .withHasDexProgress(true)
       .withDialogue({
         buttonLabel: `${namespace}:option.2.label`,
@@ -374,7 +369,7 @@ export const GlobalTradeSystemEncounter: MysteryEncounter = MysteryEncounterBuil
         // Show the trade animation
         await showTradeBackground();
         await doPokemonTradeSequence(tradedPokemon, newPlayerPokemon);
-        await showEncounterText(`${namespace}:trade_received`, null, 0, true, 4000);
+        await showEncounterText(`${namespace}:tradeReceived`, null, 0, true, 4000);
         globalScene.playBgm(encounter.misc.bgmKey);
         await addPokemonDataToDexAndValidateAchievements(newPlayerPokemon);
         await hideTradeBackground();
@@ -389,7 +384,7 @@ export const GlobalTradeSystemEncounter: MysteryEncounter = MysteryEncounterBuil
       .withDialogue({
         buttonLabel: `${namespace}:option.3.label`,
         buttonTooltip: `${namespace}:option.3.tooltip`,
-        secondOptionPrompt: `${namespace}:option.3.trade_options_prompt`,
+        secondOptionPrompt: `${namespace}:option.3.tradeOptionsPrompt`,
       })
       .withPreOptionPhase(async (): Promise<boolean> => {
         const encounter = globalScene.currentBattle.mysteryEncounter!;
@@ -421,7 +416,7 @@ export const GlobalTradeSystemEncounter: MysteryEncounter = MysteryEncounterBuil
               return it.isTransferable;
             }).length > 0;
           if (!meetsReqs) {
-            return getEncounterText(`${namespace}:option.3.invalid_selection`) ?? null;
+            return getEncounterText(`${namespace}:option.3.invalidSelection`) ?? null;
           }
 
           return null;
@@ -473,7 +468,7 @@ export const GlobalTradeSystemEncounter: MysteryEncounter = MysteryEncounterBuil
         // Generate a trainer name
         const traderName = generateRandomTraderName();
         encounter.setDialogueToken("tradeTrainerName", traderName.trim());
-        await showEncounterText(`${namespace}:item_trade_selected`);
+        await showEncounterText(`${namespace}:itemTradeSelected`);
         leaveEncounterWithoutBattle();
       })
       .build(),
@@ -569,14 +564,14 @@ function generateTradeOption(alreadyUsedSpecies: PokemonSpecies[], originalBst?:
 
 function showTradeBackground() {
   return new Promise<void>(resolve => {
-    const tradeContainer = globalScene.add.container(0, -globalScene.game.canvas.height / 6);
+    const tradeContainer = globalScene.add.container(0, -globalScene.scaledCanvas.height);
     tradeContainer.setName("Trade Background");
 
     const flyByStaticBg = globalScene.add.rectangle(
       0,
       0,
-      globalScene.game.canvas.width / 6,
-      globalScene.game.canvas.height / 6,
+      globalScene.scaledCanvas.width,
+      globalScene.scaledCanvas.height,
       0,
     );
     flyByStaticBg.setName("Black Background");
@@ -745,10 +740,10 @@ function doPokemonTradeSequence(tradedPokemon: PlayerPokemon, receivedPokemon: P
       duration: 500,
       onComplete: async () => {
         globalScene.fadeOutBgm(1000, false);
-        await showEncounterText(`${namespace}:pokemon_trade_selected`);
+        await showEncounterText(`${namespace}:pokemonTradeSelected`);
         tradedPokemon.cry();
         globalScene.playBgm("evolution");
-        await showEncounterText(`${namespace}:pokemon_trade_goodbye`);
+        await showEncounterText(`${namespace}:pokemonTradeGoodbye`);
 
         tradedPokeball.setAlpha(0);
         tradedPokeball.setVisible(true);

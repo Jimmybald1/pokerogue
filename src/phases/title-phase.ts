@@ -1,40 +1,40 @@
 import * as LoggerTools from "../logger";
 import { loggedInUser } from "#app/account";
-import { BattleType } from "#enums/battle-type";
-import { fetchDailyRunSeed, getDailyRunStarters } from "#app/data/daily-run";
-import { Gender } from "#app/data/gender";
-import { getBiomeKey } from "#app/field/arena";
 import { GameMode, getGameMode } from "#app/game-mode";
-import { GameModes } from "#enums/game-modes";
-import { overrideHeldItems, overrideModifiers, type Modifier } from "#app/modifier/modifier";
-import { getDailyRunStarterModifiers, getPlayerModifierTypeOptions, ModifierTypeOption, regenerateModifierPoolThresholds } from "#app/modifier/modifier-type";
-import { allAbilities, allSpecies, modifierTypes } from "#app/data/data-lists";
-import { ModifierPoolType } from "#enums/modifier-pool-type";
-import { Phase } from "#app/phase";
-import type { SessionSaveData } from "#app/system/game-data";
-import { Unlockables } from "#enums/unlockables";
-import { vouchers } from "#app/system/voucher";
-import type { OptionSelectConfig, OptionSelectItem } from "#app/ui/abstact-option-select-ui-handler";
-import { SaveSlotUiMode } from "#app/ui/save-slot-select-ui-handler";
-import { UiMode } from "#enums/ui-mode";
-import { isLocal, isLocalServerConnected, isNullOrUndefined, randSeedInt } from "#app/utils/common";
-import i18next from "i18next";
 import { globalScene } from "#app/global-scene";
 import Overrides from "#app/overrides";
+import { Phase } from "#app/phase";
+import { fetchDailyRunSeed, getDailyRunStarters } from "#data/daily-run";
+import { allAbilities, allSpecies, modifierTypes } from "#data/data-lists";
+import { Gender } from "#data/gender";
+import { BattleType } from "#enums/battle-type";
+import { GameModes } from "#enums/game-modes";
+import { ModifierPoolType } from "#enums/modifier-pool-type";
+import { UiMode } from "#enums/ui-mode";
+import { Unlockables } from "#enums/unlockables";
+import { getBiomeKey } from "#field/arena";
+import { overrideHeldItems, overrideModifiers, type Modifier } from "#modifiers/modifier";
+import { getDailyRunStarterModifiers, getPlayerModifierTypeOptions, ModifierTypeOption, regenerateModifierPoolThresholds } from "#modifiers/modifier-type";
+import type { SessionSaveData } from "#system/game-data";
+import { vouchers } from "#system/voucher";
+import type { OptionSelectConfig, OptionSelectItem } from "#ui/abstract-option-select-ui-handler";
+import { SaveSlotUiMode } from "#ui/save-slot-select-ui-handler";
+import { isLocal, isLocalServerConnected, isNullOrUndefined, randSeedInt } from "#utils/common";
+import i18next from "i18next";
+import { BiomeId } from "#enums/biome-id";
 import { SpeciesId } from "#enums/species-id";
-import { PlayerPokemon } from "#app/field/pokemon";
-import { PokemonMove } from "#app/data/moves/pokemon-move";
+import { PlayerPokemon } from "#field/pokemon";
+import { PokemonMove } from "#moves/pokemon-move";
 import { MoveId } from "#enums/move-id";
 import { getPokemonNameWithAffix } from "#app/messages";
 import { Nature } from "#enums/nature";
 import { PokemonType } from "#enums/pokemon-type";
-import Battle from "#app/battle";
-import { BiomeId } from "#enums/biome-id";
+import { Battle } from "#app/battle";
 import { TrainerSlot } from "#enums/trainer-slot";
 import { BattleSpec } from "#enums/battle-spec";
-import { applyAbAttrs } from "#app/data/abilities/apply-ab-attrs";
-import { biomeLinks } from "#app/data/balance/biomes";
-import { getRandomWeatherType } from "#app/data/weather";
+import { applyAbAttrs } from "#abilities/apply-ab-attrs";
+import { getRandomWeatherType } from "#data/weather";
+import { biomeLinks } from "#balance/biomes";
 import { TimeOfDay } from "#enums/time-of-day";
 import { WeatherType } from "#enums/weather-type";
 
@@ -131,10 +131,12 @@ export class TitlePhase extends Phase {
               });
             }
           }
+          // Cancel button = back to title
           options.push({
             label: i18next.t("menu:cancel"),
             handler: () => {
-              this.callEnd();
+              globalScene.phaseManager.toTitleScreen();
+              super.end();
               return true;
             },
           });
@@ -269,11 +271,12 @@ export class TitlePhase extends Phase {
   initDailyRun(): void {
     globalScene.ui.clearText();
     globalScene.ui.setMode(UiMode.SAVE_SLOT, SaveSlotUiMode.SAVE, (slotId: number) => {
-      globalScene.phaseManager.clearPhaseQueue();
       if (slotId === -1) {
-        globalScene.phaseManager.pushNew("TitlePhase");
-        return super.end();
+        globalScene.phaseManager.toTitleScreen();
+        super.end();
+        return;
       }
+      globalScene.phaseManager.clearPhaseQueue();
       globalScene.sessionSlotId = slotId;
 
       const generateDaily = (seed: string) => {
@@ -282,7 +285,7 @@ export class TitlePhase extends Phase {
         globalScene.eventManager.startEventChallenges();
 
         globalScene.setSeed(seed);
-        globalScene.resetSeed(0);
+        globalScene.resetSeed();
 
         globalScene.money = globalScene.gameMode.getStartingMoney();
 
@@ -361,6 +364,7 @@ export class TitlePhase extends Phase {
             console.error("Failed to load daily run:\n", err);
           });
       } else {
+        // Grab first 10 chars of ISO date format (YYYY-MM-DD) and convert to base64
         let seed: string = btoa(new Date().toISOString().substring(0, 10));
         if (!isNullOrUndefined(Overrides.DAILY_RUN_SEED_OVERRIDE)) {
           seed = Overrides.DAILY_RUN_SEED_OVERRIDE;

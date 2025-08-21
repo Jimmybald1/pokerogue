@@ -1,8 +1,8 @@
-import * as LoggerTools from "../logger";
+import { applyAbAttrs } from "#abilities/apply-ab-attrs";
 import { globalScene } from "#app/global-scene";
-import { applyAbAttrs } from "#app/data/abilities/apply-ab-attrs";
-import { LapsingPersistentModifier, LapsingPokemonHeldItemModifier } from "#app/modifier/modifier";
-import { BattlePhase } from "./battle-phase";
+import { LapsingPersistentModifier, LapsingPokemonHeldItemModifier } from "#modifiers/modifier";
+import { BattlePhase } from "#phases/battle-phase";
+import * as LoggerTools from "../logger";
 
 export class BattleEndPhase extends BattlePhase {
   public readonly phaseName = "BattleEndPhase";
@@ -57,12 +57,6 @@ export class BattleEndPhase extends BattlePhase {
     if (globalScene.gameMode.isEndless && globalScene.currentBattle.waveIndex >= 5850) {
       globalScene.phaseManager.clearPhaseQueue();
       globalScene.phaseManager.unshiftNew("GameOverPhase", true);
-    }
-
-    for (const pokemon of globalScene.getField()) {
-      if (pokemon) {
-        pokemon.tempSummonData.waveTurnCount = 1;
-      }
     }
 
     for (const pokemon of globalScene.getPokemonAllowedInBattle()) {

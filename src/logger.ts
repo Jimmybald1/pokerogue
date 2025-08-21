@@ -1,33 +1,33 @@
 //#region 00 Imports
-import type Pokemon from "./field/pokemon";
-import type { PlayerPokemon, EnemyPokemon } from "./field/pokemon";
+import type { PlayerPokemon, EnemyPokemon, Pokemon } from "./field/pokemon";
 import { getNatureDecrease, getNatureIncrease, getNatureName } from "./data/nature";
-import type { OptionSelectItem } from "./ui/abstact-option-select-ui-handler";
 import type { PokemonHeldItemModifier } from "./modifier/modifier";
 import { BypassSpeedChanceModifier, EnemyAttackStatusEffectChanceModifier } from "./modifier/modifier";
 import type { TitlePhase } from "./phases/title-phase";
-import type Trainer from "./field/trainer";
-import PersistentModifierData from "./system/modifier-data";
 import { getStatusEffectCatchRateMultiplier } from "./data/status-effect";
 import type { SessionSaveData } from "./system/game-data";
 import { loggedInUser } from "./account";
-import PokemonData from "./system/pokemon-data";
-import TrainerData from "./system/trainer-data";
-import ArenaData from "./system/arena-data";
-import ChallengeData from "./system/challenge-data";
 import { Challenges } from "./enums/challenges";
 import { getBiomeName } from "./data/balance/biomes";
 import type { Nature } from "./enums/nature";
 import { StatusEffect } from "./enums/status-effect";
 import { getCriticalCaptureChance } from "./data/pokeball";
 import { globalScene } from "./global-scene";
-import { BooleanHolder, getEnumKeys, getEnumValues } from "./utils/common";
 import { UiMode } from "#enums/ui-mode";
 import { SpeciesId } from "#enums/species-id";
 import { GameModes } from "#enums/game-modes";
 import { getPokemonSpecies } from "./utils/pokemon-utils";
 import { AbilityId } from "#enums/ability-id";
 import { decrypt } from "./utils/data";
+import { BooleanHolder } from "#utils/common";
+import { PokemonData } from "#system/pokemon-data";
+import { getEnumKeys, getEnumValues } from "#utils/enums";
+import { Trainer } from "#field/trainer";
+import { OptionSelectItem } from "#ui/abstract-option-select-ui-handler";
+import { TrainerData } from "#system/trainer-data";
+import { ArenaData } from "#system/arena-data";
+import { ChallengeData } from "#system/challenge-data";
+import { ModifierData as PersistentModifierData } from "#system/modifier-data";
 
 /*
 SECTIONS
@@ -95,6 +95,8 @@ export const enemyPlan: string[] = [];
 // Booleans
 export const SheetsMode = new BooleanHolder(false);
 export const isTransferAll: BooleanHolder = new BooleanHolder(false);
+
+export const logCommand: BooleanHolder = new BooleanHolder(true);
 
 // #endregion
 
@@ -1127,7 +1129,7 @@ export function exportPokemonFromData(pokemon: PokemonData, encounterRarity?: st
   const P = getPokemonSpecies(pokemon.species);
   return {
     id: pokemon.species,
-    name: P.species,
+    name: P.name,
     ability: getEnumKeys(AbilityId)[P.getAbility(pokemon.abilityIndex)],
     isHiddenAbility: P.getAbility(pokemon.abilityIndex) === P.abilityHidden,
     passiveAbility: "Cannot pull Passive or Held Items from raw file data",

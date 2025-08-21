@@ -1,6 +1,5 @@
 import { globalScene } from "#app/global-scene";
-import { EncounterPhase } from "./encounter-phase";
-import * as LoggerTools from "../logger";
+import { EncounterPhase } from "#phases/encounter-phase";
 
 /**
  * The phase between defeating an encounter and starting another wild wave.

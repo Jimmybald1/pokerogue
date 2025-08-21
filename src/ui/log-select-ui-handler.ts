@@ -1,17 +1,19 @@
 import i18next from "i18next";
-import type BattleScene from "../battle-scene";
 import { Button } from "#enums/buttons";
-import type PokemonData from "../system/pokemon-data";
-import MessageUiHandler from "./message-ui-handler";
-import { TextStyle, addTextObject } from "./text";
 import { addWindow } from "./ui-theme";
 import * as LoggerTools from "../logger";
 import { globalScene } from "#app/global-scene";
 import { UiMode } from "#enums/ui-mode";
-import { fixedInt, getEnumValues } from "#app/utils/common";
+import { fixedInt } from "#app/utils/common";
 import { allSpecies } from "#app/data/data-lists";
 import { SpeciesId } from "#enums/species-id";
 import { getPokemonSpecies } from "#app/utils/pokemon-utils";
+import { MessageUiHandler } from "./message-ui-handler";
+import { addTextObject } from "./text";
+import { TextStyle } from "#enums/text-style";
+import { getEnumValues } from "#utils/enums";
+import { PokemonData } from "#system/pokemon-data";
+import { BattleScene } from "#app/battle-scene";
 
 const sessionSlotCount = 5;
 const gap = 20;

@@ -1,10 +1,6 @@
 import { globalScene } from "#app/global-scene";
-import type Pokemon from "#app/field/pokemon";
-import { BattlePhase } from "./battle-phase";
-import { BattlerIndex } from "#app/battle";
-import * as Utils from "../utils";
-import { Stat } from "#app/enums/stat";
-import { TrickRoomTag } from "#app/data/arena-tag";
+import type { Pokemon } from "#field/pokemon";
+import { BattlePhase } from "#phases/battle-phase";
 
 type PokemonFunc = (pokemon: Pokemon) => void;
 

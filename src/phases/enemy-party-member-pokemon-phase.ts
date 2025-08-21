@@ -1,6 +1,5 @@
-import type { EnemyPokemon } from "#app/field/pokemon";
-import { PartyMemberPokemonPhase } from "./party-member-pokemon-phase";
-import * as LoggerTools from "../logger";
+import type { EnemyPokemon } from "#field/pokemon";
+import { PartyMemberPokemonPhase } from "#phases/party-member-pokemon-phase";
 
 export abstract class EnemyPartyMemberPokemonPhase extends PartyMemberPokemonPhase {
   constructor(partyMemberIndex: number) {

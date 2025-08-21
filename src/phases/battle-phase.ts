@@ -1,7 +1,6 @@
 import { globalScene } from "#app/global-scene";
-import { TrainerSlot } from "#enums/trainer-slot";
 import { Phase } from "#app/phase";
-import * as LoggerTools from "../logger";
+import { TrainerSlot } from "#enums/trainer-slot";
 
 export abstract class BattlePhase extends Phase {
   showEnemyTrainer(trainerSlot: TrainerSlot = TrainerSlot.NONE): void {

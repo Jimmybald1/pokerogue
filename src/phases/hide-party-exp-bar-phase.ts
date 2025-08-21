@@ -1,6 +1,5 @@
 import { globalScene } from "#app/global-scene";
-import { BattlePhase } from "./battle-phase";
-import * as LoggerTools from "../logger";
+import { BattlePhase } from "#phases/battle-phase";
 
 export class HidePartyExpBarPhase extends BattlePhase {
   public readonly phaseName = "HidePartyExpBarPhase";

@@ -1,15 +1,13 @@
 import * as LoggerTools from "../logger";
 import { globalScene } from "#app/global-scene";
-import { BattleStyle } from "#app/enums/battle-style";
-import { BattlerTagType } from "#app/enums/battler-tag-type";
 import { getPokemonNameWithAffix } from "#app/messages";
-import { UiMode } from "#enums/ui-mode";
-import i18next from "i18next";
-import { BattlePhase } from "./battle-phase";
-import { getNatureName } from "#app/data/nature";
+import { BattleStyle } from "#enums/battle-style";
+import { BattlerTagType } from "#enums/battler-tag-type";
 import { SwitchType } from "#enums/switch-type";
-import { EnemyCommandPhase } from "./enemy-command-phase";
-import { BattlerIndex } from "#enums/battler-index";
+import { UiMode } from "#enums/ui-mode";
+import { BattlePhase } from "#phases/battle-phase";
+import i18next from "i18next";
+import { getNatureName } from "#data/nature";
 
 export class CheckSwitchPhase extends BattlePhase {
   public readonly phaseName = "CheckSwitchPhase";

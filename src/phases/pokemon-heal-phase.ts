@@ -1,19 +1,19 @@
 import { globalScene } from "#app/global-scene";
-import type { BattlerIndex } from "#enums/battler-index";
-import { CommonAnim } from "#enums/move-anims-common";
-import { getStatusEffectHealText } from "#app/data/status-effect";
-import { StatusEffect } from "#app/enums/status-effect";
-import { HitResult } from "#enums/hit-result";
 import { getPokemonNameWithAffix } from "#app/messages";
-import { HealingBoosterModifier } from "#app/modifier/modifier";
-import { HealAchv } from "#app/system/achv";
+import type { HealBlockTag } from "#data/battler-tags";
+import { getStatusEffectHealText } from "#data/status-effect";
+import type { BattlerIndex } from "#enums/battler-index";
+import { BattlerTagType } from "#enums/battler-tag-type";
+import { HitResult } from "#enums/hit-result";
+import { CommonAnim } from "#enums/move-anims-common";
+import { StatusEffect } from "#enums/status-effect";
+import { HealingBoosterModifier } from "#modifiers/modifier";
+import { CommonAnimPhase } from "#phases/common-anim-phase";
+import { HealAchv } from "#system/achv";
+import { NumberHolder } from "#utils/common";
 import i18next from "i18next";
-import { NumberHolder } from "#app/utils/common";
-import { CommonAnimPhase } from "./common-anim-phase";
-import * as LoggerTools from "../logger";
-import { BattlerTagType } from "#app/enums/battler-tag-type";
-import type { HealBlockTag } from "#app/data/battler-tags";
 
+// TODO: Refactor this - it has far too many arguments
 export class PokemonHealPhase extends CommonAnimPhase {
   public readonly phaseName = "PokemonHealPhase";
   private hpHealed: number;
@@ -29,7 +29,7 @@ export class PokemonHealPhase extends CommonAnimPhase {
     battlerIndex: BattlerIndex,
     hpHealed: number,
     message: string | null,
-    showFullHpMessage: boolean,
+    showFullHpMessage = true,
     skipAnim = false,
     revive = false,
     healStatus = false,
@@ -73,6 +73,7 @@ export class PokemonHealPhase extends CommonAnimPhase {
       this.message = null;
       return super.end();
     }
+
     if (healOrDamage) {
       const hpRestoreMultiplier = new NumberHolder(1);
       if (!this.revive) {

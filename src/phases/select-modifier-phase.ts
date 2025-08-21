@@ -1,36 +1,35 @@
 import * as LoggerTools from "../logger";
 import { globalScene } from "#app/global-scene";
-import { ModifierTier } from "#enums/modifier-tier";
-import type { ModifierTypeOption, ModifierType } from "#app/modifier/modifier-type";
-import {
-  regenerateModifierPoolThresholds,
-  getPlayerShopModifierTypeOptionsForWave,
-  PokemonModifierType,
-  FusePokemonModifierType,
-  PokemonMoveModifierType,
-  TmModifierType,
-  RememberMoveModifierType,
-  PokemonPpRestoreModifierType,
-  PokemonPpUpModifierType,
-  getPlayerModifierTypeOptions,
-} from "#app/modifier/modifier-type";
+import Overrides from "#app/overrides";
 import { ModifierPoolType } from "#enums/modifier-pool-type";
-import type { Modifier } from "#app/modifier/modifier";
+import { ModifierTier } from "#enums/modifier-tier";
+import { UiMode } from "#enums/ui-mode";
+import type { Modifier } from "#modifiers/modifier";
 import {
   ExtraModifierModifier,
   HealShopCostModifier,
   PokemonHeldItemModifier,
   TempExtraModifierModifier,
-} from "#app/modifier/modifier";
-import type ModifierSelectUiHandler from "#app/ui/modifier-select-ui-handler";
-import { SHOP_OPTIONS_ROW_LIMIT } from "#app/ui/modifier-select-ui-handler";
-import PartyUiHandler, { PartyUiMode, PartyOption } from "#app/ui/party-ui-handler";
-import { UiMode } from "#enums/ui-mode";
+} from "#modifiers/modifier";
+import type { CustomModifierSettings, ModifierType, ModifierTypeOption } from "#modifiers/modifier-type";
+import {
+  FusePokemonModifierType,
+  getPlayerModifierTypeOptions,
+  getPlayerShopModifierTypeOptionsForWave,
+  PokemonModifierType,
+  PokemonMoveModifierType,
+  PokemonPpRestoreModifierType,
+  PokemonPpUpModifierType,
+  RememberMoveModifierType,
+  regenerateModifierPoolThresholds,
+  TmModifierType,
+} from "#modifiers/modifier-type";
+import { BattlePhase } from "#phases/battle-phase";
+import type { ModifierSelectUiHandler } from "#ui/modifier-select-ui-handler";
+import { SHOP_OPTIONS_ROW_LIMIT } from "#ui/modifier-select-ui-handler";
+import { PartyOption, PartyUiHandler, PartyUiMode } from "#ui/party-ui-handler";
+import { isNullOrUndefined, NumberHolder } from "#utils/common";
 import i18next from "i18next";
-import { BattlePhase } from "./battle-phase";
-import Overrides from "#app/overrides";
-import type { CustomModifierSettings } from "#app/modifier/modifier-type";
-import { isNullOrUndefined, NumberHolder } from "#app/utils/common";
 
 export type ModifierSelectCallback = (rowCursor: number, cursor: number) => boolean;
 
@@ -271,7 +270,7 @@ export class SelectModifierPhase extends BattlePhase {
       LoggerTools.logShop(globalScene.currentBattle.waveIndex, this.getRerollText() + modifierType.name);
       this.applyModifier(modifierType.newModifier()!);
     }
-    return !cost;
+    return cost === -1;
   }
 
   // Reroll rewards

@@ -1,11 +1,11 @@
 import * as LoggerTools from "../logger";
 import { globalScene } from "#app/global-scene";
-import { BattlerIndex } from "#enums/battler-index";
-import { Command } from "#enums/command";
-import { FieldPhase } from "./field-phase";
 import { AbilityId } from "#enums/ability-id";
+import { BattlerIndex } from "#enums/battler-index";
 import { BattlerTagType } from "#enums/battler-tag-type";
-import { PokemonMove } from "#app/data/moves/pokemon-move";
+import { Command } from "#enums/command";
+import { FieldPhase } from "#phases/field-phase";
+import { PokemonMove } from "#moves/pokemon-move";
 
 /**
  * Phase for determining an enemy AI's action for the next turn.
