@@ -63,7 +63,7 @@ const doEventReward = () => {
       return !(existingCharm && existingCharm.getStackCount() >= existingCharm.getMaxStackCount());
     });
     if (candidates.length > 0) {
-      globalScene.phaseManager.unshiftNew("ModifierRewardPhase", modifierTypes[randSeedItem(candidates)]);
+      globalScene.phaseManager.unshiftNew("ModifierRewardPhase", modifierTypes[randSeedItem(candidates, "Random event reward")]);
     } else {
       // At max stacks, give a Voucher instead
       globalScene.phaseManager.unshiftNew("ModifierRewardPhase", modifierTypes.VOUCHER);

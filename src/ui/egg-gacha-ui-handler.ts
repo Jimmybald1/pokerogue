@@ -485,7 +485,7 @@ export class EggGachaUiHandler extends MessageUiHandler {
       eggs.push(egg);
     }
     // Shuffle the eggs in case the guaranteed one got added as last egg
-    return randSeedShuffle(eggs);
+    return randSeedShuffle(eggs, "Shuffle eggs");
   }
 
   /**

@@ -123,7 +123,7 @@ export const ThePokemonSalesmanEncounter: MysteryEncounter = MysteryEncounterBui
       tries = 0;
       do {
         // If you roll 20%, give event encounter with 3 extra shiny rolls and its HA, if it has one
-        const enc = randSeedItem(validEventEncounters);
+        const enc = randSeedItem(validEventEncounters, "Random event encounter");
         species = getPokemonSpecies(enc.species);
         pokemon = new PlayerPokemon(
           species,
@@ -143,7 +143,7 @@ export const ThePokemonSalesmanEncounter: MysteryEncounter = MysteryEncounterBui
         // If, after 6 tries, you STILL somehow don't have an HA or shiny mon, pick from only the event mons that have an HA.
         if (validEventEncounters.some(s => !!getPokemonSpecies(s.species).abilityHidden)) {
           validEventEncounters.filter(s => !!getPokemonSpecies(s.species).abilityHidden);
-          const enc = randSeedItem(validEventEncounters);
+          const enc = randSeedItem(validEventEncounters, "Random event encounter");
           species = getPokemonSpecies(enc.species);
           pokemon = new PlayerPokemon(species, 5, 2, enc.formIndex);
           pokemon.trySetShinySeed();

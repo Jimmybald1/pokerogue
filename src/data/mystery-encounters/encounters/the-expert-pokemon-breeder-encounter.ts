@@ -553,7 +553,7 @@ function getPartyConfig(): EnemyPartyConfig {
 }
 
 function getSpeciesFromPool(speciesPool: (SpeciesId | BreederSpeciesEvolution)[][], waveIndex: number): SpeciesId {
-  const poolCopy = randSeedShuffle(speciesPool.slice(0));
+  const poolCopy = randSeedShuffle(speciesPool.slice(0), "Shuffle species pool");
   const speciesEvolutions = poolCopy.pop()!.slice(0);
   let speciesObject = speciesEvolutions.pop()!;
   while (speciesObject instanceof BreederSpeciesEvolution && speciesObject.evolution > waveIndex) {

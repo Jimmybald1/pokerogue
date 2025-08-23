@@ -573,7 +573,7 @@ export function getRandomTrainerFunc(
   seedOffset = 0,
 ): GetTrainerFunc {
   return () => {
-    const rand = randSeedInt(trainerPool.length);
+    const rand = randSeedInt(trainerPool.length, undefined, "Random trainer function");
     const trainerTypes: TrainerType[] = [];
 
     globalScene.executeWithSeedOffset(() => {

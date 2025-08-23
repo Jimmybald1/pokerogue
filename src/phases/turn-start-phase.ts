@@ -33,7 +33,7 @@ export class TurnStartPhase extends FieldPhase {
     let orderedTargets = (playerField as Pokemon[]).concat(enemyField);
     globalScene.executeWithSeedOffset(
       () => {
-        orderedTargets = randSeedShuffle(orderedTargets);
+        orderedTargets = randSeedShuffle(orderedTargets, "Shuffle for speed order");
       },
       globalScene.currentBattle.turn,
       globalScene.waveSeed,

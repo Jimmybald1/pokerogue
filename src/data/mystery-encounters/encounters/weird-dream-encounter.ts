@@ -386,7 +386,7 @@ function getTeamTransformations(): PokemonTransformation[] {
   // First, roll 2 of the party members to new Pokemon at a +90 to +110 BST difference
   // Then, roll the remainder of the party members at a +40 to +50 BST difference
   const numPokemon = party.length;
-  const removedPokemon = randSeedShuffle(party.slice(0));
+  const removedPokemon = randSeedShuffle(party.slice(0), "Shuffle pokemon for Weird Dream");
   for (let i = 0; i < numPokemon; i++) {
     const removed = removedPokemon[i];
     const index = pokemonTransformations.findIndex(p => p.previousPokemon.id === removed.id);
@@ -633,7 +633,7 @@ function getTransformedSpecies(
 
     // There must be at least 20 species available before it will choose one
     if (validSpecies?.length > 20) {
-      validSpecies = randSeedShuffle(validSpecies);
+      validSpecies = randSeedShuffle(validSpecies, "Shuffle valid Weird Dream species");
       newSpecies = validSpecies.pop();
       while (isNullOrUndefined(newSpecies) || alreadyUsedSpecies.includes(newSpecies)) {
         newSpecies = validSpecies.pop();
@@ -749,7 +749,7 @@ async function addEggMoveToNewPokemonMoveset(
   let eggMoveIndex: null | number = null;
   const eggMoves = newPokemon.getEggMoves()?.slice(0);
   if (eggMoves) {
-    const eggMoveIndices = randSeedShuffle([0, 1, 2, 3]);
+    const eggMoveIndices = randSeedShuffle([0, 1, 2, 3], "shuffle egg moves");
     let randomEggMoveIndex = eggMoveIndices.pop();
     let randomEggMove = !isNullOrUndefined(randomEggMoveIndex) ? eggMoves[randomEggMoveIndex] : null;
     let retries = 0;

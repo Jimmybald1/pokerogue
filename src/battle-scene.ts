@@ -3906,7 +3906,7 @@ export class BattleScene extends SceneBase {
       while (i < this.mysteryEncounterSaveData.queuedEncounters.length && !!encounter) {
         const candidate = this.mysteryEncounterSaveData.queuedEncounters[i];
         const forcedChance = candidate.spawnPercent;
-        if (randSeedInt(100) < forcedChance) {
+        if (randSeedInt(100, undefined, "Mystery Encounter chance") < forcedChance) {
           encounter = allMysteryEncounters[candidate.type];
         }
 
@@ -3939,7 +3939,7 @@ export class BattleScene extends SceneBase {
     }
 
     const totalWeight = tierWeights.reduce((a, b) => a + b);
-    const tierValue = randSeedInt(totalWeight);
+    const tierValue = randSeedInt(totalWeight, undefined, "Mystery Encounter tier");
     const commonThreshold = totalWeight - tierWeights[0];
     const greatThreshold = totalWeight - tierWeights[0] - tierWeights[1];
     const ultraThreshold = totalWeight - tierWeights[0] - tierWeights[1] - tierWeights[2];
@@ -4022,7 +4022,7 @@ export class BattleScene extends SceneBase {
       return allMysteryEncounters[MysteryEncounterType.MYSTERIOUS_CHALLENGERS];
     }
     // TODO: should this use `randSeedItem`?
-    encounter = availableEncounters[randSeedInt(availableEncounters.length)];
+    encounter = availableEncounters[randSeedInt(availableEncounters.length, undefined, "Mystery Encounter type")];
     // New encounter object to not dirty flags
     encounter = new MysteryEncounter(encounter);
     encounter.populateDialogueTokensFromRequirements();

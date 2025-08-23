@@ -383,7 +383,7 @@ export const ClowningAroundEncounter: MysteryEncounter = MysteryEncounterBuilder
             .map(move => move!.getMove().type);
           if (priorityTypes?.length > 0) {
             priorityTypes = [...new Set(priorityTypes)].sort();
-            priorityTypes = randSeedShuffle(priorityTypes);
+            priorityTypes = randSeedShuffle(priorityTypes, "Shuffle priority moves");
           }
 
           const newTypes = [PokemonType.UNKNOWN];

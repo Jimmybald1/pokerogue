@@ -433,7 +433,7 @@ export abstract class Pokemon extends Phaser.GameObjects.Container {
       this.luck = (this.shiny ? this.variant + 1 : 0) + (this.fusionShiny ? this.fusionVariant + 1 : 0);
       this.fusionLuck = this.luck;
 
-      this.teraType = randSeedItem(this.getTypes(false, false, true));
+      this.teraType = randSeedItem(this.getTypes(false, false, true), "Random tera type");
       this.isTerastallized = false;
       this.stellarTypesBoosted = [];
     }
@@ -641,13 +641,13 @@ export abstract class Pokemon extends Phaser.GameObjects.Container {
     }
 
     // If the roll succeeded and we have one, use HA; otherwise pick a random ability
-    const hasHiddenAbility = !randSeedInt(hiddenAbilityChance.value);
+    const hasHiddenAbility = !randSeedInt(hiddenAbilityChance.value, undefined, "Hidden Ability chance");
     if (this.species.abilityHidden && hasHiddenAbility) {
       return 2;
     }
 
     // only use random ability if species has a second ability
-    return this.species.ability2 !== this.species.ability1 ? randSeedInt(2) : 0;
+    return this.species.ability2 !== this.species.ability1 ? randSeedInt(2, undefined, "Random normal ability") : 0;
   }
 
   /**
@@ -2933,7 +2933,7 @@ export abstract class Pokemon extends Phaser.GameObjects.Container {
         globalScene.applyModifiers(ShinyRateBoosterModifier, true, shinyThreshold);
       }
 
-      this.shiny = randSeedInt(65536) < shinyThreshold.value;
+      this.shiny = randSeedInt(65536, undefined, "Shiny chance") < shinyThreshold.value;
     }
 
     if (this.shiny) {
@@ -3006,7 +3006,7 @@ export abstract class Pokemon extends Phaser.GameObjects.Container {
       }
     }
 
-    if (randSeedInt(65536) < haThreshold.value) {
+    if (randSeedInt(65536, undefined, "Hidden Ability chance") < haThreshold.value) {
       this.abilityIndex = 2;
     }
 
@@ -5694,7 +5694,7 @@ export abstract class Pokemon extends Phaser.GameObjects.Container {
    * @returns a random integer between {@linkcode min} and {@linkcode max} inclusive
    */
   randBattleSeedIntRange(min: number, max: number, reason?: string): number {
-    return globalScene.currentBattle ? globalScene.randBattleSeedInt(max - min + 1, min, reason) : randSeedIntRange(min, max);
+    return globalScene.currentBattle ? globalScene.randBattleSeedInt(max - min + 1, min, reason) : randSeedIntRange(min, max, reason);
   }
 
   /**
@@ -6447,7 +6447,7 @@ export class EnemyPokemon extends Pokemon {
         const { waveIndex } = globalScene.currentBattle;
         const ivs: number[] = [];
         while (ivs.length < 6) {
-          ivs.push(randSeedIntRange(Math.floor(waveIndex / 10), 31));
+          ivs.push(randSeedIntRange(Math.floor(waveIndex / 10), 31, "Random IVs"));
         }
         this.ivs = ivs;
       }

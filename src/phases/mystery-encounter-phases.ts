@@ -378,7 +378,7 @@ export class MysteryEncounterBattlePhase extends Phase {
         const trainer = globalScene.currentBattle.trainer;
         let message: string;
         globalScene.executeWithSeedOffset(
-          () => (message = randSeedItem(encounterMessages)),
+          () => (message = randSeedItem(encounterMessages), "Random encounter message"),
           globalScene.currentBattle.mysteryEncounter?.getSeedOffset(),
         );
         message = message!; // tell TS compiler it's defined now

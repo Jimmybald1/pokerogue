@@ -63,7 +63,7 @@ export class Trainer extends Phaser.GameObjects.Container {
     this.partyTemplateIndex = Math.min(
       partyTemplateIndex !== undefined
         ? partyTemplateIndex
-        : randSeedWeightedItem(this.config.partyTemplates.map((_, i) => i)),
+        : randSeedWeightedItem(this.config.partyTemplates.map((_, i) => i), "Random trainer party template"),
       this.config.partyTemplates.length - 1,
     );
     // TODO: Rework this and add actual error handling for missing names
@@ -529,7 +529,7 @@ export class Trainer extends Phaser.GameObjects.Container {
         // If useNewSpeciesPool is true, we need to generate a new species from the new species pool, otherwise we generate a random species
         let species = useNewSpeciesPool
           ? // TODO: should this use `randSeedItem`?
-            getPokemonSpecies(newSpeciesPool[Math.floor(randSeedInt(newSpeciesPool.length))])
+            getPokemonSpecies(newSpeciesPool[Math.floor(randSeedInt(newSpeciesPool.length, undefined, "Random species from species pool"))])
           : template.isSameSpecies(index) && index > offset
             ? getPokemonSpecies(
                 battle.enemyParty[offset].species.getTrainerSpeciesForLevel(

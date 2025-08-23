@@ -124,7 +124,7 @@ export function getBerryEffectFunc(berryType: BerryType): BerryEffectFunc {
 
       case BerryType.STARF:
         {
-          const randStat = randSeedInt(Stat.SPD, Stat.ATK);
+          const randStat = randSeedInt(Stat.SPD, Stat.ATK, "Random starf effect");
           const stages = new NumberHolder(2);
           applyAbAttrs("DoubleBerryEffectAbAttr", { pokemon: consumer, effectValue: stages });
           globalScene.phaseManager.unshiftNew(

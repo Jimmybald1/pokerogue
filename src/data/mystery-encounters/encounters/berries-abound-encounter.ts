@@ -311,7 +311,7 @@ export const BerriesAboundEncounter: MysteryEncounter = MysteryEncounterBuilder.
   .build();
 
 function tryGiveBerry(prioritizedPokemon?: PlayerPokemon) {
-  const berryType = randSeedItem(getEnumValues(BerryType));
+  const berryType = randSeedItem(getEnumValues(BerryType), "Random berry");
   const berry = generateModifierType(modifierTypes.BERRY, [berryType]) as BerryModifierType;
 
   const party = globalScene.getPlayerParty();

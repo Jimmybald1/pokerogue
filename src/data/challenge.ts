@@ -592,7 +592,7 @@ export class SingleGenerationChallenge extends Challenge {
           TrainerType.AARON,
           TrainerType.SHAUNTAL,
           TrainerType.MALVA,
-          randSeedItem([TrainerType.HALA, TrainerType.MOLAYNE]),
+          randSeedItem([TrainerType.HALA, TrainerType.MOLAYNE], "Elite Four (1)"),
           TrainerType.MARNIE_ELITE,
           TrainerType.RIKA,
         ];
@@ -619,7 +619,7 @@ export class SingleGenerationChallenge extends Challenge {
           TrainerType.GRIMSLEY,
           TrainerType.WIKSTROM,
           TrainerType.ACEROLA,
-          randSeedItem([TrainerType.BEA_ELITE, TrainerType.ALLISTER_ELITE]),
+          randSeedItem([TrainerType.BEA_ELITE, TrainerType.ALLISTER_ELITE], "Elite Four (3)"),
           TrainerType.LARRY_ELITE,
         ];
         break;

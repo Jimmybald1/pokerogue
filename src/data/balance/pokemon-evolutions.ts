@@ -199,7 +199,7 @@ export class SpeciesEvolutionCondition {
           return cond.nature.includes(pokemon.getNature());
         case EvoCondKey.RANDOM_FORM: {
           let ret = false;
-          globalScene.executeWithSeedOffset(() => ret = !randSeedInt(cond.value), pokemon.id);
+          globalScene.executeWithSeedOffset(() => ret = !randSeedInt(cond.value, undefined, "Random evolution condition"), pokemon.id);
           return ret;
         }
         case EvoCondKey.SPECIES_CAUGHT:

@@ -3027,7 +3027,7 @@ export class PostSummonCopyAbilityAbAttr extends PostSummonAbAttr {
 
     let target: Pokemon;
     if (targets.length > 1) {
-      globalScene.executeWithSeedOffset(() => (target = randSeedItem(targets)), globalScene.currentBattle.waveIndex);
+      globalScene.executeWithSeedOffset(() => (target = randSeedItem(targets, "Random post summon copy ability")), globalScene.currentBattle.waveIndex);
     } else {
       target = targets[0];
     }
@@ -4699,7 +4699,7 @@ export class PostTurnRestoreBerryAbAttr extends PostTurnAbAttr {
    */
   createEatenBerry(pokemon: Pokemon): boolean {
     // Pick a random available berry to yoink
-    const randomIdx = randSeedInt(this.berriesUnderCap.length);
+    const randomIdx = randSeedInt(this.berriesUnderCap.length, undefined, "Random berry to eat");
     const chosenBerryType = this.berriesUnderCap[randomIdx];
     pokemon.battleData.berriesEaten.splice(randomIdx, 1); // Remove berry from memory
     const chosenBerry = new BerryModifierType(chosenBerryType);
@@ -5356,7 +5356,7 @@ export class PostBattleLootAbAttr extends PostBattleAbAttr {
   override canApply({ simulated, victory, pokemon }: PostBattleAbAttrParams): boolean {
     const postBattleLoot = globalScene.currentBattle.postBattleLoot;
     if (!simulated && postBattleLoot.length && victory) {
-      this.randItem = randSeedItem(postBattleLoot);
+      this.randItem = randSeedItem(postBattleLoot, "Random post battle loot check");
       return globalScene.canTransferHeldItemModifier(this.randItem, pokemon, 1);
     }
     return false;
@@ -5365,7 +5365,7 @@ export class PostBattleLootAbAttr extends PostBattleAbAttr {
   override apply({ pokemon }: PostBattleAbAttrParams): void {
     const postBattleLoot = globalScene.currentBattle.postBattleLoot;
     if (!this.randItem) {
-      this.randItem = randSeedItem(postBattleLoot);
+      this.randItem = randSeedItem(postBattleLoot, "Random post battle loot");
     }
 
     if (globalScene.tryTransferHeldItemModifier(this.randItem, pokemon, true, 1, true, undefined, false)) {
@@ -6961,7 +6961,7 @@ export function initAbilities() {
       .bypassFaint()
       .ignorable(),
     new Ability(AbilityId.SHED_SKIN, 3)
-      .conditionalAttr(_pokemon => !randSeedInt(3), PostTurnResetStatusAbAttr),
+      .conditionalAttr(_pokemon => !randSeedInt(3, undefined, "Shed skin chance"), PostTurnResetStatusAbAttr),
     new Ability(AbilityId.GUTS, 3)
       .attr(BypassBurnDamageReductionAbAttr)
       .conditionalAttr(pokemon => !!pokemon.status || pokemon.hasAbility(AbilityId.COMATOSE), StatMultiplierAbAttr, Stat.ATK, 1.5),
@@ -7170,7 +7170,7 @@ export function initAbilities() {
       .attr(PostDefendMoveDisableAbAttr, 30)
       .bypassFaint(),
     new Ability(AbilityId.HEALER, 5)
-      .conditionalAttr(pokemon => !isNullOrUndefined(pokemon.getAlly()) && randSeedInt(10) < 3, PostTurnResetStatusAbAttr, true),
+      .conditionalAttr(pokemon => !isNullOrUndefined(pokemon.getAlly()) && randSeedInt(10, undefined, "Healer chance") < 3, PostTurnResetStatusAbAttr, true),
     new Ability(AbilityId.FRIEND_GUARD, 5)
       .attr(AlliedFieldDamageReductionAbAttr, 0.75)
       .ignorable(),

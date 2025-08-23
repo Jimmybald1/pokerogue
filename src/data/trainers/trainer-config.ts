@@ -477,7 +477,7 @@ export class TrainerConfig {
       const setPartySlot = !isNullOrUndefined(slot) ? Phaser.Math.Wrap(slot, 0, party.length) : -1; // If we have a tera slot defined, wrap it to party size.
       for (let t = 0; t < Math.min(count(), party.length); t++) {
         const randomIndex =
-          partyMemberIndexes.indexOf(setPartySlot) > -1 ? setPartySlot : randSeedItem(partyMemberIndexes);
+          partyMemberIndexes.indexOf(setPartySlot) > -1 ? setPartySlot : randSeedItem(partyMemberIndexes, "Random trainer tera");
         partyMemberIndexes.splice(partyMemberIndexes.indexOf(randomIndex), 1);
         if (this.hasSpecialtyType()) {
           party[randomIndex].teraType = this.specialtyType;
@@ -974,7 +974,7 @@ export function getRandomPartyMemberFunc(
   postProcess?: (enemyPokemon: EnemyPokemon) => void,
 ) {
   return (level: number, strength: PartyMemberStrength) => {
-    let species = randSeedItem(speciesPool);
+    let species = randSeedItem(speciesPool, "Random pokemon from species pool");
     if (!ignoreEvolution) {
       species = getPokemonSpecies(species).getTrainerSpeciesForLevel(
         level,
@@ -4351,7 +4351,7 @@ export const trainerConfigs: TrainerConfigs = {
     .setPartyMemberFunc(
       5,
       getRandomPartyMemberFunc([SpeciesId.URSHIFU], TrainerSlot.TRAINER, true, p => {
-        p.formIndex = randSeedIntRange(2, 3); // Random G-Max Urshifu form
+        p.formIndex = randSeedIntRange(2, 3, "Random G-Max Urshifu form"); // Random G-Max Urshifu form
         p.generateName();
         p.gender = Gender.MALE;
         p.pokeball = PokeballType.ULTRA_BALL;
@@ -4359,12 +4359,12 @@ export const trainerConfigs: TrainerConfigs = {
         if (p.formIndex === 2) {
           p.moveset[0] = new PokemonMove(MoveId.WICKED_BLOW);
           p.moveset[1] = new PokemonMove(MoveId.BRICK_BREAK);
-          p.moveset[2] = new PokemonMove(randSeedItem([MoveId.FIRE_PUNCH, MoveId.THUNDER_PUNCH, MoveId.ICE_PUNCH]));
+          p.moveset[2] = new PokemonMove(randSeedItem([MoveId.FIRE_PUNCH, MoveId.THUNDER_PUNCH, MoveId.ICE_PUNCH], "Random pokemon move"));
           p.moveset[3] = new PokemonMove(MoveId.FOCUS_ENERGY);
         } else if (p.formIndex === 3) {
           p.moveset[0] = new PokemonMove(MoveId.SURGING_STRIKES);
           p.moveset[1] = new PokemonMove(MoveId.BRICK_BREAK);
-          p.moveset[2] = new PokemonMove(randSeedItem([MoveId.FIRE_PUNCH, MoveId.THUNDER_PUNCH, MoveId.ICE_PUNCH]));
+          p.moveset[2] = new PokemonMove(randSeedItem([MoveId.FIRE_PUNCH, MoveId.THUNDER_PUNCH, MoveId.ICE_PUNCH], "Random pokemon move"));
           p.moveset[3] = new PokemonMove(MoveId.FOCUS_ENERGY);
         }
       }),
@@ -5514,7 +5514,7 @@ export const trainerConfigs: TrainerConfigs = {
     .setPartyMemberFunc(
       2,
       getRandomPartyMemberFunc([SpeciesId.SILVALLY], TrainerSlot.TRAINER, true, p => {
-        p.formIndex = randSeedInt(18); // Random Silvally Form
+        p.formIndex = randSeedInt(18, undefined, "Random Silvally form"); // Random Silvally Form
         p.generateAndPopulateMoveset();
         p.pokeball = PokeballType.ROGUE_BALL;
         if (!p.moveset.some(move => !isNullOrUndefined(move) && move.moveId === MoveId.MULTI_ATTACK)) {
@@ -5642,7 +5642,7 @@ export const trainerConfigs: TrainerConfigs = {
         p.setBoss(true, 2);
         p.generateAndPopulateMoveset();
         p.pokeball = PokeballType.ROGUE_BALL;
-        p.formIndex = randSeedInt(4, 1); // Shock, Burn, Chill, or Douse Drive
+        p.formIndex = randSeedInt(4, 1, "Random Genesect form"); // Shock, Burn, Chill, or Douse Drive
         if (!p.moveset.some(move => !isNullOrUndefined(move) && move.moveId === MoveId.TECHNO_BLAST)) {
           // Check if Techno Blast is in the moveset, if not, replace the third move with Techno Blast.
           p.moveset[2] = new PokemonMove(MoveId.TECHNO_BLAST);
@@ -5818,7 +5818,7 @@ export const trainerConfigs: TrainerConfigs = {
       1,
       getRandomPartyMemberFunc([SpeciesId.ROTOM], TrainerSlot.TRAINER, true, p => {
         p.generateAndPopulateMoveset();
-        p.formIndex = randSeedInt(5, 1); // Heat, Wash, Frost, Fan, or Mow
+        p.formIndex = randSeedInt(5, 1, "Random rotom form"); // Heat, Wash, Frost, Fan, or Mow
       }),
     )
     .setPartyMemberFunc(
@@ -5843,7 +5843,7 @@ export const trainerConfigs: TrainerConfigs = {
     .setPartyMemberFunc(
       4,
       getRandomPartyMemberFunc([SpeciesId.REVAVROOM], TrainerSlot.TRAINER, true, p => {
-        p.formIndex = randSeedInt(5, 1); // Random Starmobile form
+        p.formIndex = randSeedInt(5, 1, "Random Revavroom starmobile form"); // Random Starmobile form
         p.generateAndPopulateMoveset();
         p.pokeball = PokeballType.ROGUE_BALL;
         p.setBoss(true, 2);

@@ -39,7 +39,7 @@ export function getDailyRunStarters(seed: string): Starter[] {
 
       const starterCosts: number[] = [];
       starterCosts.push(Math.min(Math.round(3.5 + Math.abs(randSeedGauss(1))), 8));
-      starterCosts.push(randSeedInt(9 - starterCosts[0], 1));
+      starterCosts.push(randSeedInt(9 - starterCosts[0], 1, "Random starter cost"));
       starterCosts.push(10 - (starterCosts[0] + starterCosts[1]));
 
       for (let c = 0; c < starterCosts.length; c++) {
@@ -144,7 +144,7 @@ export function getDailyStartingBiome(): BiomeId {
     biomeThresholds.push(totalWeight);
   }
 
-  const randInt = randSeedInt(totalWeight);
+  const randInt = randSeedInt(totalWeight, undefined, "Random starting biome");
 
   for (let i = 0; i < biomes.length; i++) {
     if (randInt < biomeThresholds[i]) {
@@ -154,7 +154,7 @@ export function getDailyStartingBiome(): BiomeId {
 
   // Fallback in case something went wrong
   // TODO: should this use `randSeedItem`?
-  return biomes[randSeedInt(biomes.length)];
+  return biomes[randSeedInt(biomes.length, undefined, "Random starting biome fallback")];
 }
 
 /**

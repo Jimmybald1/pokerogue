@@ -8,11 +8,11 @@ export type nil = null | undefined;
 export const MissingTextureKey = "__MISSING";
 
 /** If enabled, the mod will push Log messages to the console when an RNG roll is performed. */
-const doRNGLogging = false;
+const doRNGLogging = true;
 /** If enabled, the mod will not log simulated RNG rolls. */
 export const hideSimRNGLogging = false;
 /** If enabled, the mod will push Error messages to the console when an RNG roll is performed without being assigned a label. */
-const doUnlabeledRNGLogging = false;
+const doUnlabeledRNGLogging = true;
 /** If enabled, the mod will push Log messages to the console when an RNG roll is performed that the Battle Seed does not influence. */
 const doUnseededRNGLogging = false;
 
@@ -141,8 +141,8 @@ export function randSeedInt(range: number, min = 0, reason?: string): number {
  * @param max The maximum integer to generate
  * @returns a random integer between {@linkcode min} and {@linkcode max} inclusive
  */
-export function randSeedIntRange(min: number, max: number): number {
-  return randSeedInt(max - min + 1, min);
+export function randSeedIntRange(min: number, max: number, reason?: string): number {
+  return randSeedInt(max - min + 1, min, reason);
 }
 
 /**
@@ -177,8 +177,12 @@ export function randItem<T>(items: T[], reason?: string): T {
 export function randSeedItem<T>(items: T[], reason?: string): T {
   function rpick() {
     const V = Phaser.Math.RND.pick(items);
-    if (doRNGLogging) {
-      console.log(reason ? reason : "randSeedItem");
+    if (doRNGLogging) {      
+      if (reason) {
+        console.log(reason, V);
+      } else if (doUnlabeledRNGLogging) {
+        console.error("unlabeled randSeedItem", V);
+      }
     }
     return V;
   }
@@ -188,8 +192,12 @@ export function randSeedItem<T>(items: T[], reason?: string): T {
 export function randSeedWeightedItem<T>(items: T[], reason?: string): T {
   function rpick() {
     const V = Phaser.Math.RND.weightedPick(items);
-    if (doRNGLogging) {
-      console.log(reason ? reason : "randSeedWeightedItem");
+    if (doRNGLogging) {    
+      if (reason) {
+        console.log(reason, V);
+      } else if (doUnlabeledRNGLogging) {
+        console.error("unlabeled randSeedWeightedItem", V);
+      }
     }
     return V;
   }
@@ -201,15 +209,19 @@ export function randSeedWeightedItem<T>(items: T[], reason?: string): T {
  * @param {Array} items An array of items.
  * @returns {Array} A new shuffled array of items.
  */
-export function randSeedShuffle<T>(items: T[]): T[] {
+export function randSeedShuffle<T>(items: T[], reason?: string): T[] {
   if (items.length <= 1) {
     return items;
   }
   const newArray = items.slice(0);
   for (let i = items.length - 1; i > 0; i--) {
     const j = Phaser.Math.RND.integerInRange(0, i);
-    if (doRNGLogging) {
-      console.log("randSeedShuffle", j);
+    if (doRNGLogging) { 
+      if (reason) {
+        console.log(reason, j);
+      } else if (doUnlabeledRNGLogging) {
+        console.error("unlabeled randSeedShuffle", j);
+      }
     }
     [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
   }

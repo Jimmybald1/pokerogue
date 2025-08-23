@@ -517,7 +517,7 @@ function getTrainerConfigForWave(waveIndex: number) {
   config.name = i18next.t("trainerNames:bugTypeSuperfan");
 
   let pool3Copy = POOL_3_POKEMON.slice(0);
-  pool3Copy = randSeedShuffle(pool3Copy);
+  pool3Copy = randSeedShuffle(pool3Copy, "Shuffle pool 3 pokemon");
   const pool3Mon = pool3Copy.pop()!;
 
   if (waveIndex < WAVE_LEVEL_BREAKPOINTS[0]) {
@@ -578,7 +578,7 @@ function getTrainerConfigForWave(waveIndex: number) {
         }),
       );
   } else if (waveIndex < WAVE_LEVEL_BREAKPOINTS[5]) {
-    pool3Copy = randSeedShuffle(pool3Copy);
+    pool3Copy = randSeedShuffle(pool3Copy, "Shuffle pool 3 pokemon 2");
     const pool3Mon2 = pool3Copy.pop()!;
     config
       .setPartyTemplates(new TrainerPartyTemplate(5, PartyMemberStrength.AVERAGE))
@@ -656,7 +656,7 @@ function getTrainerConfigForWave(waveIndex: number) {
       )
       .setPartyMemberFunc(4, getRandomPartyMemberFunc(POOL_4_POKEMON, TrainerSlot.TRAINER, true));
   } else {
-    pool3Copy = randSeedShuffle(pool3Copy);
+    pool3Copy = randSeedShuffle(pool3Copy, "Shuffle pool 3 pokemon 2");
     const pool3Mon2 = pool3Copy.pop()!;
     config
       .setPartyTemplates(

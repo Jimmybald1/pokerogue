@@ -126,7 +126,7 @@ export const TrainingSessionEncounter: MysteryEncounter = MysteryEncounterBuilde
           // 25-27 starting IV caps in 2 encounters
           let improvedCount = 0;
           while (ivIndexes.length > 0 && improvedCount < 2) {
-            ivIndexes = randSeedShuffle(ivIndexes);
+            ivIndexes = randSeedShuffle(ivIndexes, "Shuffle training session IV upgrades");
             const ivToChange = ivIndexes.pop();
             let newVal = ivToChange.iv;
             if (improvedCount === 0) {

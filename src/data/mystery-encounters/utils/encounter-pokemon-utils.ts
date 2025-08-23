@@ -113,24 +113,24 @@ export function getRandomPlayerPokemon(
     const faintedLegalMons = party.filter(p => (!isAllowed || p.isAllowedInChallenge()) && p.isFainted());
     if (faintedLegalMons.length > 0) {
       // TODO: should this use `randSeedItem`?
-      chosenIndex = randSeedInt(faintedLegalMons.length);
+      chosenIndex = randSeedInt(faintedLegalMons.length, undefined, "Random fainted legal pokemon");
       chosenPokemon = faintedLegalMons[chosenIndex];
     }
   }
   if (!chosenPokemon && fullyLegalMons.length > 0) {
     // TODO: should this use `randSeedItem`?
-    chosenIndex = randSeedInt(fullyLegalMons.length);
+    chosenIndex = randSeedInt(fullyLegalMons.length, undefined, "Random fully legal pokemon");
     chosenPokemon = fullyLegalMons[chosenIndex];
   }
   if (!chosenPokemon && isAllowed && allowedOnlyMons.length > 0) {
     // TODO: should this use `randSeedItem`?
-    chosenIndex = randSeedInt(allowedOnlyMons.length);
+    chosenIndex = randSeedInt(allowedOnlyMons.length, undefined, "Random allowed only pokemon");
     chosenPokemon = allowedOnlyMons[chosenIndex];
   }
   if (!chosenPokemon) {
     // If no other options worked, returns fully random
     // TODO: should this use `randSeedItem`?
-    chosenIndex = randSeedInt(party.length);
+    chosenIndex = randSeedInt(party.length, undefined, "Fully random pokemon");
     chosenPokemon = party[chosenIndex];
   }
 
@@ -294,7 +294,7 @@ export function getRandomSpeciesByStarterCost(
   }
 
   if (tryFilterStarterTiers.length > 0) {
-    const index = randSeedInt(tryFilterStarterTiers.length);
+    const index = randSeedInt(tryFilterStarterTiers.length, undefined, "Random species by starter cost");
     return Phaser.Math.RND.shuffle(tryFilterStarterTiers)[index][0].speciesId;
   }
 
@@ -534,7 +534,7 @@ export function trainerThrowPokeball(
                       shakeCounter.stop();
                       failCatch(pokemon, originalY, pokeball, pokeballType).then(() => resolve(false));
                     } else if (shakeCount++ < 3) {
-                      if (randSeedInt(65536) < ballTwitchRate) {
+                      if (randSeedInt(65536, undefined, "Ball twitch rate") < ballTwitchRate) {
                         globalScene.playSound("se/pb_move");
                       } else {
                         shakeCounter.stop();
@@ -956,7 +956,7 @@ const GOLDEN_BUG_NET_SPECIES_POOL: [SpeciesId, number][] = [
  */
 export function getGoldenBugNetSpecies(level: number): PokemonSpecies {
   const totalWeight = GOLDEN_BUG_NET_SPECIES_POOL.reduce((a, b) => a + b[1], 0);
-  const roll = randSeedInt(totalWeight);
+  const roll = randSeedInt(totalWeight, undefined, "Golden bug net species");
 
   let w = 0;
   for (const speciesWeightPair of GOLDEN_BUG_NET_SPECIES_POOL) {

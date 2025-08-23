@@ -550,7 +550,7 @@ function generateTradeOption(alreadyUsedSpecies: PokemonSpecies[], originalBst?:
 
     // There must be at least 20 species available before it will choose one
     if (validSpecies?.length > 20) {
-      validSpecies = randSeedShuffle(validSpecies);
+      validSpecies = randSeedShuffle(validSpecies, "Shuffle trade species");
       newSpecies = validSpecies.pop();
       while (isNullOrUndefined(newSpecies) || alreadyUsedSpecies.includes(newSpecies)) {
         newSpecies = validSpecies.pop();
@@ -993,11 +993,11 @@ function generateRandomTraderName() {
     1,
     allTrainerNames.indexOf(TrainerType[TrainerType.YOUNGSTER] as keyof typeof TrainerType),
   );
-  const randomTrainer = toCamelCase(randSeedItem(eligibleNames));
+  const randomTrainer = toCamelCase(randSeedItem(eligibleNames, "Random trainer"));
   const classKey = `trainersCommon:${randomTrainer}`;
   // Pick a random gender for ones with gendered pools, or access the raw object for ones without.
-  const genderKey = i18next.exists(`${classKey}.male`) ? randSeedItem([".male", ".female"]) : "";
+  const genderKey = i18next.exists(`${classKey}.male`) ? randSeedItem([".male", ".female"], "Random trainer gender") : "";
   const trainerNameString = getRandomLocaleEntry(`${classKey}${genderKey}`)[1];
   // Split the string by &s (for duo trainers)
-  return randSeedItem(trainerNameString.split(" & "));
+  return randSeedItem(trainerNameString.split(" & "), "Random trainer name");
 }

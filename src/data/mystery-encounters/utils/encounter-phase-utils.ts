@@ -1012,7 +1012,7 @@ export function getRandomEncounterSpecies(level: number, isBoss = false, rerollH
   let formIndex: number | undefined;
 
   if (eventEncounters.length > 0 && randSeedInt(2) === 1) {
-    const eventEncounter = randSeedItem(eventEncounters);
+    const eventEncounter = randSeedItem(eventEncounters, "Random event encounter");
     const levelSpecies = getPokemonSpecies(eventEncounter.species).getWildSpeciesForLevel(
       level,
       !eventEncounter.blockEvolution,
