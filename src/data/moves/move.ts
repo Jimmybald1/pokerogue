@@ -8572,8 +8572,6 @@ const MoveAttrs = Object.freeze({
 /** Map of of move attribute names to their constructors */
 export type MoveAttrConstructorMap = typeof MoveAttrs;
 
-export const selfStatLowerMoves: MoveId[] = [];
-
 export function initMoves() {
   allMoves.push(
     new SelfStatusMove(MoveId.NONE, PokemonType.NORMAL, MoveCategory.STATUS, -1, -1, 0, 1),
@@ -11622,9 +11620,4 @@ export function initMoves() {
     new AttackMove(MoveId.MALIGNANT_CHAIN, PokemonType.POISON, MoveCategory.SPECIAL, 100, 100, 5, 50, 0, 9)
       .attr(StatusEffectAttr, StatusEffect.TOXIC)
   );
-  allMoves.map(m => {
-    if (m.getAttrs("StatStageChangeAttr").some(a => a.selfTarget && a.stages < 0)) {
-      selfStatLowerMoves.push(m.id);
-    }
-  });
 }
