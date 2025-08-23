@@ -1048,12 +1048,12 @@ export class PokemonSpecies extends PokemonSpeciesForm implements Localizable {
       }
     }
 
-    if (noEvolutionChance === 1 || Phaser.Math.RND.realInRange(0, 1) < noEvolutionChance) {
+    if (noEvolutionChance === 1) {
       return this.speciesId;
     }
 
-    const roll = Phaser.Math.RND.realInRange(0, 1);
-    if (roll < noEvolutionChance) {
+    const roll = randSeedFloat("Evolution Chance")
+    if (roll <= noEvolutionChance) {
       console.log(`No evolution, chance to evolve was ${(1 - noEvolutionChance) * 100}% (Roll: ${roll})`);
       return this.speciesId;
     }
