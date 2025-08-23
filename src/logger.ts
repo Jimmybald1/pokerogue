@@ -1,36 +1,33 @@
 //#region 00 Imports
-import i18next from "i18next";
-import type Pokemon from "./field/pokemon";
-import type { PlayerPokemon, EnemyPokemon } from "./field/pokemon";
+import type { PlayerPokemon, EnemyPokemon, Pokemon } from "./field/pokemon";
 import { getNatureDecrease, getNatureIncrease, getNatureName } from "./data/nature";
-import type { OptionSelectItem } from "./ui/abstact-option-select-ui-handler";
 import type { PokemonHeldItemModifier } from "./modifier/modifier";
-import { BypassSpeedChanceModifier, EnemyAttackStatusEffectChanceModifier, ExtraModifierModifier } from "./modifier/modifier";
+import { BypassSpeedChanceModifier, EnemyAttackStatusEffectChanceModifier } from "./modifier/modifier";
 import type { TitlePhase } from "./phases/title-phase";
-import type Trainer from "./field/trainer";
-import { Species } from "./enums/species";
-import { GameModes } from "./game-mode";
-import PersistentModifierData from "./system/modifier-data";
-import { getPokemonSpecies } from "./data/pokemon-species";
 import { getStatusEffectCatchRateMultiplier } from "./data/status-effect";
 import type { SessionSaveData } from "./system/game-data";
-import { decrypt } from "./system/game-data";
 import { loggedInUser } from "./account";
-import PokemonData from "./system/pokemon-data";
-import TrainerData from "./system/trainer-data";
-import ArenaData from "./system/arena-data";
-import ChallengeData from "./system/challenge-data";
 import { Challenges } from "./enums/challenges";
-import type { ModifierTypeOption } from "./modifier/modifier-type";
-import { getPlayerModifierTypeOptions, ModifierPoolType, regenerateModifierPoolThresholds } from "./modifier/modifier-type";
-import { Abilities } from "./enums/abilities";
 import { getBiomeName } from "./data/balance/biomes";
 import type { Nature } from "./enums/nature";
 import { StatusEffect } from "./enums/status-effect";
 import { getCriticalCaptureChance } from "./data/pokeball";
 import { globalScene } from "./global-scene";
-import { BooleanHolder, getEnumKeys, getEnumValues, NumberHolder } from "./utils/common";
 import { UiMode } from "#enums/ui-mode";
+import { SpeciesId } from "#enums/species-id";
+import { GameModes } from "#enums/game-modes";
+import { getPokemonSpecies } from "./utils/pokemon-utils";
+import { AbilityId } from "#enums/ability-id";
+import { decrypt } from "./utils/data";
+import { BooleanHolder } from "#utils/common";
+import { PokemonData } from "#system/pokemon-data";
+import { getEnumKeys, getEnumValues } from "#utils/enums";
+import { Trainer } from "#field/trainer";
+import { OptionSelectItem } from "#ui/abstract-option-select-ui-handler";
+import { TrainerData } from "#system/trainer-data";
+import { ArenaData } from "#system/arena-data";
+import { ChallengeData } from "#system/challenge-data";
+import { ModifierData as PersistentModifierData } from "#system/modifier-data";
 
 /*
 SECTIONS
@@ -99,6 +96,8 @@ export const enemyPlan: string[] = [];
 export const SheetsMode = new BooleanHolder(false);
 export const isTransferAll: BooleanHolder = new BooleanHolder(false);
 
+export const logCommand: BooleanHolder = new BooleanHolder(true);
+
 // #endregion
 
 
@@ -165,7 +164,7 @@ export function downloadLogByIDToCSV(i: integer) {
 }
 
 function convertPokemonToCSV(wave: any, pokemon: any, second: boolean): string {
-  return `${wave.id}${second ? "d" : ""},${wave.biome},${pokemon.id > 1025 ? Species[pokemon.formName] : Species[pokemon.id + 1]},${pokemon.id},${pokemon.formName},${Object.values(pokemon.iv_raw).join(",")},${pokemon.ability},${pokemon.passiveAbility},${pokemon.nature.name},${pokemon.gender},${pokemon.captured},${second ? "" : wave.actions.join(";")}`;
+  return `${wave.id}${second ? "d" : ""},${wave.biome},${pokemon.id > 1025 ? SpeciesId[pokemon.formName] : SpeciesId[pokemon.id + 1]},${pokemon.id},${pokemon.formName},${Object.values(pokemon.iv_raw).join(",")},${pokemon.ability},${pokemon.passiveAbility},${pokemon.nature.name},${pokemon.gender},${pokemon.captured},${second ? "" : wave.actions.join(";")}`;
 }
 
 function convertTrainerToCSV(wave: any, trainer: any): string {
@@ -1103,7 +1102,7 @@ export interface PokeData {
  */
 export function exportPokemon(pokemon: Pokemon, encounterRarity?: string): PokeData {
   return {
-    id: getEnumValues(Species).indexOf(pokemon.species.speciesId),
+    id: getEnumValues(SpeciesId).indexOf(pokemon.species.speciesId),
     name: pokemon.species.getName(),
     ability: pokemon.getAbility().name,
     isHiddenAbility: pokemon.hasAbility(pokemon.species.abilityHidden),
@@ -1130,8 +1129,8 @@ export function exportPokemonFromData(pokemon: PokemonData, encounterRarity?: st
   const P = getPokemonSpecies(pokemon.species);
   return {
     id: pokemon.species,
-    name: P.species,
-    ability: getEnumKeys(Abilities)[P.getAbility(pokemon.abilityIndex)],
+    name: P.name,
+    ability: getEnumKeys(AbilityId)[P.getAbility(pokemon.abilityIndex)],
     isHiddenAbility: P.getAbility(pokemon.abilityIndex) === P.abilityHidden,
     passiveAbility: "Cannot pull Passive or Held Items from raw file data",
     nature: exportNature(pokemon.nature),
@@ -1978,85 +1977,6 @@ export const tierNames = [
   "Master"
 ];
 
-/**
- * This function rolls for modifiers with a certain luck value, checking to see if shiny luck would affect your results.
- * @param predictionCost
- * @param rerollOverride
- * @param modifierOverride
- * @returns
- */
-export function shinyCheckStep(predictionCost: NumberHolder, rerollOverride: integer, modifierOverride?: integer) {
-  let minLuck = -1;
-  const modifierPredictions: ModifierTypeOption[][] = [];
-  const party = globalScene.getPlayerParty();
-  regenerateModifierPoolThresholds(party, ModifierPoolType.PLAYER, rerollOverride);
-  const modifierCount = new NumberHolder(3);
-  globalScene.applyModifiers(ExtraModifierModifier, true, modifierCount);
-  if (modifierOverride) {
-    //modifierCount.value = modifierOverride
-  }
-  let isOk = true;
-  const typeOptions: ModifierTypeOption[] = getPlayerModifierTypeOptions(modifierCount.value, globalScene.getPlayerParty());
-  typeOptions.forEach((option, idx) => {
-    const lastTier = option.type!.tier;
-    if (option.alternates && option.alternates.length > 0) {
-      for (let i = 0; i < option.alternates.length; i++) {
-        if (option.alternates[i] > lastTier) {
-          //lastTier = option.alternates[i]
-          //console.log("Conflict found! (" + i + " luck, " + rerollOverride + " rolls, item " + (idx + 1) + ")")
-          isOk = false; // Shiny Luck affects this wave in some way
-          if (minLuck == -1 && i != 0) {
-            minLuck = i;
-          }
-        }
-      }
-    }
-  });
-  modifierPredictions.push(typeOptions);
-  predictionCost.value += (Math.min(Math.ceil(globalScene.currentBattle.waveIndex / 10) * 250 * Math.pow(2, rerollOverride), Number.MAX_SAFE_INTEGER));
-  return [ isOk, minLuck ];
-}
-
-/**
- * Simulates modifier rolls for as many rerolls as you can afford, checking to see if shiny luck will alter your results.
- * @returns `true` if no changes were detected, `false` otherwise
- */
-export function runShinyCheck(mode: integer, wv?: integer) {
-  let minLuck: integer = -1;
-  if (mode == 1) {
-    globalScene.emulateReset(wv);
-  } else {
-    globalScene.resetSeed(wv);
-  }
-  const predictionCost = new NumberHolder(0);
-  let isOk = true;
-  for (let i = 0; predictionCost.value < globalScene.money && i < 8; i++) {
-    const r = shinyCheckStep(predictionCost, i);
-    isOk = isOk && (r[0] as boolean);
-    if (isOk || (r[1] as integer) === -1) {
-      // Do nothing
-    } else if (minLuck == -1) {
-      minLuck = (r[1] as integer);
-      console.log("Luck " + r[1] + " breaks");
-    } else {
-      console.log("Updated from " + minLuck + " to " + Math.min(minLuck, (r[1] as integer)));
-      minLuck = Math.min(minLuck, (r[1] as integer));
-    }
-  }
-  if (mode == 1) {
-    globalScene.restoreSeed(wv);
-  } else {
-    globalScene.resetSeed(wv);
-  }
-  if (!isOk) {
-    console.log("Conflict found!");
-  }
-  if (minLuck == 15) {
-    //minLuck = 0
-  }
-  return [ isOk, minLuck ];
-}
-
 function generateBallChance(pk: EnemyPokemon, pokeballMultiplier: number) {
   const _3m = 3 * pk.getMaxHp();
   const _2h = 2 * pk.hp;
@@ -2097,6 +2017,7 @@ export function findBest(pokemon: EnemyPokemon, override?: boolean) {
   const rolls = [];
   const critCap = [];
   let offset = 0;
+
   globalScene.getModifiers(BypassSpeedChanceModifier, true).forEach(m => {
     //console.log(m, m.getPokemon(globalScene), pokemon)
     const p = m.getPokemon();
@@ -2109,11 +2030,14 @@ export function findBest(pokemon: EnemyPokemon, override?: boolean) {
       }
     });
   });
+
   globalScene.currentBattle.multiInt(critCap, offset + 1, 256, undefined, "Critical Capture Check");
   offset++;
   globalScene.currentBattle.multiInt(rolls, offset + 3, 65536, undefined, "Catch prediction");
+
   //console.log(rolls)
   //console.log(rolls.slice(offset, offset + 3))
+
   if (globalScene.pokeballCounts[0] == 0 && !override) {
     rates[0][0] = 0;
   }
@@ -2126,20 +2050,25 @@ export function findBest(pokemon: EnemyPokemon, override?: boolean) {
   if (globalScene.pokeballCounts[3] == 0 && !override) {
     rates[3][0] = 0;
   }
+
   if (catchDebug) {
     console.log("Rate data [raw rate, % odds of success, crit rate, idx]");
   }
-  for (let i = 0; i < rates.length; i++) {
-    if (catchDebug) {
+
+  if (catchDebug) {
+    for (let i = 0; i < rates.length; i++) {
       console.log(rates[i]);
     }
   }
+
   if (catchDebug) {
     console.log("Note: if middle number is less than " + critCap[0] + ", a critical capture should occur");
   }
+
   rates.sort(function(a, b) {
     return b[0] - a[0];
   });
+
   const ballNames = [
     "Poké Ball",
     "Great Ball",
@@ -2147,11 +2076,13 @@ export function findBest(pokemon: EnemyPokemon, override?: boolean) {
     "Rogue Ball",
     "Master Ball"
   ];
+
   let func_output = "";
   rates.forEach((v, i) => {
     if (catchDebug) {
       console.log("Ball: " + ballNames[v[3]], v);
     }
+
     const rawRate = v[0];
     const catchRate = v[1];
     const critRate = v[2];
@@ -2159,19 +2090,24 @@ export function findBest(pokemon: EnemyPokemon, override?: boolean) {
       if (catchDebug) {
         console.log("  Skipped because the player doesn't have any of this ball");
       }
+
       return; // Don't list success for Poke Balls we don't have
     }
+
     //console.log(ballNames[i])
     //console.log(v, rolls[offset + 0], v > rolls[offset + 0])
     //console.log(v, rolls[offset + 1], v > rolls[offset + 1])
     //console.log(v, rolls[offset + 2], v > rolls[offset + 2])
+
     if (catchDebug) {
       console.log(`  Critical capture requirement: (${critCap[0]} < ${critRate})`);
     }
+
     if (rawRate > rolls[offset + 0]) {
       if (catchDebug) {
         console.log(`  Passed roll 1 (${rolls[offset + 0]} < ${rawRate})`);
       }
+
       //console.log("1 roll")
       if (critCap[0] < critRate) {
         func_output = ballNames[v[3]] + " crits";
@@ -2183,6 +2119,7 @@ export function findBest(pokemon: EnemyPokemon, override?: boolean) {
         if (catchDebug) {
           console.log(`  Passed roll 2 (${rolls[offset + 1]} < ${rawRate} )`);
         }
+
         if (rawRate > rolls[offset + 2]) {
           //console.log("Caught!")
           if (catchDebug) {

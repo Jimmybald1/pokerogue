@@ -1,11 +1,11 @@
-import { globalScene } from "#app/global-scene";
-import { BattlerIndex } from "#app/battle";
-import { Command } from "#app/ui/command-ui-handler";
-import { FieldPhase } from "./field-phase";
 import * as LoggerTools from "../logger";
-import { Abilities } from "#enums/abilities";
+import { globalScene } from "#app/global-scene";
+import { AbilityId } from "#enums/ability-id";
+import { BattlerIndex } from "#enums/battler-index";
 import { BattlerTagType } from "#enums/battler-tag-type";
-import { PokemonMove } from "#app/field/pokemon";
+import { Command } from "#enums/command";
+import { FieldPhase } from "#phases/field-phase";
+import { PokemonMove } from "#moves/pokemon-move";
 
 /**
  * Phase for determining an enemy AI's action for the next turn.
@@ -17,16 +17,20 @@ import { PokemonMove } from "#app/field/pokemon";
  * @see {@linkcode EnemyPokemon.getNextMove}
  */
 export class EnemyCommandPhase extends FieldPhase {
+  public readonly phaseName = "EnemyCommandPhase";
   protected fieldIndex: number;
   protected skipTurn = false;
+  private simulated: boolean;
 
-  constructor(fieldIndex: number) {
+  constructor(fieldIndex: number, simulated: boolean = false) {
     super();
 
     this.fieldIndex = fieldIndex;
     if (globalScene.currentBattle.mysteryEncounter?.skipEnemyBattleTurns) {
       this.skipTurn = true;
     }
+
+    this.simulated = simulated;
   }
 
   start() {
@@ -41,7 +45,7 @@ export class EnemyCommandPhase extends FieldPhase {
 
     if (
       battle.double &&
-      enemyPokemon.hasAbility(Abilities.COMMANDER) &&
+      enemyPokemon.hasAbility(AbilityId.COMMANDER) &&
       enemyPokemon.getAlly()?.getTag(BattlerTagType.COMMANDED)
     ) {
       this.skipTurn = true;
@@ -89,7 +93,11 @@ export class EnemyCommandPhase extends FieldPhase {
 
             enemyPokemon.flyout.setText();
 
-            globalScene.updateCatchRate();
+            // Pathing tool function
+            // dont end the phase
+            if (this.simulated) {
+              return;
+            }
 
             return this.end();
           }
@@ -131,14 +139,17 @@ export class EnemyCommandPhase extends FieldPhase {
       targetLabels[1] += " (L)";
       targetLabels[2] += " (R)";
     }
+
     console.log(enemyPokemon.name + " selects:", mv.getName() + " → " + nextMove.targets.map((m) => targetLabels[m + 1]));
     globalScene.currentBattle.enemySwitchCounter = Math.max(globalScene.currentBattle.enemySwitchCounter - 1, 0);
 
-    LoggerTools.enemyPlan[this.fieldIndex * 2] = mv.getName();
-    LoggerTools.enemyPlan[this.fieldIndex * 2 + 1] = "→ " + nextMove.targets.map((m) => targetLabels[m + 1]);
     globalScene.arenaFlyout.updateFieldText();
 
-    globalScene.updateCatchRate();
+    // Pathing tool function
+    // dont end the phase
+    if (this.simulated) {
+      return;
+    }
 
     this.end();
   }

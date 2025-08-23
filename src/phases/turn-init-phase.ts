@@ -1,21 +1,17 @@
-import { BattlerIndex } from "#app/battle";
+import { globalScene } from "#app/global-scene";
+import { BattlerIndex } from "#enums/battler-index";
+import { TurnInitEvent } from "#events/battle-scene";
+import type { PlayerPokemon } from "#field/pokemon";
 import {
   handleMysteryEncounterBattleStartEffects,
   handleMysteryEncounterTurnStartEffects,
-} from "#app/data/mystery-encounters/utils/encounter-phase-utils";
-import { TurnInitEvent } from "#app/events/battle-scene";
-import type { PlayerPokemon, EnemyPokemon } from "#app/field/pokemon";
+} from "#mystery-encounters/encounter-phase-utils";
+import { FieldPhase } from "#phases/field-phase";
 import i18next from "i18next";
-import { CommandPhase } from "./command-phase";
-import { EnemyCommandPhase } from "./enemy-command-phase";
-import { FieldPhase } from "./field-phase";
-import { GameOverPhase } from "./game-over-phase";
-import { ToggleDoublePositionPhase } from "./toggle-double-position-phase";
-import { TurnStartPhase } from "./turn-start-phase";
-import { globalScene } from "#app/global-scene";
 import * as LoggerTools from "../logger";
 
 export class TurnInitPhase extends FieldPhase {
+  public readonly phaseName = "TurnInitPhase";
   start() {
     super.start();
 
@@ -25,14 +21,18 @@ export class TurnInitPhase extends FieldPhase {
     globalScene.getPlayerField().forEach(p => {
       // If this pokemon is in play and evolved into something illegal under the current challenge, force a switch
       if (p.isOnField() && !p.isAllowedInBattle()) {
-        globalScene.queueMessage(i18next.t("challenges:illegalEvolution", { pokemon: p.name }), null, true);
+        globalScene.phaseManager.queueMessage(
+          i18next.t("challenges:illegalEvolution", { pokemon: p.name }),
+          null,
+          true,
+        );
 
         const allowedPokemon = globalScene.getPokemonAllowedInBattle();
 
         if (!allowedPokemon.length) {
           // If there are no longer any legal pokemon in the party, game over.
-          globalScene.clearPhaseQueue();
-          globalScene.unshiftPhase(new GameOverPhase());
+          globalScene.phaseManager.clearPhaseQueue();
+          globalScene.phaseManager.unshiftNew("GameOverPhase");
         } else if (
           allowedPokemon.length >= globalScene.currentBattle.getBattlerCount() ||
           (globalScene.currentBattle.double && !allowedPokemon[0].isActive(true))
@@ -45,7 +45,7 @@ export class TurnInitPhase extends FieldPhase {
           p.leaveField();
         }
         if (allowedPokemon.length === 1 && globalScene.currentBattle.double) {
-          globalScene.unshiftPhase(new ToggleDoublePositionPhase(true));
+          globalScene.phaseManager.unshiftNew("ToggleDoublePositionPhase", true);
         }
       }
     });
@@ -68,83 +68,26 @@ export class TurnInitPhase extends FieldPhase {
       this.end();
       return;
     }
+    
+    globalScene.predictEnemy();
 
-    if (false) {
-      globalScene.getField().forEach((pokemon, i) => {
-        if (pokemon != undefined && pokemon != null) {
-          console.log("Handle " + pokemon.name);
+    globalScene.getField().forEach((pokemon, i) => {
+      if (pokemon?.isActive()) {
+        if (pokemon.isPlayer()) {
+          globalScene.currentBattle.addParticipant(pokemon as PlayerPokemon);
         }
-        if (pokemon?.isActive()) {
-          if (pokemon.isPlayer()) {
-            globalScene.currentBattle.addParticipant(pokemon as PlayerPokemon);
-          } else {
-            console.log("Marked " + pokemon.name + " as used");
-            pokemon.usedInBattle = true;
-            pokemon.flyout.setText();
-            pokemon.getBattleInfo().iconsActive = true;
-          }
-          pokemon.resetTurnData();
-          globalScene.pushPhase(pokemon.isPlayer() ? new CommandPhase(i) : new EnemyCommandPhase(i - BattlerIndex.ENEMY));
-        }
-      });
-    } else {
-      globalScene.getField().forEach((pokemon, i) => {
-        if (pokemon?.isActive()) {
-          if (!pokemon.isPlayer()) {
-            pokemon.flyout.setText();
-            pokemon.usedInBattle = true;
-            pokemon.getBattleInfo().iconsActive = true;
-            pokemon.resetTurnData();
-            globalScene.pushPhase(pokemon.isPlayer() ? new CommandPhase(i) : new EnemyCommandPhase(i - BattlerIndex.ENEMY));
-          }
-        }
-      });
-      globalScene.getField().forEach((pokemon, i) => {
-        if (pokemon?.isActive()) {
-          if (pokemon.isPlayer()) {
-            globalScene.currentBattle.addParticipant(pokemon as PlayerPokemon);
-            pokemon.resetTurnData();
-            globalScene.pushPhase(pokemon.isPlayer() ? new CommandPhase(i) : new EnemyCommandPhase(i - BattlerIndex.ENEMY));
-          }
-        }
-      });
-    }
 
-    const Pt = globalScene.getEnemyParty();
-    const Pt1: EnemyPokemon[] = [];
-    const Pt2: EnemyPokemon[] = [];
-    for (let i = 0; i < Pt.length; i++) {
-      if (i % 2 == 0) {
-        Pt1.push(Pt[i]);
-      } else {
-        Pt2.push(Pt[i]);
-      }
-    }
-    Pt.forEach((pokemon, i) => {
-      if (pokemon != undefined && pokemon.hp > 0 && pokemon.isActive()) {
-        if (pokemon.hasTrainer() || true) {
-        // console.log(i)
-          if (pokemon.getFieldIndex() == 1 && pokemon.isOnField()) {
-          // Switch this to cycle between
-          //   - hiding the top mon's team bar
-          //   - showing the bottom mon's team bar with its active slots reversed
-            if (false) {
-              pokemon.getBattleInfo().displayParty(Pt);
-              Pt[0].getBattleInfo().switchIconVisibility(false); // Make the top mon's team bar go away
-              Pt[0].getBattleInfo().iconsActive = false; // Prevent the top mon from re-opening its bar
-            } else {
-              pokemon.getBattleInfo().displayParty(Pt2);
-            }
-          } else {
-            pokemon.getBattleInfo().displayParty((globalScene.currentBattle.double ? Pt1 : Pt));
-          }
+        pokemon.resetTurnData();
+
+        if (pokemon.isPlayer()) {
+          globalScene.phaseManager.pushNew("CommandPhase", i);
+        } else {
+          globalScene.phaseManager.pushNew("EnemyCommandPhase", i - BattlerIndex.ENEMY);
         }
       }
     });
 
-    globalScene.pushPhase(new TurnStartPhase());
-
-    globalScene.updateCatchRate();
+    globalScene.phaseManager.pushNew("TurnStartPhase");
 
     this.end();
   }

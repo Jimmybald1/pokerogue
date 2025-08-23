@@ -1,11 +1,13 @@
 import { globalScene } from "#app/global-scene";
-import { PlayerGender } from "#app/enums/player-gender";
 import { Phase } from "#app/phase";
-import { addTextObject, TextStyle } from "#app/ui/text";
+import { PlayerGender } from "#enums/player-gender";
+import { TextStyle } from "#enums/text-style";
+import { addTextObject } from "#ui/text";
 import i18next from "i18next";
 import * as LoggerTools from "../logger";
 
 export class EndCardPhase extends Phase {
+  public readonly phaseName = "EndCardPhase";
   public endCard: Phaser.GameObjects.Image;
   public text: Phaser.GameObjects.Text;
   start(): void {
@@ -24,8 +26,8 @@ export class EndCardPhase extends Phase {
     globalScene.field.add(this.endCard);
 
     this.text = addTextObject(
-      globalScene.game.canvas.width / 12,
-      globalScene.game.canvas.height / 6 - 16,
+      globalScene.scaledCanvas.width / 2,
+      globalScene.scaledCanvas.height - 16,
       i18next.t("battle:congratulations"),
       TextStyle.SUMMARY,
       { fontSize: "128px" },
