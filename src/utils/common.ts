@@ -8,11 +8,11 @@ export type nil = null | undefined;
 export const MissingTextureKey = "__MISSING";
 
 /** If enabled, the mod will push Log messages to the console when an RNG roll is performed. */
-const doRNGLogging = true;
+const doRNGLogging = false;
 /** If enabled, the mod will not log simulated RNG rolls. */
 export const hideSimRNGLogging = false;
 /** If enabled, the mod will push Error messages to the console when an RNG roll is performed without being assigned a label. */
-const doUnlabeledRNGLogging = true;
+const doUnlabeledRNGLogging = false;
 /** If enabled, the mod will push Log messages to the console when an RNG roll is performed that the Battle Seed does not influence. */
 const doUnseededRNGLogging = false;
 
