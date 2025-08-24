@@ -429,10 +429,8 @@ export class EncounterPhase extends BattlePhase {
         });
       }
     }
+    
     LoggerTools.resetWaveActions(undefined, true);
-    if (globalScene.currentBattle.waveIndex % 10 == 1) {
-      LoggerTools.logActions(globalScene.currentBattle.waveIndex, "RELOAD YOUR GAME (F5)");
-    }
 
     //globalScene.doShinyCheck()
 
