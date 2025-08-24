@@ -268,7 +268,7 @@ export class SelectModifierPhase extends BattlePhase {
       }
     } else {      
       LoggerTools.logShop(globalScene.currentBattle.waveIndex, this.getRerollText() + modifierType.name);
-      this.applyModifier(modifierType.newModifier()!);
+      this.applyModifier(modifierType.newModifier()!, cost);
     }
     return cost === -1;
   }
