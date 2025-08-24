@@ -28,6 +28,7 @@ import { TrainerData } from "#system/trainer-data";
 import { ArenaData } from "#system/arena-data";
 import { ChallengeData } from "#system/challenge-data";
 import { ModifierData as PersistentModifierData } from "#system/modifier-data";
+import { TrainerType } from "#enums/trainer-type";
 
 /*
 SECTIONS
@@ -106,7 +107,7 @@ export const logCommand: BooleanHolder = new BooleanHolder(true);
  * Saves a log to your device.
  * @param i The index of the log you want to save.
  */
-export function downloadLogByID(i: integer) {
+export function downloadLogByID(i: number) {
   console.log(i);
   const d = JSON.parse(localStorage.getItem(logs[i][1])!);
   const blob = new Blob([ printDRPD("", "", d as DRPD) ], { type: "text/json" });
@@ -123,7 +124,7 @@ export function downloadLogByID(i: integer) {
  * Saves a log to your device in an alternate format.
  * @param i The index of the log you want to save.
  */
-export function downloadLogByIDToCSV(i: integer) {
+export function downloadLogByIDToCSV(i: number) {
   console.log(i);
   const d = JSON.parse(localStorage.getItem(logs[i][1])!);
   const waves = d["waves"];
@@ -175,7 +176,7 @@ function convertTrainerToCSV(wave: any, trainer: any): string {
  * Saves a log to your device in an alternate format.
  * @param i The index of the log you want to save.
  */
-export function downloadLogByIDToSheet(i: integer) {
+export function downloadLogByIDToSheet(i: number) {
   console.log(i);
   const d = JSON.parse(localStorage.getItem(logs[i][1])!);
   SheetsMode.value = true;
@@ -355,7 +356,7 @@ export const RNGState: number[] = [];
 /**
  * The waves that autosaves are created at.
  */
-export const autoCheckpoints: integer[] = [
+export const autoCheckpoints: number[] = [
   1,
   11,
   21,
@@ -407,7 +408,7 @@ export function getSize(str: string) {
  * @param index The slot index.
  * @returns [INDEX] NAME (example: `[1] Walking Wake` is a Walking Wake in the first party slot)
  */
-export function playerPokeName(index: integer | Pokemon | PlayerPokemon) {
+export function playerPokeName(index: number | Pokemon | PlayerPokemon) {
   const species: string[] = [];
   const dupeSpecies: string[] = [];
   for (let i = 0; i < globalScene.getPlayerParty().length; i++) {
@@ -441,7 +442,7 @@ export function playerPokeName(index: integer | Pokemon | PlayerPokemon) {
  * @param index The slot index.
  * @returns [INDEX] NAME (example: `[2] Zigzagoon` is a Zigzagoon in the right slot (for a double battle) or in the second party slot (for a single battle against a Trainer))
  */
-export function enemyPokeName(index: integer | Pokemon | EnemyPokemon) {
+export function enemyPokeName(index: number | Pokemon | EnemyPokemon) {
   const species: string[] = [];
   const dupeSpecies: string[] = [];
   for (let i = 0; i < globalScene.getEnemyParty().length; i++) {
@@ -504,8 +505,8 @@ export interface DRPD {
   /** The Pokemon that the player started with. Daily runs will have 3. @see PokeData */
   starters?: PokeData[],
   /** The maximum luck value you can have. If your luck value is higher than this, some floors may break. */
-  maxluck?: integer;
-  minSafeLuckFloor?: integer[];
+  maxluck?: number;
+  minSafeLuckFloor?: number[];
 }
 
 /**
@@ -669,7 +670,7 @@ function updateLog(drpd: DRPD): DRPD {
  */
 export interface Wave {
   /** The wave number. Used to label the wave, detect and delete duplicates, and automatically sort `DRPD.waves[]`. */
-  id: integer,
+  id: number,
   /** Set to `true` if a reload is required to play this wave properly.Setting this value is the PITA I have ever dealt with. */
   reload: boolean,
   /**
@@ -849,9 +850,9 @@ function printWave(inData: string, indent: string, wave: Wave): string {
  * @param floor The wave index to retrieve.
  * @returns The requested `Wave`.
  */
-export function getWave(drpd: DRPD, floor: integer): Wave {
+export function getWave(drpd: DRPD, floor: number): Wave {
   let wv: Wave | undefined = undefined;
-  let insertPos: integer | undefined = undefined;
+  let insertPos: number | undefined = undefined;
   console.log(drpd.waves);
   for (var i = 0; i < drpd.waves.length; i++) {
     if (drpd.waves[i] != undefined && drpd.waves[i] != null) {
@@ -1050,7 +1051,7 @@ export function getWave(drpd: DRPD, floor: integer): Wave {
  */
 export interface PokeData {
   /** The party position of this Pokémon, as of the beginning of the battle. */
-  id: integer,
+  id: number,
   /** The name of this Pokémon as it would appear in the party list or in battle. */
   name: string,
   /** The Pokémon's primary ability. */
@@ -1072,7 +1073,7 @@ export interface PokeData {
   /** Whether or not the Pokémon was captured. */
   captured: boolean,
   /** The Pokémon's level. */
-  level: integer,
+  level: number,
   /** The Pokémon's Held Items, if any.
    * @see ItemData
    */
@@ -1214,7 +1215,7 @@ function printPoke(inData: string, indent: string, pokemon: PokeData) {
  * Calls `logPokemon` once for each opponent or, if it's a trainer battle, logs the trainer's data.
  * @param floor The wave index to write to. Defaults to the current wave.
  */
-export function logTeam(floor: integer = globalScene.currentBattle.waveIndex) {
+export function logTeam(floor: number = globalScene.currentBattle.waveIndex) {
   const team = globalScene.getEnemyParty();
   console.log("Log Enemy Team");
   if (team[0]?.hasTrainer()) {
@@ -1285,17 +1286,17 @@ function printNature(inData: string, indent: string, nature: NatureData) {
  */
 export interface IVData {
   /** Influences a Pokémon's maximum health. */
-  hp: integer,
+  hp: number,
   /** Influences a Pokémon's physical strength. */
-  atk: integer,
+  atk: number,
   /** Influences a Pokémon's resistance to physical attacks. */
-  def: integer,
+  def: number,
   /** Influences the power of a Pokémon's ranged attacks */
-  spatk: integer,
+  spatk: number,
   /** Influences a Pokémon's resistance to ranged attacks. */
-  spdef: integer,
+  spdef: number,
   /** Influences a Pokémon's action speed. */
-  speed: integer
+  speed: number
 }
 
 /**
@@ -1303,7 +1304,7 @@ export interface IVData {
  * @param ivs The IV array to store.
  * @returns The IV data.
  */
-export function exportIVs(ivs: integer[]): IVData {
+export function exportIVs(ivs: number[]): IVData {
   return {
     hp: ivs[0],
     atk: ivs[1],
@@ -1314,7 +1315,7 @@ export function exportIVs(ivs: integer[]): IVData {
   };
 }
 
-export function formatIVs(ivs: integer[] | IVData): string[] {
+export function formatIVs(ivs: number[] | IVData): string[] {
   return [
     `HP: ${Array.isArray(ivs) ? ivs[0] : ivs.hp}`,
     `Attack: ${Array.isArray(ivs) ? ivs[1] : ivs.hp}`,
@@ -1359,7 +1360,7 @@ export interface LogTrainerData {
   /** The trainer type's position in the Trainers enum.
    * @see Trainer
   */
-  id: integer,
+  id: number,
   /** The Trainer's ingame name. */
   name: string,
   /** The Trainer's ingame title. */
@@ -1375,7 +1376,7 @@ export function exportTrainer(trainer: Trainer): LogTrainerData {
   return {
     id: trainer.config.trainerType,
     name: trainer.getNameOnly(),
-    type: trainer.getTitleOnly()
+    type: TrainerType[trainer.config.trainerType]
   };
 }
 
@@ -1410,7 +1411,7 @@ export interface ItemData {
   /** The item's ingame name. */
   name: string,
   /** This item's stack size. */
-  quantity: integer,
+  quantity: number,
 }
 
 /**
@@ -1498,7 +1499,7 @@ export function setFileInfo(title: string, authors: string[], label: string) {
  * @param saves Your session data. Used to label logs if they match one of your save slots.
  * @returns A UI option.
  */
-export function generateOption(i: integer, saves: any): OptionSelectItem {
+export function generateOption(i: number, saves: any): OptionSelectItem {
   const filename: string = (JSON.parse(localStorage.getItem(logs[i][1])!) as DRPD).title!;
   const op: OptionSelectItem = {
     label: `Export ${filename} (${getSize(printDRPD("", "", JSON.parse(localStorage.getItem(logs[i][1])!) as DRPD))})`,
@@ -1526,7 +1527,7 @@ export function generateOption(i: integer, saves: any): OptionSelectItem {
  * @param saves Your session data. Used to label logs if they match one of your save slots.
  * @returns A UI option.
  */
-export function generateEditOption(i: integer, saves: any, phase: TitlePhase): OptionSelectItem {
+export function generateEditOption(i: number, saves: any, phase: TitlePhase): OptionSelectItem {
   const filename: string = (JSON.parse(localStorage.getItem(logs[i][1])!) as DRPD).title || "unlabeled";
   const op: OptionSelectItem = {
     label: `Export ${filename} (${getSize(printDRPD("", "", JSON.parse(localStorage.getItem(logs[i][1])!) as DRPD))})`,
@@ -1654,7 +1655,7 @@ export function generateEditHandler(logId: string, callback: Function) {
  * @param saves Your session data. Used to label logs if they match one of your save slots.
  * @returns A UI option.
  */
-export function generateEditHandlerForLog(i: integer, callback: Function) {
+export function generateEditHandlerForLog(i: number, callback: Function) {
   return (): boolean => {
     rarityslot[1] = logs[i][1];
     //globalScene.phaseQueue[0].end()
@@ -1716,7 +1717,7 @@ export function generateEditHandlerForLog(i: integer, callback: Function) {
  *
  * @see resetWaveActions
  */
-export function logActions(floor: integer = globalScene.currentBattle.waveIndex, action: string) {
+export function logActions(floor: number = globalScene.currentBattle.waveIndex, action: string) {
   const drpd = getDRPD();
   console.log(`Logging an action: "${action}"`);
   const wv: Wave = getWave(drpd, floor);
@@ -1740,7 +1741,7 @@ export function logActions(floor: integer = globalScene.currentBattle.waveIndex,
  *
  * @see resetWaveActions
  */
-export function appendAction(floor: integer = globalScene.currentBattle.waveIndex, action: string) {
+export function appendAction(floor: number = globalScene.currentBattle.waveIndex, action: string) {
   const drpd = getDRPD();
   const wv: Wave = getWave(drpd, floor);
   if (wv.clearActionsFlag) {
@@ -1766,7 +1767,7 @@ export function appendAction(floor: integer = globalScene.currentBattle.waveInde
  *
  * @see resetWaveActions
  */
-export function getActionCount(floor: integer) {
+export function getActionCount(floor: number) {
   const drpd = getDRPD();
   console.log("Checking action count");
   console.log(drpd);
@@ -1787,7 +1788,7 @@ export function getActionCount(floor: integer) {
  * @param floor The wave index to write to. Defaults to the current floor.
  * @param target The Pokémon that you captured.
  */
-export function logCapture(floor: integer = globalScene.currentBattle.waveIndex, target: EnemyPokemon) {
+export function logCapture(floor: number = globalScene.currentBattle.waveIndex, target: EnemyPokemon) {
   const drpd = getDRPD();
   console.log(`Logging successful capture: ${target.name}`);
   const wv: Wave = getWave(drpd, floor);
@@ -1843,7 +1844,7 @@ export function logLuck() {
  * @param pokemon The `EnemyPokemon` to store the data of. (Automatically converted via `exportPokemon`)
  * @param encounterRarity The rarity tier of this Pokémon. If not specified, it calculates this automatically by searching the current biome's species pool.
  */
-export function logPokemon(floor: integer = globalScene.currentBattle.waveIndex, slot: integer, pokemon: EnemyPokemon, encounterRarity?: string) {
+export function logPokemon(floor: number = globalScene.currentBattle.waveIndex, slot: number, pokemon: EnemyPokemon, encounterRarity?: string) {
   const drpd = getDRPD();
   console.log(`Logging opposing team member: ${pokemon.name}`);
   const wv: Wave = getWave(drpd, floor);
@@ -1881,7 +1882,7 @@ export function logPokemon(floor: integer = globalScene.currentBattle.waveIndex,
  * @param floor The wave index to write to. Defaults to the current floor.
  * @param action The shop action. Left blank if there was no shop this floor or if you ran away. Logged as "Skip taking items" if you didn't take anything for some reason.
  */
-export function logShop(floor: integer = globalScene.currentBattle.waveIndex, action: string) {
+export function logShop(floor: number = globalScene.currentBattle.waveIndex, action: string) {
   const drpd = getDRPD();
   console.log(`Logging shop result: "${action}"`);
   const wv: Wave = getWave(drpd, floor);
@@ -1897,7 +1898,7 @@ export function logShop(floor: integer = globalScene.currentBattle.waveIndex, ac
  * Logs the current floor's Trainer.
  * @param floor The wave index to write to. Defaults to the current floor.
  */
-export function logTrainer(floor: integer = globalScene.currentBattle.waveIndex) {
+export function logTrainer(floor: number = globalScene.currentBattle.waveIndex) {
   const drpd: DRPD = getDRPD();
   console.log(`Logging trainer: ${globalScene.currentBattle.trainer!.getTitleOnly()} ${globalScene.currentBattle.trainer!.getNameOnly()}`);
   const wv: Wave = getWave(drpd, floor);
@@ -1912,7 +1913,7 @@ export function logTrainer(floor: integer = globalScene.currentBattle.waveIndex)
  * Flags a wave as a reset.
  * @param floor The wave index to write to.
  */
-export function flagReset(floor: integer = globalScene.currentBattle.waveIndex) {
+export function flagReset(floor: number = globalScene.currentBattle.waveIndex) {
   const drpd = getDRPD();
   console.log("Flag Reset", drpd);
   const wv = getWave(drpd, floor);
@@ -1925,7 +1926,7 @@ export function flagReset(floor: integer = globalScene.currentBattle.waveIndex) 
  * Flags a wave as a reset, unless this is your first time playing the wave.
  * @param floor The wave index to write to. Defaults to the current floor.
  */
-export function flagResetIfExists(floor: integer = globalScene.currentBattle.waveIndex) {
+export function flagResetIfExists(floor: number = globalScene.currentBattle.waveIndex) {
   const drpd = getDRPD();
   let waveExists = false;
   for (let i = 0; i < drpd.waves.length; i++) {
@@ -1953,7 +1954,7 @@ export function flagResetIfExists(floor: integer = globalScene.currentBattle.wav
  *
  * @see logActions
  */
-export function resetWaveActions(floor: integer = globalScene.currentBattle.waveIndex, softflag: boolean) {
+export function resetWaveActions(floor: number = globalScene.currentBattle.waveIndex, softflag: boolean) {
   const drpd = getDRPD();
   console.log("Clear Actions", drpd);
   const wv: Wave = getWave(drpd, floor);
@@ -2148,7 +2149,7 @@ export function findBest(pokemon: EnemyPokemon, override?: boolean) {
   return "---";
 }
 
-export function parseSlotData(slotId: integer): SessionSaveData | undefined {
+export function parseSlotData(slotId: number): SessionSaveData | undefined {
   const S = localStorage.getItem(`sessionData${slotId ? slotId : ""}_${loggedInUser?.username}`);
   if (S == null) {
     // No data in this slot
