@@ -395,7 +395,7 @@ export class AttemptCapturePhase extends PokemonPhase {
                     },
                     () => {
                       // NO
-                      LoggerTools.logActions(globalScene.currentBattle.waveIndex, "Do Not Keep " + pokemon.name);
+                      LoggerTools.logActions(globalScene.currentBattle.waveIndex, "Do Not Keep " + pokemon.species.getName());
                       globalScene.ui.setMode(UiMode.MESSAGE).then(() => {
                         removePokemon();
                         end();
