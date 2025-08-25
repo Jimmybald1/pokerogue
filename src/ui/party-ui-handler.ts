@@ -547,6 +547,7 @@ export class PartyUiHandler extends MessageUiHandler {
               invertedIndex,
               this.transferQuantitiesMax[invertedIndex],
               this.cursor,
+              true, // isAll - pathing tool
             );
           },
         );
