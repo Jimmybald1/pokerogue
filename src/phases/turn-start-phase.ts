@@ -242,6 +242,17 @@ export class TurnStartPhase extends FieldPhase {
         globalScene.phaseManager.unshiftNew("AttemptCapturePhase", turnCommand.targets![0] % 2, turnCommand.cursor!); //TODO: is the bang correct here?
         break;
       case Command.POKEMON:
+        if (pokemon.isPlayer()) {
+          if (turnCommand.args?.[0]) {
+            // Baton Pass
+            LoggerTools.Actions[pokemon.getFieldIndex()] = `Baton Pass ${pokemon.name} to ${globalScene.getPlayerParty()[turnCommand.cursor!].name}`;
+          }
+          else {
+            // Regular Switch
+            LoggerTools.Actions[pokemon.getFieldIndex()] = `Switch ${pokemon.name} to ${globalScene.getPlayerParty()[turnCommand.cursor!].name}`;
+          }
+        }
+
         globalScene.phaseManager.unshiftNew(
           "SwitchSummonPhase",
           turnCommand.args?.[0] ? SwitchType.BATON_PASS : SwitchType.SWITCH,
