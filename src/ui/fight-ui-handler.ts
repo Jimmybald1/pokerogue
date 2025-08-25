@@ -345,8 +345,12 @@ export class FightUiHandler extends UiHandler implements InfoToggle {
       }
       return "1x";
     }
-
-    return `${effectiveness}x`;
+    
+    let text = `${effectiveness}x`;
+    if (globalScene.pathingToolUI) {
+      text += ` - ${this.calcDamage(pokemon, opponent, pokemonMove)}`;
+    }
+    return text;
   }
 
   displayMoves() {
@@ -437,7 +441,7 @@ export class FightUiHandler extends UiHandler implements InfoToggle {
     this.cursorObj = null;
   }
 
-  calcDamage(user: PlayerPokemon, target: Pokemon, move: PokemonMove) {
+  calcDamage(user: Pokemon, target: Pokemon, move: PokemonMove) {
     const moveObj = move.getMove();
     if (moveObj.category == MoveCategory.STATUS) {
       return ""; // Don't give a damage estimate for status moves
