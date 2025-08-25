@@ -172,7 +172,9 @@ export class CommandPhase extends FieldPhase {
     if (!isVirtual(queuedMove.useMode) && moveIndex === -1) {
       globalScene.ui.setMode(UiMode.COMMAND, this.fieldIndex);
     } else {
+      LoggerTools.logCommand.value = false; // Don't log this move
       this.handleCommand(Command.FIGHT, moveIndex, queuedMove.useMode, queuedMove);
+      LoggerTools.logCommand.value = true;
     }
 
     return true;

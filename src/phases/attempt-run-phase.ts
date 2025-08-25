@@ -31,7 +31,7 @@ export class AttemptRunPhase extends FieldPhase {
       enemyField.forEach(pokemon => applyAbAttrs("PreLeaveFieldAbAttr", { pokemon }));
 
       globalScene.playSound("se/flee");
-      LoggerTools.logShop(globalScene.currentBattle.waveIndex, "Fled");
+      LoggerTools.logActions(globalScene.currentBattle.waveIndex, "Fled");
       globalScene.phaseManager.queueMessage(i18next.t("battle:runAwaySuccess"), null, true, 500);
 
       globalScene.tweens.add({
