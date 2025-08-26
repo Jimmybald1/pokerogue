@@ -3,6 +3,7 @@ import type { TurnCommand } from "#app/battle";
 import { globalScene } from "#app/global-scene";
 import { TrickRoomTag } from "#data/arena-tag";
 import { allMoves } from "#data/data-lists";
+import { BattleType } from "#enums/battle-type";
 import { BattlerIndex } from "#enums/battler-index";
 import { Command } from "#enums/command";
 import { Stat } from "#enums/stat";
@@ -250,7 +251,12 @@ export class TurnStartPhase extends FieldPhase {
           }
           else {
             // Regular Switch
-            LoggerTools.Actions[pokemon.getFieldIndex()] = `Switch ${pokemon.name} to ${globalScene.getPlayerParty()[turnCommand.cursor!].name}`;
+            if (globalScene.currentBattle.turn === 1 && globalScene.currentBattle.battleType !== BattleType.TRAINER) {
+              LoggerTools.Actions[pokemon.getFieldIndex()] = `Switch (NOT Pre-Switch) ${pokemon.name} to ${globalScene.getPlayerParty()[turnCommand.cursor!].name}`;
+            }
+            else {
+              LoggerTools.Actions[pokemon.getFieldIndex()] = `Switch ${pokemon.name} to ${globalScene.getPlayerParty()[turnCommand.cursor!].name}`;
+            }
           }
         }
 
