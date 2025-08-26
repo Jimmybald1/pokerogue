@@ -151,7 +151,9 @@ export class TurnStartPhase extends FieldPhase {
       switch (preTurnCommand?.command) {
         case Command.TERA:
           globalScene.phaseManager.pushNew("TeraPhase", pokemon);
-          LoggerTools.Actions[pokemon.getFieldIndex()] = `*Terastallize* ${LoggerTools.Actions[pokemon.getFieldIndex()]}`;
+          if (pokemon.isPlayer()) {
+            LoggerTools.Actions[pokemon.getFieldIndex()] = `*Terastallize* ${LoggerTools.Actions[pokemon.getFieldIndex()]}`;
+          }
       }
     }
 
