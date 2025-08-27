@@ -165,7 +165,7 @@ export function downloadLogByIDToCSV(i: number) {
 }
 
 function convertPokemonToCSV(wave: any, pokemon: any, second: boolean): string {
-  return `${wave.id}${second ? "d" : ""},${wave.biome},${pokemon.id > 1025 ? SpeciesId[pokemon.formName] : SpeciesId[pokemon.id + 1]},${pokemon.id},${pokemon.formName},${Object.values(pokemon.iv_raw).join(",")},${pokemon.ability},${pokemon.passiveAbility},${pokemon.nature.name},${pokemon.gender},${pokemon.captured},${second ? "" : wave.actions.join(";")}`;
+  return `${wave.id}${second ? "d" : ""},${wave.biome},${pokemon.id > 1025 ? SpeciesId[pokemon.formName] : SpeciesId[pokemon.id + 1]},${pokemon.id + 1},${pokemon.formName},${Object.values(pokemon.iv_raw).join(",")},${pokemon.ability},${pokemon.passiveAbility},${pokemon.nature.name},${pokemon.gender},${pokemon.captured},${second ? "" : wave.actions.join(";")}`;
 }
 
 function convertTrainerToCSV(wave: any, trainer: any): string {
