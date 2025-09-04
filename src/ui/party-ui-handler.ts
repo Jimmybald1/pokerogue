@@ -976,6 +976,11 @@ export class PartyUiHandler extends MessageUiHandler {
       return false;
     }
 
+    this.partySlots.forEach(ps => {
+      ps.slotHpPercentageText.setVisible(globalScene.pathingToolUI);
+      ps.slotEtherText.setVisible(globalScene.pathingToolUI);
+    });
+
     if (this.awaitingActionInput) {
       if ((button === Button.ACTION || button === Button.CANCEL) && this.onActionInput) {
         ui.playSelect();
@@ -1175,11 +1180,6 @@ export class PartyUiHandler extends MessageUiHandler {
           break;
         }
     }
-
-    this.partySlots.forEach(ps => {
-      ps.slotHpPercentageText.setVisible(globalScene.pathingToolUI);
-      ps.slotEtherText.setVisible(globalScene.pathingToolUI);
-    });
 
     if (success) {
       ui.playSelect();
@@ -1730,12 +1730,8 @@ export class PartyUiHandler extends MessageUiHandler {
       this.partySlots[i].slotHpBar.setVisible(true);
       this.partySlots[i].slotHpOverlay.setVisible(true);
       this.partySlots[i].slotHpText.setVisible(true);
-      if (globalScene.pathingToolUI) {
-        this.partySlots[i].slotHpPercentageText.setVisible(true);
-      }
-      if (globalScene.pathingToolUI) {
-        this.partySlots[i].slotEtherText.setVisible(true);
-      }
+      this.partySlots[i].slotHpPercentageText.setVisible(globalScene.pathingToolUI);
+      this.partySlots[i].slotEtherText.setVisible(globalScene.pathingToolUI);
     }
   }
 
@@ -2166,12 +2162,8 @@ class PartySlot extends Phaser.GameObjects.Container {
       this.slotHpBar.setVisible(true);
       this.slotHpOverlay.setVisible(true);
       this.slotHpText.setVisible(true);
-      if (globalScene.pathingToolUI) {
-        this.slotHpPercentageText.setVisible(true);
-      }
-      if (globalScene.pathingToolUI) {
-        this.slotEtherText.setVisible(true);
-      }
+      this.slotHpPercentageText.setVisible(globalScene.pathingToolUI);
+      this.slotEtherText.setVisible(globalScene.pathingToolUI);
     } else {
       this.slotHpBar.setVisible(false);
       this.slotHpOverlay.setVisible(false);
