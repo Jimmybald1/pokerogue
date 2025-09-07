@@ -493,6 +493,44 @@ export class Battle {
     globalScene.rngCounter = tempRngCounter;
     globalScene.rngSeedOverride = tempSeedOverride;
     return ret;
+  }  
+  
+  /**
+   * Executes everything in the given function from the current seed. 
+   * After it is finished it resets back to the current seed stat.
+   * Helpful when executing Pathing Tool code in the middle of a battle without affecting the battle.
+   */
+  executeWithoutBattleSeedAdvancement(
+    // biome-ignore lint/complexity/noBannedTypes: Refactor to not use Function
+    func: Function,
+  ): void {
+    if (!func) {
+      return;
+    }
+
+    const tempBattleRngCounter = this.rngCounter;
+    const tempBattleSeedState = this.battleSeedState;
+    const tempEnemySwitchCounter = this.enemySwitchCounter;
+    const tempRngCounter = globalScene.rngCounter;
+    const tempRngOffset = globalScene.rngOffset;
+    const tempSeedOverride = globalScene.rngSeedOverride;
+    const state = Phaser.Math.RND.state();
+
+    if (this.battleSeedState) {
+      Phaser.Math.RND.state(this.battleSeedState);
+    } else {
+      Phaser.Math.RND.sow([ shiftCharCodes(this.battleSeed, this.turn << 6) ]);
+    }
+
+    func();
+
+    Phaser.Math.RND.state(state);
+    this.rngCounter = tempBattleRngCounter;
+    this.battleSeedState = tempBattleSeedState;
+    this.enemySwitchCounter = tempEnemySwitchCounter;
+    globalScene.rngCounter = tempRngCounter;
+    globalScene.rngOffset = tempRngOffset;
+    globalScene.rngSeedOverride = tempSeedOverride;
   }
 
   /**

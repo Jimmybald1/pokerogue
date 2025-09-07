@@ -2069,6 +2069,11 @@ export class BattleScene extends SceneBase {
     this.battleBaseRNGState = Phaser.Math.RND.state();
   }
 
+  /**
+   * Executes everything in the given function from the current seed. 
+   * After it is finished it resets back to the current seed stat.
+   * Helpful when executing Pathing Tool code in the middle of a battle without affecting the battle.
+   */
   executeWithoutSeedAdvancement(
     // biome-ignore lint/complexity/noBannedTypes: Refactor to not use Function
     func: Function,
@@ -2169,22 +2174,22 @@ export class BattleScene extends SceneBase {
   // Pathing tool function
   // Activate enemy command phase for move and catch prediction
   predictEnemy(): void {
-    this.getField().forEach((pokemon, i) => {
-      if (pokemon?.isActive() && !pokemon.isPlayer()) {
-        (pokemon as EnemyPokemon).toggleFlyout(false);
-        pokemon.resetTurnData();
+    this.currentBattle.executeWithoutBattleSeedAdvancement(() => {
+      this.getField().forEach((pokemon, i) => {
+        if (pokemon?.isActive() && !pokemon.isPlayer()) {
+          (pokemon as EnemyPokemon).toggleFlyout(false);
+          pokemon.resetTurnData();
 
-        const enemyCommandPhase = new EnemyCommandPhase(i - BattlerIndex.ENEMY, true);
-        enemyCommandPhase.start();
+          const enemyCommandPhase = new EnemyCommandPhase(i - BattlerIndex.ENEMY, true);
+          enemyCommandPhase.start();
 
-        // Pathing tool function
-        // update catch rate
-        this.updateCatchRate();
+          // update catch rate
+          this.updateCatchRate();
 
-        // Reset all commands and rng, but dont increment the actual turn
-        this.currentBattle.incrementTurn();
-        this.currentBattle.turn--;
-      }
+          this.currentBattle.turnCommands = Object.fromEntries(getEnumValues(BattlerIndex).map(bt => [bt, null]));
+          this.currentBattle.preTurnCommands = Object.fromEntries(getEnumValues(BattlerIndex).map(bt => [bt, null]));
+        }
+      });
     });
   }
 
