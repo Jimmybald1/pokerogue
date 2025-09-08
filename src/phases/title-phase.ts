@@ -523,7 +523,7 @@ export class TitlePhase extends Phase {
 
   InitShopScouting(method) {
     globalScene.sessionSlotId = 0;
-    globalScene.gameData.loadSession(globalScene.sessionSlotId, undefined, undefined).then((success: boolean) => {
+    globalScene.gameData.loadSession(globalScene.sessionSlotId).then((success: boolean) => {
       console.time('Shop Scouting');
       this.ShopScouting(method);
       console.timeEnd('Shop Scouting');
@@ -923,7 +923,7 @@ export class TitlePhase extends Phase {
 
   InitScouting(charms: number) {
     globalScene.sessionSlotId = 0;
-    globalScene.gameData.loadSession(globalScene.sessionSlotId, undefined, undefined).then((success: boolean) => {
+    globalScene.gameData.loadSession(globalScene.sessionSlotId).then((success: boolean) => {
       this.ScoutingWithoutUI(charms);
     }).catch(err => {
       console.error(err);
