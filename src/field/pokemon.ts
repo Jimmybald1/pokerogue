@@ -6681,6 +6681,7 @@ export class EnemyPokemon extends Pokemon {
                     ignoreAllyAbility: !p.getAlly()?.waveData.abilityRevealed,
                     ignoreSourceAllyAbility: false,
                     isCritical,
+                    simulated: true,
                   }).damage >= p.hp
                 );
               })
