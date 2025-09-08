@@ -481,7 +481,6 @@ export class SaveSlotSelectUiHandler extends MessageUiHandler {
 
 class SessionSlot extends Phaser.GameObjects.Container {
   public slotId: number;
-  public autoSlot: integer | undefined;
   public hasData: boolean;
   /** Indicates the save slot ran into an error while being loaded */
   public malformed: boolean;

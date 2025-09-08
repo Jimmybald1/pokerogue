@@ -254,18 +254,16 @@ export default class LogSelectUiHandler extends MessageUiHandler {
 
 class SessionSlot extends Phaser.GameObjects.Container {
   public slotId?: integer;
-  public autoSlot: integer;
   public hasData: boolean;
   public wv: integer;
   public key: string;
   private loadingLabel: Phaser.GameObjects.Text;
   public logIndex: integer;
 
-  constructor(slotId: integer | undefined = undefined, ypos: integer, autoSlot?: integer) {
+  constructor(slotId: integer | undefined = undefined, ypos: integer) {
     super(globalScene, 0, ypos * 56 + (ypos > 4 ? gap : 0));
 
     this.slotId = slotId!;
-    this.autoSlot = autoSlot!;
 
     this.setup();
   }
@@ -288,7 +286,7 @@ class SessionSlot extends Phaser.GameObjects.Container {
       lbl = `[${this.slotId + 1}] ${lbl}`;
       matchesFile = this.slotId + 1;
     }
-    //console.log(data, this.slotId, this.autoSlot, lbl)
+
     const gameModeLabel = addTextObject(8, 5, lbl, TextStyle.WINDOW);
     this.add(gameModeLabel);
 
@@ -416,21 +414,6 @@ class SessionSlot extends Phaser.GameObjects.Container {
       this.setupWithData(JSON.parse(localStorage.getItem(l)!));
       resolve(true);
     });
-    /*
-    return new Promise<boolean>(resolve => {
-      globalScene.gameData.getSession(this.slotId, this.autoSlot).then(async sessionData => {
-        if (!sessionData) {
-          this.hasData = false;
-          this.loadingLabel.setText(i18next.t("saveSlotSelectUiHandler:empty"));
-          resolve(false);
-          return;
-        }
-        this.hasData = true;
-        await this.setupWithData(undefined);
-        resolve(true);
-      });
-    });
-    */
   }
 }
 
