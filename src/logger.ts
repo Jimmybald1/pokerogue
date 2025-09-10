@@ -2316,7 +2316,7 @@ export function parseSlotData(slotId: number): SessionSaveData | undefined {
  * PathingTool function
  * Calculates the damage ranges that are possible if this move would be selected.
  */
-export function predictDamage(user: Pokemon, target: Pokemon, move: PokemonMove, damageDisplay?: string) {
+export function predictDamage(user: Pokemon, target: Pokemon, move: PokemonMove, willTera: boolean, damageDisplay?: string) {
   const moveObj = move.getMove();
   if (moveObj.category == MoveCategory.STATUS) {
     return ""; // Don't give a damage estimate for status moves
@@ -2339,7 +2339,7 @@ export function predictDamage(user: Pokemon, target: Pokemon, move: PokemonMove,
 
   const isGuaranteedCrit = target.isGuaranteedCrit(user, moveObj, true);
   const isTera = user.isTerastallized;
-  user.isTerastallized = isTera ? isTera : this.fromCommand === Command.TERA; // If not yet terastallized, check if command wants to terastallize
+  user.isTerastallized = isTera ? isTera : willTera; // If not yet terastallized, check if command wants to terastallize
   let dmgLow = target.getAttackDamage(
     {
       source: user, 

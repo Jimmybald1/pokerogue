@@ -341,7 +341,7 @@ export class FightUiHandler extends UiHandler implements InfoToggle {
     
     let text = `${effectiveness}x`;
     if (globalScene.pathingToolUI) {
-      text += ` - ${LoggerTools.predictDamage(pokemon, opponent, pokemonMove)}`;
+      text += ` - ${LoggerTools.predictDamage(pokemon, opponent, pokemonMove, this.fromCommand === Command.TERA)}`;
     }
     return text;
   }
