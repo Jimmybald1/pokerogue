@@ -19,7 +19,7 @@ import { GameModes } from "#enums/game-modes";
 import { getPokemonSpecies } from "./utils/pokemon-utils";
 import { AbilityId } from "#enums/ability-id";
 import { decrypt } from "./utils/data";
-import { BooleanHolder, isNullOrUndefined, NumberHolder, randSeedInt, rangemap } from "#utils/common";
+import { BooleanHolder, isNullOrUndefined, NumberHolder, randSeedInt } from "#utils/common";
 import { PokemonData } from "#system/pokemon-data";
 import { getEnumKeys, getEnumValues } from "#utils/enums";
 import { Trainer } from "#field/trainer";
@@ -2535,6 +2535,10 @@ export function predictDamage(user: Pokemon, target: Pokemon, move: PokemonMove,
     return (dmgLowF == dmgHighF ? dmgLowF + qSuffix : dmgLowF + "-" + dmgHighF + qSuffix) + koText;
   }
   return "";
+}
+
+function rangemap(value: integer, min: integer, max: integer) {
+  return (max - value) / (max - min);
 }
 // #endregion
 

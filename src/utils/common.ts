@@ -47,14 +47,6 @@ export function shiftCharCodes(str: string, shiftCount: number) {
   return newStr;
 }
 
-export function clampInt(value: integer, min: integer, max: integer): integer {
-  return Math.min(Math.max(value, min), max);
-}
-
-export function rangemap(value: integer, min: integer, max: integer) {
-  return (max - value) / (max - min);
-}
-
 export function randGauss(stdev: number, mean = 0, reason?: string): number {
   if (!stdev) {
     return 0;
