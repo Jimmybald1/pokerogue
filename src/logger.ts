@@ -2758,168 +2758,15 @@ function ShopScouting(method) {
   globalScene.RemoveModifiers();
   console.log(`Starting shop scouting ${new Date().toLocaleTimeString()}`);
 
-  const party = globalScene.getPlayerParty();
-
-  const comps = [
-    [ SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW ],
-    [ SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.BULBASAUR ],
-    [ SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.JIGGLYPUFF ],
-    [ SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.POLIWHIRL ],
-    // [SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.SWELLOW, SpeciesId.MEW],
-    // [SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.SWELLOW, SpeciesId.BULBASAUR],
-    // [SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.SWELLOW, SpeciesId.JIGGLYPUFF],
-    // [SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.SWELLOW, SpeciesId.POLIWHIRL],
-  ];
-
-  const revives = [
-    () => {
-      party[3].hp = party[3].getMaxHp();
-      party[4].hp = party[4].getMaxHp();
-      party[5].hp = party[5].getMaxHp();
-      return 0;
-    },
-    () => {
-      party[3].hp = 0;
-      return 1;
-    },
-    () => {
-      party[4].hp = 0;
-      return 2;
-    },
-    () => {
-      party[5].hp = 0;
-      return 3;
-    }
-  ]
-
-  const ethers = [
-    (pokemon: PlayerPokemon) => {
-      SetFullPP(pokemon);
-      return 0;
-    },
-    (pokemon: PlayerPokemon) => {
-      SetFullPP(pokemon);
-      pokemon.moveset[0]?.usePp(pokemon.moveset[0].getMovePp());
-      return 1;
-    },
-    (pokemon: PlayerPokemon) =>  {
-      SetFullPP(pokemon);
-      pokemon.moveset[1]?.usePp(pokemon.moveset[1].getMovePp());
-      return 2;
-    },
-    (pokemon: PlayerPokemon) =>  {
-      SetFullPP(pokemon);
-      pokemon.moveset[2]?.usePp(pokemon.moveset[2].getMovePp());
-      return 3;
-    },
-  ];
-
-  const lures = [
-    () => {
-      globalScene.RemoveLures();
-      return "";
-    },
-    () => {
-      globalScene.RemoveLures();
-      globalScene.InsertLure();
-      return "Lure";
-    },
-    () => {
-      globalScene.RemoveLures();
-      globalScene.InsertSuperLure();
-      return "Super Lure";
-    },
-    () => {
-      globalScene.RemoveLures();
-      globalScene.InsertMaxLure();
-      return "Max Lure";
-    },
-    () => {
-      globalScene.RemoveLures();
-      globalScene.InsertLure();
-      globalScene.InsertSuperLure();
-      return "Lure + Super Lure";
-    },
-    () => {
-      globalScene.RemoveLures();
-      globalScene.InsertSuperLure();
-      globalScene.InsertMaxLure();
-      return "Super Lure + Max Lure";
-    },
-    () => {
-      globalScene.RemoveLures();
-      globalScene.InsertThreeLures();
-      return "All Lures";
-    },
-  ];
-
+  const comps = GetPartyCompositions();
   const comp = comps[method];
-  const mushroom = [
-    (mu: {start: integer, end: integer, level: integer}) => {
-      ClearParty(party);
-      mu.level = 39;
-      FillParty(party, comp, mu.level);
-      mu.start = 1;
-      mu.end  = 20;
-    },
-    (mu: {start: integer, end: integer, level: integer}) => {
-      ClearParty(party);
-      mu.level = 59;
-      FillParty(party, comp, mu.level);
-      mu.start = 15;
-      mu.end  = 40;
-    },
-    (mu: {start: integer, end: integer, level: integer}) => {
-      ClearParty(party);
-      mu.level = 79;
-      FillParty(party, comp, mu.level);
-      mu.start = 35;
-      mu.end  = 49;
-    },
-  ];
 
-  const globals = [
-    () => {
-      return "";
-    },
-    // () => {
-    //   globalScene.InsertMegaBracelet();
-    //   return "Mega";
-    // },
-    // () => {
-    //   globalScene.InsertDynamaxBand();
-    //   return "Band";
-    // },
-    // () => {
-    //   globalScene.InsertLockCapsule();
-    //   return "Lock";
-    // },
-    // () => {
-    //   globalScene.InsertMegaBracelet();
-    //   globalScene.InsertDynamaxBand();
-    //   return "Mega + Band";
-    // },
-    // () => {
-    //   globalScene.InsertMegaBracelet();
-    //   globalScene.InsertLockCapsule();
-    //   return "Mega + Lock";
-    // },
-    // () => {
-    //   globalScene.InsertDynamaxBand();
-    //   globalScene.InsertLockCapsule();
-    //   return "Band + Lock";
-    // },
-    // () => {
-    //   globalScene.InsertMegaBracelet();
-    //   globalScene.InsertDynamaxBand();
-    //   globalScene.InsertLockCapsule();
-    //   return "Mega + Band + Lock";
-    // },
-    // () => {
-    //   globalScene.InsertTeraOrb();
-    //   return "Tera";
-    // },
-  ];
+  const party = globalScene.getPlayerParty();
+  const revives = GetReviveSetups(party);
+  const ethers = GetEtherSetups();
+  const lures = GetLureSetups();
+  const mushroom = GetMushroomSetups(party, comp);
+  const globals = GetGlobalItemSetups();
 
   iterations = [];
 
@@ -2971,32 +2818,6 @@ function ShopScouting(method) {
   console.log(charmList);
   console.log(`Shop scouting done ${new Date().toLocaleTimeString()}`);
   globalScene.ui.showText("DONE! Copy the list from the console and refresh the page.", null);
-}
-
-function ClearParty(party: PlayerPokemon[]) {
-  do {
-    globalScene.removePokemonFromPlayerParty(party[0], true);
-  }
-  while (party.length > 0);
-}
-
-function FillParty(party: PlayerPokemon[], comp: SpeciesId[], level: integer) {
-  comp.forEach((s: SpeciesId) => {
-    AddPokemon(party, s, level);
-  });
-}
-
-function AddPokemon(party: PlayerPokemon[], speciesId: SpeciesId, level: integer) {
-  const pokemon = allSpecies.filter(sp => sp.speciesId == speciesId)[0];
-  const playerPokemon = globalScene.addPlayerPokemon(pokemon, level);
-  playerPokemon.moveset = [ new PokemonMove(MoveId.TACKLE), new PokemonMove(MoveId.SPLASH), new PokemonMove(MoveId.SPLASH), new PokemonMove(MoveId.SPLASH) ];
-  party.push(playerPokemon);
-}
-
-function SetFullPP(pokemon: PlayerPokemon) {
-  pokemon.getMoveset().forEach(ms => {
-    ms?.setFullPp();
-  });
 }
 
 // Done:
@@ -3098,7 +2919,7 @@ function IteratePotions(party: PlayerPokemon[], n = 0, pot = 0, suppot = 0, hypp
   }
 
   // hyper potion
-  var damage = Math.min(Math.max(Math.floor(mhp * 0.45), 100));
+  var damage = Math.min(Math.max(Math.floor(mhp * 0.40), 100));
   if (damage < mhp && (mhp - damage) / mhp > 0.5) {
     pokemon.hp = mhp - damage;
     IteratePotions(party, n + 1, pot + 1, suppot + 1, hyppot + 1, maxpot, revive, eth, lure, start, end, level, rogueItem);
@@ -3110,10 +2931,6 @@ function IteratePotions(party: PlayerPokemon[], n = 0, pot = 0, suppot = 0, hypp
     pokemon.hp = mhp - damage;
     IteratePotions(party, n + 1, pot + 1, suppot + 1, hyppot + 1, maxpot + 1, revive, eth, lure, start, end, level, rogueItem);
   }
-
-  // // Revive
-  // pokemon.hp = 0;
-  // IteratePotions(party, n + 1, pot + 1, suppot + 1, hyppot + 1, maxpot + 1, revive + 1, eth, lure, start, end, level, rogueItem);
 
   // reset pokemon
   pokemon.hp = pokemon.getMaxHp();
@@ -3137,5 +2954,205 @@ function GenerateShop(party: PlayerPokemon[], comptext: string, start: integer, 
       }
     }, w);
   }
+}
+
+function GetReviveSetups(party: PlayerPokemon[]) {
+  return [
+    () => {
+      party[3].hp = party[3].getMaxHp();
+      party[4].hp = party[4].getMaxHp();
+      party[5].hp = party[5].getMaxHp();
+      return 0;
+    },
+    () => {
+      party[3].hp = 0;
+      return 1;
+    },
+    () => {
+      party[4].hp = 0;
+      return 2;
+    },
+    () => {
+      party[5].hp = 0;
+      return 3;
+    }
+  ];
+}
+
+function GetEtherSetups() {
+  return [
+    (pokemon: PlayerPokemon) => {
+      SetFullPP(pokemon);
+      return 0;
+    },
+    (pokemon: PlayerPokemon) => {
+      SetFullPP(pokemon);
+      pokemon.moveset[0]?.usePp(pokemon.moveset[0].getMovePp());
+      return 1;
+    },
+    (pokemon: PlayerPokemon) =>  {
+      SetFullPP(pokemon);
+      pokemon.moveset[1]?.usePp(pokemon.moveset[1].getMovePp());
+      return 2;
+    },
+    (pokemon: PlayerPokemon) =>  {
+      SetFullPP(pokemon);
+      pokemon.moveset[2]?.usePp(pokemon.moveset[2].getMovePp());
+      return 3;
+    },
+  ];
+}
+
+function SetFullPP(pokemon: PlayerPokemon) {
+  pokemon.getMoveset().forEach(ms => {
+    ms?.setFullPp();
+  });
+}
+
+function GetLureSetups() {
+  return [
+    () => {
+      globalScene.RemoveLures();
+      return "";
+    },
+    () => {
+      globalScene.RemoveLures();
+      globalScene.InsertLure();
+      return "Lure";
+    },
+    () => {
+      globalScene.RemoveLures();
+      globalScene.InsertSuperLure();
+      return "Super Lure";
+    },
+    () => {
+      globalScene.RemoveLures();
+      globalScene.InsertMaxLure();
+      return "Max Lure";
+    },
+    () => {
+      globalScene.RemoveLures();
+      globalScene.InsertLure();
+      globalScene.InsertSuperLure();
+      return "Lure + Super Lure";
+    },
+    () => {
+      globalScene.RemoveLures();
+      globalScene.InsertSuperLure();
+      globalScene.InsertMaxLure();
+      return "Super Lure + Max Lure";
+    },
+    () => {
+      globalScene.RemoveLures();
+      globalScene.InsertThreeLures();
+      return "All Lures";
+    },
+  ];
+}
+
+function GetMushroomSetups(party: PlayerPokemon[], comp: SpeciesId[]) {
+  return [
+    (mu: {start: integer, end: integer, level: integer}) => {
+      ClearParty(party);
+      mu.level = 39;
+      FillParty(party, comp, mu.level);
+      mu.start = 1;
+      mu.end  = 20;
+    },
+    (mu: {start: integer, end: integer, level: integer}) => {
+      ClearParty(party);
+      mu.level = 59;
+      FillParty(party, comp, mu.level);
+      mu.start = 15;
+      mu.end  = 40;
+    },
+    (mu: {start: integer, end: integer, level: integer}) => {
+      ClearParty(party);
+      mu.level = 79;
+      FillParty(party, comp, mu.level);
+      mu.start = 35;
+      mu.end  = 49;
+    },
+  ];
+}
+
+function GetGlobalItemSetups() {
+  return [
+    () => {
+      return "";
+    },
+    // () => {
+    //   globalScene.InsertMegaBracelet();
+    //   return "Mega";
+    // },
+    // () => {
+    //   globalScene.InsertDynamaxBand();
+    //   return "Band";
+    // },
+    // () => {
+    //   globalScene.InsertLockCapsule();
+    //   return "Lock";
+    // },
+    // () => {
+    //   globalScene.InsertMegaBracelet();
+    //   globalScene.InsertDynamaxBand();
+    //   return "Mega + Band";
+    // },
+    // () => {
+    //   globalScene.InsertMegaBracelet();
+    //   globalScene.InsertLockCapsule();
+    //   return "Mega + Lock";
+    // },
+    // () => {
+    //   globalScene.InsertDynamaxBand();
+    //   globalScene.InsertLockCapsule();
+    //   return "Band + Lock";
+    // },
+    // () => {
+    //   globalScene.InsertMegaBracelet();
+    //   globalScene.InsertDynamaxBand();
+    //   globalScene.InsertLockCapsule();
+    //   return "Mega + Band + Lock";
+    // },
+    // () => {
+    //   globalScene.InsertTeraOrb();
+    //   return "Tera";
+    // },
+  ];
+}
+
+function GetPartyCompositions() {
+  // Make sure the final 3 slots are always generic Mew. Those are selected to faint for the Revives tests.
+  return [
+    [ SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW ],
+    [ SpeciesId.BULBASAUR, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW ],
+    [ SpeciesId.JIGGLYPUFF, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW ],
+    [ SpeciesId.POLIWHIRL, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW ],
+    // Swellow for Guts tests:
+    // [ SpeciesId.MEW, SpeciesId.SWELLOW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW ],
+    // [ SpeciesId.BULBASAUR, SpeciesId.SWELLOW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW ],
+    // [ SpeciesId.JIGGLYPUFF, SpeciesId.SWELLOW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW ],
+    // [ SpeciesId.POLIWHIRL, SpeciesId.SWELLOW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW ],
+  ];
+}
+
+function ClearParty(party: PlayerPokemon[]) {
+  do {
+    globalScene.removePokemonFromPlayerParty(party[0], true);
+  }
+  while (party.length > 0);
+}
+
+function FillParty(party: PlayerPokemon[], comp: SpeciesId[], level: integer) {
+  comp.forEach((s: SpeciesId) => {
+    AddPokemon(party, s, level);
+  });
+}
+
+function AddPokemon(party: PlayerPokemon[], speciesId: SpeciesId, level: integer) {
+  const pokemon = allSpecies.filter(sp => sp.speciesId == speciesId)[0];
+  const playerPokemon = globalScene.addPlayerPokemon(pokemon, level);
+  playerPokemon.moveset = [ new PokemonMove(MoveId.TACKLE), new PokemonMove(MoveId.SPLASH), new PokemonMove(MoveId.SPLASH), new PokemonMove(MoveId.SPLASH) ];
+  party.push(playerPokemon);
 }
 // #endregion
