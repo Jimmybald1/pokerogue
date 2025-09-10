@@ -2075,6 +2075,7 @@ export class BattleScene extends SceneBase {
    * Executes everything in the given function from the current seed. 
    * After it is finished it resets back to the current seed stat.
    * Helpful when executing Pathing Tool code in the middle of a battle without affecting the battle.
+   * Pathing tool function
    */
   executeWithoutSeedAdvancement(
     // biome-ignore lint/complexity/noBannedTypes: Refactor to not use Function
