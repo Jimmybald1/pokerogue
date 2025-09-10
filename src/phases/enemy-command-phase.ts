@@ -140,7 +140,12 @@ export class EnemyCommandPhase extends FieldPhase {
       targetLabels[2] += " (R)";
     }
 
-    console.log(enemyPokemon.name + " selects:", mv.getName() + " → " + nextMove.targets.map((m) => targetLabels[m + 1]));
+    let dmgText = LoggerTools.predictDamage(enemyPokemon, globalScene.getPlayerParty()[nextMove.targets[0]], mv, "Value");
+    if (nextMove.targets.length > 1) {
+      dmgText += " & " + LoggerTools.predictDamage(enemyPokemon, globalScene.getPlayerParty()[nextMove.targets[1]], mv, "Value");  
+    }
+
+    console.log(enemyPokemon.name + " selects:", mv.getName() + " → " + nextMove.targets.map((m) => targetLabels[m + 1]) + " | " + dmgText);
     globalScene.currentBattle.enemySwitchCounter = Math.max(globalScene.currentBattle.enemySwitchCounter - 1, 0);
 
     globalScene.arenaFlyout.updateFieldText();

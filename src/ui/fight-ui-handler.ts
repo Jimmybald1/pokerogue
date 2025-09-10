@@ -6,28 +6,21 @@ import { Button } from "#enums/buttons";
 import { Command } from "#enums/command";
 import { MoveCategory } from "#enums/move-category";
 import { MoveUseMode } from "#enums/move-use-mode";
-import { MultiHitType } from "#enums/multi-hit-type";
 import { PokemonType } from "#enums/pokemon-type";
-import { StatusEffect } from "#enums/status-effect";
 import { TextStyle } from "#enums/text-style";
 import { UiMode } from "#enums/ui-mode";
-import type { EnemyPokemon, PlayerPokemon, Pokemon } from "#field/pokemon";
-import { PokemonMultiHitModifierType } from "#modifiers/modifier-type";
-import { applyMoveAttrs } from "#moves/apply-attrs";
+import type { EnemyPokemon, Pokemon } from "#field/pokemon";
 import type { PokemonMove } from "#moves/pokemon-move";
 import type { CommandPhase } from "#phases/command-phase";
 import { MoveInfoOverlay } from "#ui/move-info-overlay";
 import { addTextObject } from "#ui/text";
 import { UiHandler } from "#ui/ui-handler";
-import { fixedInt, getLocalizedSpriteKey, isNullOrUndefined, NumberHolder, padInt, rangemap } from "#utils/common";
+import { fixedInt, getLocalizedSpriteKey, padInt } from "#utils/common";
 import i18next from "i18next";
 import * as LoggerTools from "../logger";
-import { MultiHitAttr } from "#types/move-types";
 
 export class FightUiHandler extends UiHandler implements InfoToggle {
   public static readonly MOVES_CONTAINER_NAME = "moves";
-
-  private readonly logDamagePrediction: Boolean = false;
 
   private movesContainer: Phaser.GameObjects.Container;
   private moveInfoContainer: Phaser.GameObjects.Container;
@@ -348,7 +341,7 @@ export class FightUiHandler extends UiHandler implements InfoToggle {
     
     let text = `${effectiveness}x`;
     if (globalScene.pathingToolUI) {
-      text += ` - ${this.calcDamage(pokemon, opponent, pokemonMove)}`;
+      text += ` - ${LoggerTools.predictDamage(pokemon, opponent, pokemonMove)}`;
     }
     return text;
   }
@@ -439,204 +432,5 @@ export class FightUiHandler extends UiHandler implements InfoToggle {
       this.cursorObj.destroy();
     }
     this.cursorObj = null;
-  }
-
-  calcDamage(user: Pokemon, target: Pokemon, move: PokemonMove) {
-    const moveObj = move.getMove();
-    if (moveObj.category == MoveCategory.STATUS) {
-      return ""; // Don't give a damage estimate for status moves
-    }
-
-    if (target.getMoveEffectiveness(user, moveObj, false, true) == undefined) {
-      return ""; // Target is immune
-    }
-
-    let dmgRange = 0.85;
-    const fixedDamage = new NumberHolder(0);
-    applyMoveAttrs("FixedDamageAttr", user, target, moveObj, fixedDamage);
-    if (fixedDamage.value > 0) {
-      dmgRange = 1;
-    }
-
-    const isGuaranteedCrit = target.isGuaranteedCrit(user, moveObj, true);
-    const isTera = user.isTerastallized;
-    user.isTerastallized = isTera ? isTera : this.fromCommand === Command.TERA; // If not yet terastallized, check if command wants to terastallize
-    let dmgLow = target.getAttackDamage(
-      {
-        source: user, 
-        move: moveObj, 
-        isCritical: isGuaranteedCrit,
-        simulated: true,
-      }
-    ).damage * dmgRange;
-    let dmgHigh = target.getAttackDamage(
-      {
-        source: user, 
-        move: moveObj, 
-        isCritical: isGuaranteedCrit,
-        simulated: true,
-      }
-    ).damage;
-    user.isTerastallized = isTera; // Revert to whatever the terastallize state was before
-
-    if (this.logDamagePrediction) {
-      console.log(`Damage min: ${dmgLow} | Damage max: ${dmgHigh}`);
-    }
-
-    let minHits = 1;
-    let maxHits = -1; // If nothing changes this value, it is set to minHits
-    const mh = moveObj.getAttrs("MultiHitAttr");
-    for (var i = 0; i < mh.length; i++) {
-      const mh2 = mh[i] as MultiHitAttr;
-      switch (mh2.getMultiHitType()) {
-        case MultiHitType._2:
-          minHits = 2;
-        case MultiHitType._2_TO_5:
-          minHits = 2;
-          maxHits = 5;
-        case MultiHitType._3:
-          minHits = 3;
-        case MultiHitType._10:
-          minHits = 1;
-          maxHits = 10;
-        case MultiHitType.BEAT_UP:
-          const party = user.isPlayer() ? globalScene.getPlayerParty() : globalScene.getEnemyParty();
-          // No status means the ally pokemon can contribute to Beat Up
-          minHits = party.reduce((total, pokemon) => {
-            return total + (pokemon.id === user.id ? 1 : pokemon?.status && pokemon.status.effect !== StatusEffect.NONE ? 0 : 1);
-          }, 0);
-      }
-    }
-
-    if (maxHits == -1) {
-      maxHits = minHits;
-    }
-
-    // Add Multi Lens if its not a multi-hit move
-    if (minHits == 1) {
-      const h = user.getHeldItems();
-      for (var i = 0; i < h.length; i++) {
-        if (h[i].type instanceof PokemonMultiHitModifierType) {
-          minHits *= h[i].getStackCount();
-          maxHits *= h[i].getStackCount();
-        }
-      }
-    }
-
-    if (this.logDamagePrediction) {
-      console.log(`MinHits: ${minHits} | MaxHits: ${maxHits}`);
-    }
-
-    if (false) {
-      dmgLow = dmgLow * minHits;
-      dmgHigh = dmgHigh * maxHits;
-    }
-
-    // Actual damage dealt
-    let dmgLowF = Math.floor(dmgLow);
-    let dmgHighF = Math.floor(dmgHigh);
-
-    let maxEHP = target.getMaxHp();
-
-    let koText = "";
-    if (dmgLowF >= maxEHP) {
-      koText = " KO";
-    } else if (dmgHighF >= target.hp) {
-      var percentChance = rangemap(maxEHP, dmgLow, dmgHigh);
-      koText = " " + Math.floor(percentChance * 100) + "% KO";
-    }
-
-    // Calculate boss shield segments cleared
-    let qSuffix = "";
-    if (target.isBoss()) {
-      const segmentRequirements = (target as EnemyPokemon).calculateBossShieldRequirements();
-      if (this.logDamagePrediction) {
-        console.log(`Segments: ${segmentRequirements}`);
-      }
-
-      maxEHP = segmentRequirements[segmentRequirements.length - 1];
-
-      // Count amount of segments cleared.
-      const segmentClearedLow = segmentRequirements.reduce((total, req) => {
-        return total + (dmgLowF >= req ? 1 : 0);
-      }, 0);
-      const segmentClearedHigh = segmentRequirements.reduce((total, req) => {
-        return total + (dmgHighF >= req ? 1 : 0);
-      }, 0);
-
-      // Set info suffix text
-      qSuffix = ` (${segmentClearedLow}-${segmentClearedHigh})`;
-      if (segmentClearedLow == segmentClearedHigh) {
-        qSuffix = ` (${segmentClearedLow})`;
-      }
-
-      if (this.logDamagePrediction) {
-        console.log(`Segments min: ${segmentClearedLow} | Segments max: ${segmentClearedHigh}`);
-      }
-
-      if (segmentClearedLow == segmentRequirements.length) {
-        // Same segment, Guaranteed kill
-        // 100% KO
-        // show damage ranges
-        koText = " KO";
-      } else if (segmentClearedHigh == segmentRequirements.length) {
-        // Different segment, only high is a kill
-        // ~% KO
-        // show segment damage for low and damage range for high
-        var percentChance = rangemap(maxEHP, dmgLow, dmgHigh);
-        koText = " " + Math.floor(percentChance * 100) + "% KO";
-
-        dmgLow = segmentClearedLow > 0 ? segmentRequirements[0] * segmentClearedLow : dmgLow;
-      } else if (segmentClearedLow == segmentClearedHigh) {
-        // Same segment
-        // no KO
-        // show segment damage for both
-        koText = "";
-
-        dmgLow = segmentClearedLow > 0 ? segmentRequirements[0] * segmentClearedLow : dmgLow;
-        dmgHigh = segmentClearedHigh > 0 ? segmentRequirements[0] * segmentClearedHigh : dmgHigh;
-      } else {
-        // Different segment
-        // no KO
-        // show segment damage for both
-        koText = "";
-
-        dmgLow = segmentClearedLow > 0 ? segmentRequirements[0] * segmentClearedLow : dmgLow;
-        dmgHigh = segmentClearedHigh > 0 ? segmentRequirements[0] * segmentClearedHigh : dmgHigh;
-      }
-
-      // Re-Floor based on the new numbers
-      dmgLowF = Math.floor(dmgLow);
-      dmgHighF = Math.floor(dmgHigh);
-      if (this.logDamagePrediction) {
-        console.log(`Boss damage min: ${dmgLow} | Boss damage max: ${dmgHigh}`);
-      }
-    }
-
-    // %HP removed
-    const dmgLowP = Math.round((dmgLowF) / target.getMaxHp() * 100);
-    const dmgHighP = Math.round((dmgHighF) / target.getMaxHp() * 100);
-
-    if (this.logDamagePrediction) {
-      console.log(`HP% min: ${dmgLowP} | HP% max: ${dmgHighP}`);
-    }
-
-    if (this.logDamagePrediction) {
-      console.log(`Enemy HP: ${target.hp} | Enemy HP%: ${target.getHpRatio() * 100}`);
-    }
-    if (this.logDamagePrediction) {
-      console.log(`Max EHP: ${maxEHP}`);
-    }
-    if (this.logDamagePrediction && !isNullOrUndefined(koText)) {
-      console.log(`KO%: ${koText}`);
-    }
-
-    if (globalScene.damageDisplay == "Percent") {
-      return (dmgLowP == dmgHighP ? dmgLowP + "%" + qSuffix : dmgLowP + "%-" + dmgHighP + "%" + qSuffix) + koText;
-    }
-    if (globalScene.damageDisplay == "Value") {
-      return (dmgLowF == dmgHighF ? dmgLowF + qSuffix : dmgLowF + "-" + dmgHighF + qSuffix) + koText;
-    }
-    return "";
   }
 }

@@ -1,4 +1,3 @@
-import * as LoggerTools from "../logger";
 import { globalScene } from "#app/global-scene";
 import { getPokemonNameWithAffix } from "#app/messages";
 import { BattleStyle } from "#enums/battle-style";
