@@ -14,6 +14,7 @@ import { SettingsKeyboardUiHandler } from "#ui/settings-keyboard-ui-handler";
 import { SettingsUiHandler } from "#ui/settings-ui-handler";
 import { StarterSelectUiHandler } from "#ui/starter-select-ui-handler";
 import Phaser from "phaser";
+import * as LoggerTools from "./logger";
 
 type ActionKeys = Record<Button, () => void>;
 
@@ -255,8 +256,8 @@ export class UiInputs {
     }
   }
   buttonHideCustomUI(button: Button): void {
-    globalScene.togglePathingToolUI();
-    console.log(`Toggle Pathing Tool UI ${globalScene.pathingToolUI ? "ON" : "OFF"}`);
+    LoggerTools.togglePathingToolUI();
+    console.log(`Toggle Pathing Tool UI ${LoggerTools.pathingToolUI ? "ON" : "OFF"}`);
     globalScene.ui.processInput(button);
   }
 }

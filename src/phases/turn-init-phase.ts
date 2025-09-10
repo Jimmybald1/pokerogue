@@ -69,7 +69,7 @@ export class TurnInitPhase extends FieldPhase {
       return;
     }
     
-    globalScene.predictEnemy();
+    LoggerTools.predictEnemy();
 
     globalScene.getField().forEach((pokemon, i) => {
       if (pokemon?.isActive()) {

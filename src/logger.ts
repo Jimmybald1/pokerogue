@@ -51,6 +51,8 @@ import { BiomeId } from "#enums/biome-id";
 import { getRandomWeatherType } from "#data/weather";
 import { WeatherType } from "#enums/weather-type";
 import { TimeOfDay } from "#enums/time-of-day";
+import { EnemyCommandPhase } from "#phases/enemy-command-phase";
+import { BattlerIndex } from "#enums/battler-index";
 
 /*
 SECTIONS
@@ -91,9 +93,10 @@ export const acceptedVersions = [
   "1.1.0b",
 ];
 
-/** Toggles console messages about catch prediction. */
+/** Toggles console messages about predictions. */
 const catchDebug: boolean = false;
 const logDamagePrediction: boolean = false;
+export let pathingToolUI: boolean = true;
 
 // Value holders
 /** Holds the encounter rarities for the Pokemon in this wave. */
@@ -2325,6 +2328,37 @@ export function parseSlotData(slotId: number): SessionSaveData | undefined {
   }
   Save.description += " (" + getBiomeName(Save.arena.biome) + " " + Save.waveIndex + ")";
   return Save;
+}
+
+// Activate enemy command phase for move and catch prediction
+export function predictEnemy(): void {
+  globalScene.currentBattle.executeWithoutBattleSeedAdvancement(() => {
+    globalScene.getField().forEach((pokemon, i) => {
+      if (pokemon?.isActive() && !pokemon.isPlayer()) {
+        (pokemon as EnemyPokemon).toggleFlyout(false);
+        pokemon.resetTurnData();
+
+        const enemyCommandPhase = new EnemyCommandPhase(i - BattlerIndex.ENEMY, true);
+        enemyCommandPhase.start();
+
+        // update catch rate
+        globalScene.updateCatchRate();
+
+        globalScene.currentBattle.turnCommands = Object.fromEntries(getEnumValues(BattlerIndex).map(bt => [bt, null]));
+        globalScene.currentBattle.preTurnCommands = Object.fromEntries(getEnumValues(BattlerIndex).map(bt => [bt, null]));
+      }
+    });
+  });
+}
+
+// Pathing tool function
+export function togglePathingToolUI(): void {
+  pathingToolUI = !pathingToolUI;
+  if (pathingToolUI) {
+    globalScene.updateCatchRate();
+  } else {
+    globalScene.updateScoreText();
+  }
 }
 
 /**
