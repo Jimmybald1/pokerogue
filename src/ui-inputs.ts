@@ -255,6 +255,7 @@ export class UiInputs {
       (globalScene.ui.getHandler() as SettingsUiHandler).show([]);
     }
   }
+  
   buttonHideCustomUI(button: Button): void {
     LoggerTools.togglePathingToolUI();
     console.log(`Toggle Pathing Tool UI ${LoggerTools.pathingToolUI ? "ON" : "OFF"}`);
