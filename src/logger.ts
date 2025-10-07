@@ -2800,11 +2800,13 @@ function ShopScouting(method) {
   const comp = comps[method];
 
   const party = globalScene.getPlayerParty();
-  const revives = GetReviveSetups(party);
-  const ethers = GetEtherSetups();
-  const lures = GetLureSetups();
-  const mushroom = GetMushroomSetups(party, comp);
+
   const globals = GetGlobalItemSetups();
+  const mushroom = GetMushroomSetups(party, comp);
+  const lures = GetLureSetups();
+  const ethers = GetEtherSetups();
+  const revives = GetReviveSetups(party);
+  const potions = GetPotionSetups(party);
 
   iterations = [];
 
@@ -2846,8 +2848,15 @@ function ShopScouting(method) {
 
           revives.forEach(revive => {
             const r = revive();
-            IteratePotions(party, 0, 0, 0, 0, 0, r, e, text, mu.start, mu.end, mu.level, rogueItem);
-          })
+
+            potions.forEach(potion => {
+              const p = potion();
+              if (p) {
+                const comptext = CreateLog(p.pot, p.suppot, p.hyppot, p.maxpot, r, e, text, mu.level, rogueItem);
+                GenerateShop(party, comptext, mu.start, mu.end);
+              }
+            });
+          });
         });
       });
     });
@@ -2858,35 +2867,6 @@ function ShopScouting(method) {
   globalScene.ui.showText("DONE! Copy the list from the console and refresh the page.", null);
 }
 
-// Done:
-//  Potion
-//  Super Potion
-//  Hyper Potion
-//  Max Potion
-//  Ether
-//  Max Ether
-//  Elixir
-//  Max Elixir
-//  Lure
-//  Super Lure
-//  Max Lure
-//  Memory Mushroom
-//  Revive
-//  Max Revive
-//  Lock Capsule
-//  Dynamax Band
-//  Mega Bracelet
-//
-// Planned:
-//  Full Heal
-//  Full Restore
-//  Sacred Ash
-//  Form Change Items
-//  Species Items
-//  Leek
-//  Toxic Orb
-//  Flame Orb
-//  Tera Orb
 function CreateLog(pot = 0, suppot = 0, hyppot = 0, maxpot = 0, revive = 0, eth = 0, lure = "", level = 79, rogueItem = "") {
   const items: string[] = [];
   if (pot - suppot > 0) {
@@ -2896,10 +2876,10 @@ function CreateLog(pot = 0, suppot = 0, hyppot = 0, maxpot = 0, revive = 0, eth 
     items.push(`${suppot - hyppot}x <75% HP and 25+ dmg taken`);
   }
   if (hyppot - maxpot > 0) {
-    items.push(`${hyppot - maxpot}x 50%-62.5% and 100+ dmg taken`);
+    items.push(`${hyppot - maxpot}x <62.5% and 100+ dmg taken`);
   }
-  if (maxpot - revive > 0) {
-    items.push(`${maxpot - revive}x <50% and 100+ dmg taken`);
+  if (maxpot > 0) {
+    items.push(`${maxpot}x <50% and 100+ dmg taken`);
   }
   if (revive > 0) {
     items.push(`${revive}x fainted`);
@@ -2923,57 +2903,6 @@ function CreateLog(pot = 0, suppot = 0, hyppot = 0, maxpot = 0, revive = 0, eth 
   return items.join(" + ");
 }
 
-function IteratePotions(party: PlayerPokemon[], n = 0, pot = 0, suppot = 0, hyppot = 0, maxpot = 0, revive = 0, eth = 0, lure = "", start = 1, end = 50, level = 79, rogueItem = "") {
-  if (n == Math.min(3, party.length)) {
-    const i = `${pot} ${suppot} ${hyppot} ${maxpot} ${revive} ${eth} ${lure} ${level} ${rogueItem}`;
-    if (iterations.some(it => it == i)) {
-      return;
-    }
-
-    iterations.push(i);
-    const comptext = CreateLog(pot, suppot, hyppot, maxpot, revive, eth, lure, level, rogueItem);
-    GenerateShop(party, comptext, start, end);
-    return;
-  }
-
-  const pokemon = party[n];
-  const mhp = pokemon.getMaxHp();
-
-  // Nothing
-  IteratePotions(party, n + 1, pot, suppot, hyppot, maxpot, revive, eth, lure, start, end, level, rogueItem);
-
-  // potion
-  var damage = Math.min(Math.max(Math.floor(mhp * 0.18), 10));
-  if (damage < mhp) {
-    pokemon.hp = mhp - damage;
-    IteratePotions(party, n + 1, pot + 1, suppot, hyppot, maxpot, revive, eth, lure, start, end, level, rogueItem);
-  }
-
-  // super potion
-  var damage = Math.min(Math.max(Math.floor(mhp * 0.31), 25));
-  if (damage < mhp) {
-    pokemon.hp = mhp - damage;
-    IteratePotions(party, n + 1, pot + 1, suppot + 1, hyppot, maxpot, revive, eth, lure, start, end, level, rogueItem);
-  }
-
-  // hyper potion
-  var damage = Math.min(Math.max(Math.floor(mhp * 0.40), 100));
-  if (damage < mhp && (mhp - damage) / mhp > 0.5) {
-    pokemon.hp = mhp - damage;
-    IteratePotions(party, n + 1, pot + 1, suppot + 1, hyppot + 1, maxpot, revive, eth, lure, start, end, level, rogueItem);
-  }
-
-  // max potion
-  var damage = Math.min(Math.max(Math.floor(mhp * 0.51), 100));
-  if (damage < mhp) {
-    pokemon.hp = mhp - damage;
-    IteratePotions(party, n + 1, pot + 1, suppot + 1, hyppot + 1, maxpot + 1, revive, eth, lure, start, end, level, rogueItem);
-  }
-
-  // reset pokemon
-  pokemon.hp = pokemon.getMaxHp();
-}
-
 function GenerateShop(party: PlayerPokemon[], comptext: string, start: integer, end: integer) {
   for (var w = start; w < end; w++) {
     if (w % 10 == 0) {
@@ -2992,6 +2921,313 @@ function GenerateShop(party: PlayerPokemon[], comptext: string, start: integer, 
       }
     }, w);
   }
+}
+
+enum PotionType {
+  POTION,
+  SUPER_POTION,
+  HYPER_POTION,
+  MAX_POTION,
+}
+
+function GetPotionSetups(party: PlayerPokemon[]) {
+  return [
+    // 0 Pokemon
+    () => {
+      ResetPotionHealth(party);
+      return { pot: 0, suppot: 0, hyppot: 0, maxpot: 0 }
+    },
+    // 1 Pokemon
+    () => {
+      if (ApplyPotionType(party[2], PotionType.POTION)) {
+        return { pot: 1, suppot: 0, hyppot: 0, maxpot: 0 }
+      }
+
+      return null;
+    },
+    () => {
+      if (ApplyPotionType(party[2], PotionType.SUPER_POTION)) {
+        return { pot: 1, suppot: 1, hyppot: 0, maxpot: 0 }
+      }
+
+      return null;
+    },
+    () => {
+      if (ApplyPotionType(party[2], PotionType.HYPER_POTION)) {
+        return { pot: 1, suppot: 1, hyppot: 1, maxpot: 0 }
+      }
+
+      return null;
+    },
+    () => {
+      if (ApplyPotionType(party[2], PotionType.MAX_POTION)) {
+        return { pot: 1, suppot: 1, hyppot: 1, maxpot: 1 }
+      }
+
+      return null;
+    },
+    // 2 Pokemon
+    // POTION
+    () => {
+      if (ApplyPotionType(party[2], PotionType.POTION) && ApplyPotionType(party[1], PotionType.POTION)) {
+        return { pot: 2, suppot: 0, hyppot: 0, maxpot: 0 }
+      }
+
+      return null;
+    },
+    () => {
+      if (ApplyPotionType(party[2], PotionType.POTION) && ApplyPotionType(party[1], PotionType.SUPER_POTION)) {
+        return { pot: 2, suppot: 1, hyppot: 0, maxpot: 0 }
+      }
+
+      return null;
+    },
+    () => {
+      if (ApplyPotionType(party[2], PotionType.POTION) && ApplyPotionType(party[1], PotionType.HYPER_POTION)) {
+        return { pot: 2, suppot: 1, hyppot: 1, maxpot: 0 }
+      }
+
+      return null;
+    },
+    () => {
+      if (ApplyPotionType(party[2], PotionType.POTION) && ApplyPotionType(party[1], PotionType.MAX_POTION)) {
+        return { pot: 2, suppot: 1, hyppot: 1, maxpot: 1 }
+      }
+
+      return null;
+    },
+    // SUPER POTION
+    () => {
+      if (ApplyPotionType(party[2], PotionType.SUPER_POTION) && ApplyPotionType(party[1], PotionType.SUPER_POTION)) {
+        return { pot: 2, suppot: 2, hyppot: 0, maxpot: 0 }
+      }
+
+      return null;
+    },
+    () => {
+      if (ApplyPotionType(party[2], PotionType.SUPER_POTION) && ApplyPotionType(party[1], PotionType.HYPER_POTION)) {
+        return { pot: 2, suppot: 2, hyppot: 1, maxpot: 0 }
+      }
+
+      return null;
+    },
+    () => {
+      if (ApplyPotionType(party[2], PotionType.SUPER_POTION) && ApplyPotionType(party[1], PotionType.MAX_POTION)) {
+        return { pot: 2, suppot: 2, hyppot: 1, maxpot: 1 }
+      }
+
+      return null;
+    },
+    // HYPER POTION
+    () => {
+      if (ApplyPotionType(party[2], PotionType.HYPER_POTION) && ApplyPotionType(party[1], PotionType.HYPER_POTION)) {
+        return { pot: 2, suppot: 2, hyppot: 2, maxpot: 0 }
+      }
+
+      return null;
+    },
+    () => {
+      if (ApplyPotionType(party[2], PotionType.HYPER_POTION) && ApplyPotionType(party[1], PotionType.MAX_POTION)) {
+        return { pot: 2, suppot: 2, hyppot: 2, maxpot: 1 }
+      }
+
+      return null;
+    },
+    // MAX POTION
+    () => {
+      if (ApplyPotionType(party[2], PotionType.MAX_POTION) && ApplyPotionType(party[1], PotionType.MAX_POTION)) {
+        return { pot: 2, suppot: 2, hyppot: 2, maxpot: 2 }
+      }
+
+      return null;
+    },
+    // 3 Pokemon
+    // POTION / POTION
+    () => {
+      if (ApplyPotionType(party[2], PotionType.POTION) && ApplyPotionType(party[1], PotionType.POTION) && ApplyPotionType(party[0], PotionType.POTION)) {
+        return { pot: 3, suppot: 0, hyppot: 0, maxpot: 0 }
+      }
+
+      return null;
+    },
+    () => {
+      if (ApplyPotionType(party[2], PotionType.POTION) && ApplyPotionType(party[1], PotionType.POTION) && ApplyPotionType(party[0], PotionType.SUPER_POTION)) {
+        return { pot: 3, suppot: 1, hyppot: 0, maxpot: 0 }
+      }
+
+      return null;
+    },
+    () => {
+      if (ApplyPotionType(party[2], PotionType.POTION) && ApplyPotionType(party[1], PotionType.POTION) && ApplyPotionType(party[0], PotionType.HYPER_POTION)) {
+        return { pot: 3, suppot: 1, hyppot: 1, maxpot: 0 }
+      }
+
+      return null;
+    },
+    () => {
+      if (ApplyPotionType(party[2], PotionType.POTION) && ApplyPotionType(party[1], PotionType.POTION) && ApplyPotionType(party[0], PotionType.MAX_POTION)) {
+        return { pot: 3, suppot: 1, hyppot: 1, maxpot: 1 }
+      }
+
+      return null;
+    },
+    // POTION / SUPER POTION
+    () => {
+      if (ApplyPotionType(party[2], PotionType.POTION) && ApplyPotionType(party[1], PotionType.SUPER_POTION) && ApplyPotionType(party[0], PotionType.SUPER_POTION)) {
+        return { pot: 3, suppot: 2, hyppot: 0, maxpot: 0 }
+      }
+
+      return null;
+    },
+    () => {
+      if (ApplyPotionType(party[2], PotionType.POTION) && ApplyPotionType(party[1], PotionType.SUPER_POTION) && ApplyPotionType(party[0], PotionType.HYPER_POTION)) {
+        return { pot: 3, suppot: 2, hyppot: 1, maxpot: 0 }
+      }
+
+      return null;
+    },
+    () => {
+      if (ApplyPotionType(party[2], PotionType.POTION) && ApplyPotionType(party[1], PotionType.SUPER_POTION) && ApplyPotionType(party[0], PotionType.MAX_POTION)) {
+        return { pot: 3, suppot: 2, hyppot: 1, maxpot: 1 }
+      }
+
+      return null;
+    },
+    // POTION / HYPER POTION
+    () => {
+      if (ApplyPotionType(party[2], PotionType.POTION) && ApplyPotionType(party[1], PotionType.HYPER_POTION) && ApplyPotionType(party[0], PotionType.HYPER_POTION)) {
+        return { pot: 3, suppot: 2, hyppot: 2, maxpot: 0 }
+      }
+
+      return null;
+    },
+    () => {
+      if (ApplyPotionType(party[2], PotionType.POTION) && ApplyPotionType(party[1], PotionType.HYPER_POTION) && ApplyPotionType(party[0], PotionType.MAX_POTION)) {
+        return { pot: 3, suppot: 2, hyppot: 2, maxpot: 1 }
+      }
+
+      return null;
+    },
+    // POTION / MAX POTION
+    () => {
+      if (ApplyPotionType(party[2], PotionType.POTION) && ApplyPotionType(party[1], PotionType.MAX_POTION) && ApplyPotionType(party[0], PotionType.MAX_POTION)) {
+        return { pot: 3, suppot: 2, hyppot: 2, maxpot: 2 }
+      }
+
+      return null;
+    },
+    // SUPER POTION / SUPER POTION
+    () => {
+      if (ApplyPotionType(party[2], PotionType.SUPER_POTION) && ApplyPotionType(party[1], PotionType.SUPER_POTION) && ApplyPotionType(party[0], PotionType.SUPER_POTION)) {
+        return { pot: 3, suppot: 3, hyppot: 0, maxpot: 0 }
+      }
+
+      return null;
+    },
+    () => {
+      if (ApplyPotionType(party[2], PotionType.SUPER_POTION) && ApplyPotionType(party[1], PotionType.SUPER_POTION) && ApplyPotionType(party[0], PotionType.HYPER_POTION)) {
+        return { pot: 3, suppot: 3, hyppot: 1, maxpot: 0 }
+      }
+
+      return null;
+    },
+    () => {
+      if (ApplyPotionType(party[2], PotionType.SUPER_POTION) && ApplyPotionType(party[1], PotionType.SUPER_POTION) && ApplyPotionType(party[0], PotionType.MAX_POTION)) {
+        return { pot: 3, suppot: 3, hyppot: 1, maxpot: 1 }
+      }
+
+      return null;
+    },
+    // SUPER POTION / HYPER POTION
+    () => {
+      if (ApplyPotionType(party[2], PotionType.SUPER_POTION) && ApplyPotionType(party[1], PotionType.HYPER_POTION) && ApplyPotionType(party[0], PotionType.HYPER_POTION)) {
+        return { pot: 3, suppot: 3, hyppot: 2, maxpot: 0 }
+      }
+
+      return null;
+    },
+    () => {
+      if (ApplyPotionType(party[2], PotionType.SUPER_POTION) && ApplyPotionType(party[1], PotionType.HYPER_POTION) && ApplyPotionType(party[0], PotionType.MAX_POTION)) {
+        return { pot: 3, suppot: 3, hyppot: 2, maxpot: 1 }
+      }
+
+      return null;
+    },
+    // SUPER POTION / MAX POTION
+    () => {
+      if (ApplyPotionType(party[2], PotionType.SUPER_POTION) && ApplyPotionType(party[1], PotionType.MAX_POTION) && ApplyPotionType(party[0], PotionType.MAX_POTION)) {
+        return { pot: 3, suppot: 3, hyppot: 2, maxpot: 2 }
+      }
+
+      return null;
+    },
+    // HYPER POTION / HYPER POTION
+    () => {
+      if (ApplyPotionType(party[2], PotionType.HYPER_POTION) && ApplyPotionType(party[1], PotionType.HYPER_POTION) && ApplyPotionType(party[0], PotionType.HYPER_POTION)) {
+        return { pot: 3, suppot: 3, hyppot: 3, maxpot: 0 }
+      }
+
+      return null;
+    },
+    () => {
+      if (ApplyPotionType(party[2], PotionType.HYPER_POTION) && ApplyPotionType(party[1], PotionType.HYPER_POTION) && ApplyPotionType(party[0], PotionType.MAX_POTION)) {
+        return { pot: 3, suppot: 3, hyppot: 3, maxpot: 1 }
+      }
+
+      return null;
+    },
+    // HYPER POTION / MAX POTION
+    () => {
+      if (ApplyPotionType(party[2], PotionType.HYPER_POTION) && ApplyPotionType(party[1], PotionType.MAX_POTION) && ApplyPotionType(party[0], PotionType.MAX_POTION)) {
+        return { pot: 3, suppot: 3, hyppot: 3, maxpot: 2 }
+      }
+
+      return null;
+    },
+    // MAX POTION / MAX POTION
+    () => {
+      if (ApplyPotionType(party[2], PotionType.MAX_POTION) && ApplyPotionType(party[1], PotionType.MAX_POTION) && ApplyPotionType(party[0], PotionType.MAX_POTION)) {
+        return { pot: 3, suppot: 3, hyppot: 3, maxpot: 3}
+      }
+
+      return null;
+    },
+  ]
+}
+
+function ApplyPotionType(pokemon: PlayerPokemon, type: PotionType) {
+  switch (type) {
+    case PotionType.POTION:
+      return ApplyPotion(pokemon, 0.80, 10, 0.75);
+    case PotionType.SUPER_POTION:
+      return ApplyPotion(pokemon, 0.70, 25, 0.625);
+    case PotionType.HYPER_POTION:
+      return ApplyPotion(pokemon, 0.55, 100, 0.50);
+    case PotionType.MAX_POTION:
+      return ApplyPotion(pokemon, 0.40, 100, 0);
+    default:
+      return false;
+  }
+}
+
+function ApplyPotion(pokemon: PlayerPokemon, percent: number, value: number, percentLimit: number): boolean {
+  const maxhp = pokemon.getMaxHp();
+  if (maxhp <= value) {
+    return false;
+  }
+
+  pokemon.hp = Math.max(1, Math.min((maxhp * percent), (maxhp - value)));
+  if (pokemon.getHpRatio() <= percentLimit) {
+    return false;
+  }
+
+  return true;
+}
+
+function ResetPotionHealth(party: PlayerPokemon[]) {
+  party[0].hp = party[0].getMaxHp();
+  party[1].hp = party[1].getMaxHp();
+  party[2].hp = party[2].getMaxHp();
 }
 
 function GetReviveSetups(party: PlayerPokemon[]) {
@@ -3028,12 +3264,12 @@ function GetEtherSetups() {
       pokemon.moveset[0]?.usePp(pokemon.moveset[0].getMovePp());
       return 1;
     },
-    (pokemon: PlayerPokemon) =>  {
+    (pokemon: PlayerPokemon) => {
       SetFullPP(pokemon);
       pokemon.moveset[1]?.usePp(pokemon.moveset[1].getMovePp());
       return 2;
     },
-    (pokemon: PlayerPokemon) =>  {
+    (pokemon: PlayerPokemon) => {
       SetFullPP(pokemon);
       pokemon.moveset[2]?.usePp(pokemon.moveset[2].getMovePp());
       return 3;
@@ -3090,26 +3326,26 @@ function GetLureSetups() {
 
 function GetMushroomSetups(party: PlayerPokemon[], comp: SpeciesId[]) {
   return [
-    (mu: {start: integer, end: integer, level: integer}) => {
+    (mu: { start: integer, end: integer, level: integer }) => {
       ClearParty(party);
       mu.level = 39;
       FillParty(party, comp, mu.level);
       mu.start = 1;
-      mu.end  = 20;
+      mu.end = 20;
     },
-    (mu: {start: integer, end: integer, level: integer}) => {
+    (mu: { start: integer, end: integer, level: integer }) => {
       ClearParty(party);
       mu.level = 59;
       FillParty(party, comp, mu.level);
       mu.start = 15;
-      mu.end  = 40;
+      mu.end = 40;
     },
-    (mu: {start: integer, end: integer, level: integer}) => {
+    (mu: { start: integer, end: integer, level: integer }) => {
       ClearParty(party);
       mu.level = 79;
       FillParty(party, comp, mu.level);
       mu.start = 35;
-      mu.end  = 49;
+      mu.end = 49;
     },
   ];
 }
@@ -3162,15 +3398,15 @@ function GetGlobalItemSetups() {
 function GetPartyCompositions() {
   // Make sure the final 3 slots are always generic Mew. Those are selected to faint for the Revives tests.
   return [
-    [ SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW ],
-    [ SpeciesId.BULBASAUR, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW ],
-    [ SpeciesId.JIGGLYPUFF, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW ],
-    [ SpeciesId.POLIWHIRL, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW ],
+    [SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY],
+    [SpeciesId.BULBASAUR, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY],
+    [SpeciesId.JIGGLYPUFF, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY],
+    [SpeciesId.POLIWHIRL, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY],
     // Swellow for Guts tests:
-    // [ SpeciesId.MEW, SpeciesId.SWELLOW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW ],
-    // [ SpeciesId.BULBASAUR, SpeciesId.SWELLOW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW ],
-    // [ SpeciesId.JIGGLYPUFF, SpeciesId.SWELLOW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW ],
-    // [ SpeciesId.POLIWHIRL, SpeciesId.SWELLOW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW ],
+    // [ SpeciesId.BLISSEY, SpeciesId.SWELLOW, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY ],
+    // [ SpeciesId.BULBASAUR, SpeciesId.SWELLOW, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY ],
+    // [ SpeciesId.JIGGLYPUFF, SpeciesId.SWELLOW, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY ],
+    // [ SpeciesId.POLIWHIRL, SpeciesId.SWELLOW, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY ],
   ];
 }
 
@@ -3190,7 +3426,7 @@ function FillParty(party: PlayerPokemon[], comp: SpeciesId[], level: integer) {
 function AddPokemon(party: PlayerPokemon[], speciesId: SpeciesId, level: integer) {
   const pokemon = allSpecies.filter(sp => sp.speciesId == speciesId)[0];
   const playerPokemon = globalScene.addPlayerPokemon(pokemon, level);
-  playerPokemon.moveset = [ new PokemonMove(MoveId.TACKLE), new PokemonMove(MoveId.SPLASH), new PokemonMove(MoveId.SPLASH), new PokemonMove(MoveId.SPLASH) ];
+  playerPokemon.moveset = [new PokemonMove(MoveId.TACKLE), new PokemonMove(MoveId.SPLASH), new PokemonMove(MoveId.SPLASH), new PokemonMove(MoveId.SPLASH)];
   party.push(playerPokemon);
 }
 // #endregion
