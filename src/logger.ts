@@ -110,7 +110,7 @@ export const haChances: Number[][] = [];
  * The second index is (very lazily) used to store a log's name/seed for `setFileInfo`.
  * @see setFileInfo
  */
-export const rarityslot = [ 0, "" ];
+export const rarityslot = [0, ""];
 
 /** Stores a list of the user's battle actions in a turn.
  *
@@ -136,7 +136,7 @@ export const logCommand: BooleanHolder = new BooleanHolder(true);
 export function downloadLogByID(i: number) {
   console.log(i);
   const d = JSON.parse(localStorage.getItem(logs[i][1])!);
-  const blob = new Blob([ printDRPD("", "", d as DRPD) ], { type: "text/json" });
+  const blob = new Blob([printDRPD("", "", d as DRPD)], { type: "text/json" });
   const link = document.createElement("a");
   link.href = window.URL.createObjectURL(blob);
   const date: string = (d as DRPD).date;
@@ -155,9 +155,9 @@ export function downloadLogByIDToCSV(i: number) {
   const d = JSON.parse(localStorage.getItem(logs[i][1])!);
   const waves = d["waves"];
   const encounterList: string[] = [];
-  encounterList.push(convertPokemonToCSV({ "id": "a", "biome": waves[0].biome, "actions": []}, d.starters[0], false));
-  encounterList.push(convertPokemonToCSV({ "id": "b", "biome": waves[0].biome, "actions": []}, d.starters[1], false));
-  encounterList.push(convertPokemonToCSV({ "id": "c", "biome": waves[0].biome, "actions": []}, d.starters[2], false));
+  encounterList.push(convertPokemonToCSV({ "id": "a", "biome": waves[0].biome, "actions": [] }, d.starters[0], false));
+  encounterList.push(convertPokemonToCSV({ "id": "b", "biome": waves[0].biome, "actions": [] }, d.starters[1], false));
+  encounterList.push(convertPokemonToCSV({ "id": "c", "biome": waves[0].biome, "actions": [] }, d.starters[2], false));
 
   for (var i = 1; i < waves.length; i++) {
     const wave = waves[i];
@@ -180,7 +180,7 @@ export function downloadLogByIDToCSV(i: number) {
     }
   }
   const encounters = encounterList.join("\n");
-  const blob = new Blob([ encounters ], { type: "text/csv" });
+  const blob = new Blob([encounters], { type: "text/csv" });
   const link = document.createElement("a");
   link.href = window.URL.createObjectURL(blob);
   const date: string = (d as DRPD).date;
@@ -206,7 +206,7 @@ export function downloadLogByIDToSheet(i: number) {
   console.log(i);
   const d = JSON.parse(localStorage.getItem(logs[i][1])!);
   SheetsMode.value = true;
-  const blob = new Blob([ printDRPD("", "", d as DRPD) ], { type: "text/json" });
+  const blob = new Blob([printDRPD("", "", d as DRPD)], { type: "text/json" });
   SheetsMode.value = false;
   const link = document.createElement("a");
   link.href = window.URL.createObjectURL(blob);
@@ -233,7 +233,7 @@ export function downloadLogByIDToSheet(i: number) {
  * @see getLogs
  */
 export const logs: string[][] = [
-  [ "drpd.json", "drpd", "DRPD", "", "wide_lens", "" ],
+  ["drpd.json", "drpd", "DRPD", "", "wide_lens", ""],
 ];
 
 /** @deprecated */
@@ -272,7 +272,7 @@ export function getLogs() {
   }
   for (let i = 0; i < localStorage.length; i++) {
     if (localStorage.key(i)!.substring(0, 9) == "drpd_log:") {
-      logs.push([ "drpd.json", localStorage.key(i)!, localStorage.key(i)!.substring(9), "", "", "" ]);
+      logs.push(["drpd.json", localStorage.key(i)!, localStorage.key(i)!.substring(9), "", "", ""]);
       for (let j = 0; j < 5; j++) {
         const D = parseSlotData(j);
         if (D != undefined) {
@@ -394,7 +394,7 @@ export const autoCheckpoints: number[] = [
 /**
  * Used to get the filesize of a string.
  */
-export const byteSize = str => new Blob([ str ]).size;
+export const byteSize = str => new Blob([str]).size;
 
 /**
  * Contains names for different file size units.
@@ -409,7 +409,7 @@ export const byteSize = str => new Blob([ str ]).size;
  *
  * TB: 1,000,000,000,000 bytes
  */
-const filesizes = [ "b", "kb", "mb", "gb", "tb" ];
+const filesizes = ["b", "kb", "mb", "gb", "tb"];
 
 /**
  * Returns the size of a file, in bytes, KB, MB, GB, or (hopefully not) TB.
@@ -447,7 +447,7 @@ export function playerPokeName(index: number | Pokemon | PlayerPokemon) {
   if (typeof index === "number") {
     //console.log(globalScene.getParty()[index], species, dupeSpecies)
     if (dupeSpecies.includes(globalScene.getPlayerParty()[index].name)) {
-      return globalScene.getPlayerParty()[index].name + " (Slot " + (index  + 1) + ")";
+      return globalScene.getPlayerParty()[index].name + " (Slot " + (index + 1) + ")";
     }
     return globalScene.getPlayerParty()[index].name;
   }
@@ -481,7 +481,7 @@ export function enemyPokeName(index: number | Pokemon | EnemyPokemon) {
   if (typeof index === "number") {
     //console.log(globalScene.getEnemyParty()[index], species, dupeSpecies)
     if (dupeSpecies.includes(globalScene.getEnemyParty()[index].name)) {
-      return globalScene.getEnemyParty()[index].name + " (Slot " + (index  + 1) + ")";
+      return globalScene.getEnemyParty()[index].name + " (Slot " + (index + 1) + ")";
     }
     return globalScene.getEnemyParty()[index].name;
   }
@@ -557,7 +557,7 @@ export function newDocument(name: string = "Untitled Run", authorName: string | 
     title: name,
     label: "unnamedRoute",
     uuid: "",
-    authors: (Array.isArray(authorName) ? authorName : [ authorName ]),
+    authors: (Array.isArray(authorName) ? authorName : [authorName]),
     date: new Date().getUTCFullYear() + "-" + (new Date().getUTCMonth() + 1 < 10 ? "0" : "") + (new Date().getUTCMonth() + 1) + "-" + (new Date().getUTCDate() < 10 ? "0" : "") + new Date().getUTCDate(),
     waves: new Array(50),
     starters: new Array(3),
@@ -668,7 +668,7 @@ function updateLog(drpd: DRPD): DRPD {
   if (drpd.version == "1.1.0") {
     drpd.version = "1.1.0a";
     drpd.maxluck = 14;
-    drpd.minSafeLuckFloor = [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ];
+    drpd.minSafeLuckFloor = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
   } // 1.1.0 → 1.1.0a
   if (drpd.version == "1.1.0a") {
     drpd.version = "1.1.0b";
@@ -819,7 +819,7 @@ function printWave(inData: string, indent: string, wave: Wave): string {
           inData += wave.actions[i];
         }
       }
-      inData +=  "\"";
+      inData += "\"";
     } else {
       inData += ",\n" + indent + "  \"actions\": [";
       for (var i = 0; i < wave.actions.length; i++) {
@@ -1207,7 +1207,7 @@ function printPoke(inData: string, indent: string, pokemon: PokeData) {
         inData += printItemNoNewline(inData, "", pokemon.items[i]);
       }
     }
-    inData +=  "\"";
+    inData += "\"";
   } else {
     if (pokemon.items.length > 0) {
       inData += ",\n" + indent + "  \"items\": [\n";
@@ -2022,10 +2022,10 @@ function generateCritChance(pk: EnemyPokemon, pokeballMultiplier: number) {
 
 function catchCalc(pokemon: EnemyPokemon) {
   const rates = [
-    [ generateBallChance(pokemon, 1), 0, generateCritChance(pokemon, 1), 0 ],
-    [ generateBallChance(pokemon, 1.5), 0, generateCritChance(pokemon, 1.5), 1 ],
-    [ generateBallChance(pokemon, 2), 0, generateCritChance(pokemon, 2), 2 ],
-    [ generateBallChance(pokemon, 3), 0, generateCritChance(pokemon, 3), 3 ]
+    [generateBallChance(pokemon, 1), 0, generateCritChance(pokemon, 1), 0],
+    [generateBallChance(pokemon, 1.5), 0, generateCritChance(pokemon, 1.5), 1],
+    [generateBallChance(pokemon, 2), 0, generateCritChance(pokemon, 2), 2],
+    [generateBallChance(pokemon, 3), 0, generateCritChance(pokemon, 3), 3]
   ];
   for (let i = 0; i < rates.length; i++) {
     rates[i][1] = (rates[i][0] / 65536) ** 3;
@@ -2092,7 +2092,7 @@ export function findBest(pokemon: EnemyPokemon, override?: boolean) {
     console.log("Note: if middle number is less than " + critCap[0] + ", a critical capture should occur");
   }
 
-  rates.sort(function(a, b) {
+  rates.sort(function (a, b) {
     return b[0] - a[0];
   });
 
@@ -2391,16 +2391,16 @@ export function predictDamage(user: Pokemon, target: Pokemon, move: PokemonMove,
   user.isTerastallized = isTera ? isTera : willTera; // If not yet terastallized, check if command wants to terastallize
   let dmgLow = target.getAttackDamage(
     {
-      source: user, 
-      move: moveObj, 
+      source: user,
+      move: moveObj,
       isCritical: isGuaranteedCrit,
       simulated: true,
     }
   ).damage * dmgRange;
   let dmgHigh = target.getAttackDamage(
     {
-      source: user, 
-      move: moveObj, 
+      source: user,
+      move: moveObj,
       isCritical: isGuaranteedCrit,
       simulated: true,
     }
@@ -2601,12 +2601,12 @@ function ScoutingWithoutUI(charms: number) {
   });
 
   ClearParty(party);
-  FillParty(party, [ SpeciesId.VENUSAUR ], 20);
+  FillParty(party, [SpeciesId.VENUSAUR], 20);
 
   var output: string[][] = [];
-  output.push([ "startstarters" ]);
+  output.push(["startstarters"]);
   output.push(starters);
-  output.push([ "endstarters" ]);
+  output.push(["endstarters"]);
   localStorage.setItem("scouting", JSON.stringify(output));
 
   // Remove any lures or charms
@@ -2653,9 +2653,9 @@ function ScoutingWithoutUI(charms: number) {
 
 function StoreEncounters(lurecharm: string) {
   let output = JSON.parse(localStorage.getItem("scouting")!) as string[][];
-  output.push([ `start${lurecharm}` ]);
+  output.push([`start${lurecharm}`]);
   output.push(encounterList);
-  output.push([ `end${lurecharm}` ]);
+  output.push([`end${lurecharm}`]);
   localStorage.setItem("scouting", JSON.stringify(output));
   output = [];
 }
@@ -2689,7 +2689,7 @@ function GenerateBattle(nolog: boolean = false) {
       globalScene.getPlayerParty().slice(0, !battle.double ? 1 : 2).reverse().forEach(playerPokemon => {
         applyAbAttrs("SyncEncounterNatureAbAttr", { pokemon: playerPokemon, target: battle.enemyParty[e], passive: undefined });
       });
-    }      
+    }
 
     if (!nolog) {
       const enemy = battle.enemyParty[e];
@@ -2702,16 +2702,16 @@ function GenerateBattle(nolog: boolean = false) {
       }
 
       // Male/Female sprites for Frillish, Jellicent, Pyroar, Meowstic, Indeedee, Basculegion, Oinkologne...
-      if (["592","593","668","678","876","902","916"].includes(atlaspath)) {
+      if (["592", "593", "668", "678", "876", "902", "916"].includes(atlaspath)) {
         atlaspath += `-${Gender[enemy.gender].toLowerCase()}`;
       }
 
       // Store encounters in a list, basically CSV (uses regex in sheets), but readable as well
       const text = `Wave: ${globalScene.currentBattle.waveIndex} Biome: ${BiomeId[globalScene.arena.biomeType]} Pokemon: ${getPokemonNameWithAffix(enemy)} ` +
-      `Form: ${atlaspath} Species ID: ${enemy.species.speciesId} Stats: ${enemy.stats} IVs: ${enemy.ivs} Ability: ${enemy.getAbility().name} ` +
-      `Passive Ability: ${enemy.getPassiveAbility().name} Nature: ${Nature[enemy.nature]} Gender: ${Gender[enemy.gender]} Rarity: ${rarities[e]} AbilityIndex: ${enemy.abilityIndex} ` +
-      `ID: ${enemy.id} Type: ${enemy.getTypes().map(t => PokemonType[t]).join(",")} Moves: ${enemy.getMoveset().map(m => MoveId[m?.moveId ?? 0]).join(",")} HARolls: ${haChances[e].join(",")} ` +
-      `Hidden Ability: ${allAbilities[enemy.getSpeciesForm().abilityHidden].name}`;
+        `Form: ${atlaspath} Species ID: ${enemy.species.speciesId} Stats: ${enemy.stats} IVs: ${enemy.ivs} Ability: ${enemy.getAbility().name} ` +
+        `Passive Ability: ${enemy.getPassiveAbility().name} Nature: ${Nature[enemy.nature]} Gender: ${Gender[enemy.gender]} Rarity: ${rarities[e]} AbilityIndex: ${enemy.abilityIndex} ` +
+        `ID: ${enemy.id} Type: ${enemy.getTypes().map(t => PokemonType[t]).join(",")} Moves: ${enemy.getMoveset().map(m => MoveId[m?.moveId ?? 0]).join(",")} HARolls: ${haChances[e].join(",")} ` +
+        `Hidden Ability: ${allAbilities[enemy.getSpeciesForm().abilityHidden].name}`;
       encounterList.push(text);
       console.log(text);
       if (battle.waveIndex == 50) {
@@ -2720,7 +2720,7 @@ function GenerateBattle(nolog: boolean = false) {
       }
     }
   });
-  
+
   if (!nolog && globalScene.currentBattle.waveIndex % 10 === 1) {
     regenerateModifierPoolThresholds(
       globalScene.getEnemyField(),
@@ -2756,10 +2756,10 @@ function GenerateBiomes(biomeId: BiomeId, waveIndex: integer) {
   }
 
   const biomeChoices: BiomeId[] = (!Array.isArray(biomeLinks[biomeId])
-    ? [ biomeLinks[biomeId] as BiomeId ]
+    ? [biomeLinks[biomeId] as BiomeId]
     : biomeLinks[biomeId] as (BiomeId | [BiomeId, integer])[])
-      .filter(b => !Array.isArray(b) || !randSeedInt(b[1], undefined, "Choosing next biome"))
-      .map(b => (!Array.isArray(b) ? b : b[0]));
+    .filter(b => !Array.isArray(b) || !randSeedInt(b[1], undefined, "Choosing next biome"))
+    .map(b => (!Array.isArray(b) ? b : b[0]));
 
   // Recursively generate next biomes
   for (const b of biomeChoices) {
@@ -2842,7 +2842,7 @@ function ShopScouting(method) {
 
       lures.forEach(lure => {
         const text = lure();
-        
+
         ethers.forEach(ether => {
           const e = ether(party[0]);
 
@@ -3187,7 +3187,7 @@ function GetPotionSetups(party: PlayerPokemon[]) {
     // MAX POTION / MAX POTION
     () => {
       if (ApplyPotionType(party[2], PotionType.MAX_POTION) && ApplyPotionType(party[1], PotionType.MAX_POTION) && ApplyPotionType(party[0], PotionType.MAX_POTION)) {
-        return { pot: 3, suppot: 3, hyppot: 3, maxpot: 3}
+        return { pot: 3, suppot: 3, hyppot: 3, maxpot: 3 }
       }
 
       return null;
