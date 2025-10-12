@@ -2686,9 +2686,13 @@ function GenerateBattle(nolog: boolean = false) {
       if (globalScene.currentBattle.battleSpec === BattleSpec.FINAL_BOSS) {
         battle.enemyParty[e].ivs = new Array(6).fill(31);
       }
-      globalScene.getPlayerParty().slice(0, !battle.double ? 1 : 2).reverse().forEach(playerPokemon => {
-        applyAbAttrs("SyncEncounterNatureAbAttr", { pokemon: playerPokemon, target: battle.enemyParty[e], passive: undefined });
-      });
+      globalScene
+        .getPlayerParty()
+        .slice(0, !battle.double ? 1 : 2)
+        .reverse()
+        .forEach(playerPokemon => {
+          applyAbAttrs("SyncEncounterNatureAbAttr", { pokemon: playerPokemon, target: battle.enemyParty[e] });
+        });
     }
 
     if (!nolog) {
@@ -2721,6 +2725,7 @@ function GenerateBattle(nolog: boolean = false) {
     }
   });
 
+  // Do rest of rng steps + get weather only on wave x1
   if (!nolog && globalScene.currentBattle.waveIndex % 10 === 1) {
     regenerateModifierPoolThresholds(
       globalScene.getEnemyField(),
