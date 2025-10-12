@@ -977,8 +977,8 @@ export class PartyUiHandler extends MessageUiHandler {
     }
 
     this.partySlots.forEach(ps => {
-      ps.slotHpPercentageText.setVisible(globalScene.pathingToolUI);
-      ps.slotEtherText.setVisible(globalScene.pathingToolUI);
+      ps.slotHpPercentageText.setVisible(LoggerTools.pathingToolUI);
+      ps.slotEtherText.setVisible(LoggerTools.pathingToolUI);
     });
 
     if (this.awaitingActionInput) {
@@ -1730,8 +1730,8 @@ export class PartyUiHandler extends MessageUiHandler {
       this.partySlots[i].slotHpBar.setVisible(true);
       this.partySlots[i].slotHpOverlay.setVisible(true);
       this.partySlots[i].slotHpText.setVisible(true);
-      this.partySlots[i].slotHpPercentageText.setVisible(globalScene.pathingToolUI);
-      this.partySlots[i].slotEtherText.setVisible(globalScene.pathingToolUI);
+      this.partySlots[i].slotHpPercentageText.setVisible(LoggerTools.pathingToolUI);
+      this.partySlots[i].slotEtherText.setVisible(LoggerTools.pathingToolUI);
     }
   }
 
@@ -2162,8 +2162,8 @@ class PartySlot extends Phaser.GameObjects.Container {
       this.slotHpBar.setVisible(true);
       this.slotHpOverlay.setVisible(true);
       this.slotHpText.setVisible(true);
-      this.slotHpPercentageText.setVisible(globalScene.pathingToolUI);
-      this.slotEtherText.setVisible(globalScene.pathingToolUI);
+      this.slotHpPercentageText.setVisible(LoggerTools.pathingToolUI);
+      this.slotEtherText.setVisible(LoggerTools.pathingToolUI);
     } else {
       this.slotHpBar.setVisible(false);
       this.slotHpOverlay.setVisible(false);

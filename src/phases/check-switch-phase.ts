@@ -1,4 +1,3 @@
-import * as LoggerTools from "../logger";
 import { globalScene } from "#app/global-scene";
 import { getPokemonNameWithAffix } from "#app/messages";
 import { BattleStyle } from "#enums/battle-style";
@@ -8,6 +7,7 @@ import { UiMode } from "#enums/ui-mode";
 import { BattlePhase } from "#phases/battle-phase";
 import i18next from "i18next";
 import { getNatureName } from "#data/nature";
+import * as LoggerTools from "../logger";
 
 export class CheckSwitchPhase extends BattlePhase {
   public readonly phaseName = "CheckSwitchPhase";
@@ -78,7 +78,7 @@ export class CheckSwitchPhase extends BattlePhase {
       pk.setBattleInfoFlyout(getNatureName(pk.nature), ivDesc, pk.getAbility().name, pk.getPassiveAbility().name, pk.abilityIndex);
     }
 
-    globalScene.predictEnemy();
+    LoggerTools.predictEnemy();
 
     globalScene.ui.showText(
       i18next.t("battle:switchQuestion", {

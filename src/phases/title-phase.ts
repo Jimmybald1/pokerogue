@@ -1,11 +1,10 @@
-import * as LoggerTools from "../logger";
 import { loggedInUser } from "#app/account";
 import { GameMode, getGameMode } from "#app/game-mode";
 import { globalScene } from "#app/global-scene";
 import Overrides from "#app/overrides";
 import { Phase } from "#app/phase";
 import { fetchDailyRunSeed, getDailyRunStarters } from "#data/daily-run";
-import { allAbilities, allSpecies, modifierTypes } from "#data/data-lists";
+import { modifierTypes } from "#data/data-lists";
 import { Gender } from "#data/gender";
 import { BattleType } from "#enums/battle-type";
 import { GameModes } from "#enums/game-modes";
@@ -13,30 +12,16 @@ import { ModifierPoolType } from "#enums/modifier-pool-type";
 import { UiMode } from "#enums/ui-mode";
 import { Unlockables } from "#enums/unlockables";
 import { getBiomeKey } from "#field/arena";
-import { overrideHeldItems, overrideModifiers, type Modifier } from "#modifiers/modifier";
-import { getDailyRunStarterModifiers, getPlayerModifierTypeOptions, ModifierTypeOption, regenerateModifierPoolThresholds } from "#modifiers/modifier-type";
+import { type Modifier } from "#modifiers/modifier";
+import { getDailyRunStarterModifiers, regenerateModifierPoolThresholds } from "#modifiers/modifier-type";
 import type { SessionSaveData } from "#system/game-data";
 import { vouchers } from "#system/voucher";
 import type { OptionSelectConfig, OptionSelectItem } from "#ui/abstract-option-select-ui-handler";
 import { SaveSlotUiMode } from "#ui/save-slot-select-ui-handler";
-import { isLocal, isLocalServerConnected, isNullOrUndefined, randSeedInt } from "#utils/common";
+import { isLocal, isLocalServerConnected, isNullOrUndefined } from "#utils/common";
 import i18next from "i18next";
 import { BiomeId } from "#enums/biome-id";
-import { SpeciesId } from "#enums/species-id";
-import { PlayerPokemon } from "#field/pokemon";
-import { PokemonMove } from "#moves/pokemon-move";
-import { MoveId } from "#enums/move-id";
-import { getPokemonNameWithAffix } from "#app/messages";
-import { Nature } from "#enums/nature";
-import { PokemonType } from "#enums/pokemon-type";
-import { Battle } from "#app/battle";
-import { TrainerSlot } from "#enums/trainer-slot";
-import { BattleSpec } from "#enums/battle-spec";
-import { applyAbAttrs } from "#abilities/apply-ab-attrs";
-import { getRandomWeatherType } from "#data/weather";
-import { biomeLinks } from "#balance/biomes";
-import { TimeOfDay } from "#enums/time-of-day";
-import { WeatherType } from "#enums/weather-type";
+import * as LoggerTools from "../logger";
 
 export class TitlePhase extends Phase {
   public readonly phaseName = "TitlePhase";
@@ -151,7 +136,7 @@ export class TitlePhase extends Phase {
       { // Pathing tool option
         label: "Scouting",
         handler: () => {
-          globalScene.ui.showText("Encounter Scouting", null, () => this.InitScouting(0));
+          globalScene.ui.showText("Encounter Scouting", null, () => LoggerTools.InitScouting(0));
           return true;
         }
       }, 
@@ -162,25 +147,25 @@ export class TitlePhase extends Phase {
           shopOptions.push({
             label: "Shop no evo",
             handler: () => {
-              this.InitShopScouting(0);
+              LoggerTools.InitShopScouting(0);
               return true;
             }
           }, {
             label: "Shop lvl evo",
             handler: () => {
-              this.InitShopScouting(1);
+              LoggerTools.InitShopScouting(1);
               return true;
             }
           }, {
             label: "Shop 1x item evo",
             handler: () => {
-              this.InitShopScouting(2);
+              LoggerTools.InitShopScouting(2);
               return true;
             }
           }, {
             label: "Shop 2x item evo",
             handler: () => {
-              this.InitShopScouting(3);
+              LoggerTools.InitShopScouting(3);
               return true;
             }
           });
@@ -191,7 +176,6 @@ export class TitlePhase extends Phase {
       { // Pathing tool option
         label: "Manage Logs",
         handler: () => {
-          //return this.logRenameMenu()
           globalScene.ui.setOverlayMode(UiMode.LOG_HANDLER,
             (k: string) => {
               if (k === undefined) {
@@ -431,11 +415,6 @@ export class TitlePhase extends Phase {
     return true;
   }
 
-  showLoggerOptions(txt: string, options: OptionSelectItem[]): boolean {
-    globalScene.ui.showText("Export or clear game logs.", null, () => globalScene.ui.setOverlayMode(UiMode.OPTION_SELECT, { options: options }));
-    return true;
-  }
-
   logMenu(): boolean {
     const options: OptionSelectItem[] = [];
     LoggerTools.getLogs();
@@ -519,603 +498,5 @@ export class TitlePhase extends Phase {
       return undefined;
     }
     return saves.map(f => f[1]);
-  }
-
-  InitShopScouting(method) {
-    globalScene.sessionSlotId = 0;
-    globalScene.gameData.loadSession(globalScene.sessionSlotId).then((success: boolean) => {
-      console.time('Shop Scouting');
-      this.ShopScouting(method);
-      console.timeEnd('Shop Scouting');
-    }).catch(err => {
-      console.error(err);
-      globalScene.ui.showText("something went wrong, see console error", null);
-    });
-  }
-
-  private iterations: string[] = [];
-  private charmList: string[] = [];
-  ShopScouting(method) {
-    // Remove any lures or charms
-    globalScene.RemoveModifiers();
-    console.log(`Starting shop scouting ${new Date().toLocaleTimeString()}`);
-
-    const party = globalScene.getPlayerParty();
-
-    const comps = [
-      [ SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW ],
-      [ SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.BULBASAUR ],
-      [ SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.JIGGLYPUFF ],
-      [ SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.POLIWHIRL ],
-      // [SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.SWELLOW, SpeciesId.MEW],
-      // [SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.SWELLOW, SpeciesId.BULBASAUR],
-      // [SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.SWELLOW, SpeciesId.JIGGLYPUFF],
-      // [SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.MEW, SpeciesId.SWELLOW, SpeciesId.POLIWHIRL],
-    ];
-
-    const revives = [
-      () => {
-        party[3].hp = party[3].getMaxHp();
-        party[4].hp = party[4].getMaxHp();
-        party[5].hp = party[5].getMaxHp();
-        return 0;
-      },
-      () => {
-        party[3].hp = 0;
-        return 1;
-      },
-      () => {
-        party[4].hp = 0;
-        return 2;
-      },
-      () => {
-        party[5].hp = 0;
-        return 3;
-      }
-    ]
-
-    const ethers = [
-      (pokemon: PlayerPokemon) => {
-        this.SetFullPP(pokemon);
-        return 0;
-      },
-      (pokemon: PlayerPokemon) => {
-        this.SetFullPP(pokemon);
-        pokemon.moveset[0]?.usePp(pokemon.moveset[0].getMovePp());
-        return 1;
-      },
-      (pokemon: PlayerPokemon) =>  {
-        this.SetFullPP(pokemon);
-        pokemon.moveset[1]?.usePp(pokemon.moveset[1].getMovePp());
-        return 2;
-      },
-      (pokemon: PlayerPokemon) =>  {
-        this.SetFullPP(pokemon);
-        pokemon.moveset[2]?.usePp(pokemon.moveset[2].getMovePp());
-        return 3;
-      },
-    ];
-
-    const lures = [
-      () => {
-        globalScene.RemoveLures();
-        return "";
-      },
-      () => {
-        globalScene.RemoveLures();
-        globalScene.InsertLure();
-        return "Lure";
-      },
-      () => {
-        globalScene.RemoveLures();
-        globalScene.InsertSuperLure();
-        return "Super Lure";
-      },
-      () => {
-        globalScene.RemoveLures();
-        globalScene.InsertMaxLure();
-        return "Max Lure";
-      },
-      () => {
-        globalScene.RemoveLures();
-        globalScene.InsertLure();
-        globalScene.InsertSuperLure();
-        return "Lure + Super Lure";
-      },
-      () => {
-        globalScene.RemoveLures();
-        globalScene.InsertSuperLure();
-        globalScene.InsertMaxLure();
-        return "Super Lure + Max Lure";
-      },
-      () => {
-        globalScene.RemoveLures();
-        globalScene.InsertThreeLures();
-        return "All Lures";
-      },
-    ];
-
-    const comp = comps[method];
-    const mushroom = [
-      (mu: {start: integer, end: integer, level: integer}) => {
-        this.ClearParty(party);
-        mu.level = 39;
-        this.FillParty(party, comp, mu.level);
-        mu.start = 1;
-        mu.end  = 20;
-      },
-      (mu: {start: integer, end: integer, level: integer}) => {
-        this.ClearParty(party);
-        mu.level = 59;
-        this.FillParty(party, comp, mu.level);
-        mu.start = 15;
-        mu.end  = 40;
-      },
-      (mu: {start: integer, end: integer, level: integer}) => {
-        this.ClearParty(party);
-        mu.level = 79;
-        this.FillParty(party, comp, mu.level);
-        mu.start = 35;
-        mu.end  = 49;
-      },
-    ];
-
-    const globals = [
-      () => {
-        return "";
-      },
-      // () => {
-      //   globalScene.InsertMegaBracelet();
-      //   return "Mega";
-      // },
-      // () => {
-      //   globalScene.InsertDynamaxBand();
-      //   return "Band";
-      // },
-      // () => {
-      //   globalScene.InsertLockCapsule();
-      //   return "Lock";
-      // },
-      // () => {
-      //   globalScene.InsertMegaBracelet();
-      //   globalScene.InsertDynamaxBand();
-      //   return "Mega + Band";
-      // },
-      // () => {
-      //   globalScene.InsertMegaBracelet();
-      //   globalScene.InsertLockCapsule();
-      //   return "Mega + Lock";
-      // },
-      // () => {
-      //   globalScene.InsertDynamaxBand();
-      //   globalScene.InsertLockCapsule();
-      //   return "Band + Lock";
-      // },
-      // () => {
-      //   globalScene.InsertMegaBracelet();
-      //   globalScene.InsertDynamaxBand();
-      //   globalScene.InsertLockCapsule();
-      //   return "Mega + Band + Lock";
-      // },
-      // () => {
-      //   globalScene.InsertTeraOrb();
-      //   return "Tera";
-      // },
-    ];
-
-    this.iterations = [];
-
-    // this.ClearParty(party);
-    // overrides.MOVESET_OVERRIDE = [Moves.TACKLE, Moves.SPLASH, Moves.SPLASH, Moves.SPLASH];
-    // this.FillParty(party, comps[0], 39);
-    // party[0].hp = 0;
-    // this.GenerateShop(party, "test", 9, 10);
-    // party[0].hp = party[0].getMaxHp();
-    // this.GenerateShop(party, "test", 9, 10);
-    // return
-
-    globals.forEach(g => {
-      globalScene.RemoveModifiers();
-
-      // globalScene.InsertDynamaxBand();
-      // globalScene.InsertMegaBracelet();
-      // globalScene.InsertLockCapsule();
-      // globalScene.InsertTeraOrb();
-      // globalScene.InsertIVScanner();
-
-      const rogueItem = g();
-      mushroom.forEach(m => {
-        const mu = {
-          start: 0,
-          end: 0,
-          level: 0
-        };
-        m(mu);
-
-        const partynames = party.map(p => p.name);
-        console.log(rogueItem, mu.level, partynames, party);
-
-        lures.forEach(lure => {
-          const text = lure();
-          
-          ethers.forEach(ether => {
-            const e = ether(party[0]);
-
-            revives.forEach(revive => {
-              const r = revive();
-              this.IteratePotions(party, 0, 0, 0, 0, 0, r, e, text, mu.start, mu.end, mu.level, rogueItem);
-            })
-          });
-        });
-      });
-    });
-
-    console.log(this.charmList);
-    console.log(`Shop scouting done ${new Date().toLocaleTimeString()}`);
-    globalScene.ui.showText("DONE! Copy the list from the console and refresh the page.", null);
-  }
-
-  ClearParty(party: PlayerPokemon[]) {
-    do {
-      globalScene.removePokemonFromPlayerParty(party[0], true);
-    }
-    while (party.length > 0);
-  }
-
-  FillParty(party: PlayerPokemon[], comp: SpeciesId[], level: integer) {
-    comp.forEach((s: SpeciesId) => {
-      this.AddPokemon(party, s, level);
-    });
-  }
-
-  AddPokemon(party: PlayerPokemon[], speciesId: SpeciesId, level: integer) {
-    const pokemon = allSpecies.filter(sp => sp.speciesId == speciesId)[0];
-    const playerPokemon = globalScene.addPlayerPokemon(pokemon, level);
-    playerPokemon.moveset = [ new PokemonMove(MoveId.TACKLE), new PokemonMove(MoveId.SPLASH), new PokemonMove(MoveId.SPLASH), new PokemonMove(MoveId.SPLASH) ];
-    party.push(playerPokemon);
-  }
-
-  SetFullPP(pokemon: PlayerPokemon) {
-    pokemon.getMoveset().forEach(ms => {
-      ms?.setFullPp();
-    });
-  }
-
-  // Done:
-  //  Potion
-  //  Super Potion
-  //  Hyper Potion
-  //  Max Potion
-  //  Ether
-  //  Max Ether
-  //  Elixir
-  //  Max Elixir
-  //  Lure
-  //  Super Lure
-  //  Max Lure
-  //  Memory Mushroom
-  //  Revive
-  //  Max Revive
-  //  Lock Capsule
-  //  Dynamax Band
-  //  Mega Bracelet
-  //
-  // Planned:
-  //  Full Heal
-  //  Full Restore
-  //  Sacred Ash
-  //  Form Change Items
-  //  Species Items
-  //  Leek
-  //  Toxic Orb
-  //  Flame Orb
-  //  Tera Orb
-  CreateLog(pot = 0, suppot = 0, hyppot = 0, maxpot = 0, revive = 0, eth = 0, lure = "", level = 79, rogueItem = "") {
-    const items: string[] = [];
-    if (pot - suppot > 0) {
-      items.push(`${pot - suppot}x <87.5% HP and 10+ dmg taken`);
-    }
-    if (suppot - hyppot > 0) {
-      items.push(`${suppot - hyppot}x <75% HP and 25+ dmg taken`);
-    }
-    if (hyppot - maxpot > 0) {
-      items.push(`${hyppot - maxpot}x 50%-62.5% and 100+ dmg taken`);
-    }
-    if (maxpot - revive > 0) {
-      items.push(`${maxpot - revive}x <50% and 100+ dmg taken`);
-    }
-    if (revive > 0) {
-      items.push(`${revive}x fainted`);
-    }
-    if (eth > 0) {
-      items.push(`${eth}x low PP`);
-    }
-    if (lure != "") {
-      items.push(`${lure}`);
-    }
-    if (rogueItem != "") {
-      items.push(`${rogueItem}`);
-    }
-
-    if (items.length == 0) {
-      items.push("nothing");
-    }
-
-    items.push(`Highest lvl: ${level - 19}-${level}`);
-
-    return items.join(" + ");
-  }
-
-  IteratePotions(party: PlayerPokemon[], n = 0, pot = 0, suppot = 0, hyppot = 0, maxpot = 0, revive = 0, eth = 0, lure = "", start = 1, end = 50, level = 79, rogueItem = "") {
-    if (n == Math.min(3, party.length)) {
-      const i = `${pot} ${suppot} ${hyppot} ${maxpot} ${revive} ${eth} ${lure} ${level} ${rogueItem}`;
-      if (this.iterations.some(it => it == i)) {
-        return;
-      }
-
-      this.iterations.push(i);
-      const comptext = this.CreateLog(pot, suppot, hyppot, maxpot, revive, eth, lure, level, rogueItem);
-      this.GenerateShop(party, comptext, start, end);
-      return;
-    }
-
-    const pokemon = party[n];
-    const mhp = pokemon.getMaxHp();
-
-    // Nothing
-    this.IteratePotions(party, n + 1, pot, suppot, hyppot, maxpot, revive, eth, lure, start, end, level, rogueItem);
-
-    // potion
-    var damage = Math.min(Math.max(Math.floor(mhp * 0.18), 10));
-    if (damage < mhp) {
-      pokemon.hp = mhp - damage;
-      this.IteratePotions(party, n + 1, pot + 1, suppot, hyppot, maxpot, revive, eth, lure, start, end, level, rogueItem);
-    }
-
-    // super potion
-    var damage = Math.min(Math.max(Math.floor(mhp * 0.31), 25));
-    if (damage < mhp) {
-      pokemon.hp = mhp - damage;
-      this.IteratePotions(party, n + 1, pot + 1, suppot + 1, hyppot, maxpot, revive, eth, lure, start, end, level, rogueItem);
-    }
-
-    // hyper potion
-    var damage = Math.min(Math.max(Math.floor(mhp * 0.45), 100));
-    if (damage < mhp && (mhp - damage) / mhp > 0.5) {
-      pokemon.hp = mhp - damage;
-      this.IteratePotions(party, n + 1, pot + 1, suppot + 1, hyppot + 1, maxpot, revive, eth, lure, start, end, level, rogueItem);
-    }
-
-    // max potion
-    var damage = Math.min(Math.max(Math.floor(mhp * 0.51), 100));
-    if (damage < mhp) {
-      pokemon.hp = mhp - damage;
-      this.IteratePotions(party, n + 1, pot + 1, suppot + 1, hyppot + 1, maxpot + 1, revive, eth, lure, start, end, level, rogueItem);
-    }
-
-    // // Revive
-    // pokemon.hp = 0;
-    // this.IteratePotions(party, n + 1, pot + 1, suppot + 1, hyppot + 1, maxpot + 1, revive + 1, eth, lure, start, end, level, rogueItem);
-
-    // reset pokemon
-    pokemon.hp = pokemon.getMaxHp();
-  }
-
-  GenerateShop(party: PlayerPokemon[], comptext: string, start: integer, end: integer) {
-    for (var w = start; w < end; w++) {
-      if (w % 10 == 0) {
-        continue;
-      }
-
-      globalScene.executeWithSeedOffset(() => {
-        globalScene.currentBattle.waveIndex = w;
-        for (let i = 0; i < 4; i++) {
-          regenerateModifierPoolThresholds(party, ModifierPoolType.PLAYER, i);
-          const typeOptions: ModifierTypeOption[] = getPlayerModifierTypeOptions(Math.min(6, Math.max(3, 3 + Math.floor((w / 10) - 1))), party);
-          if (typeOptions.some(t => t.type.id == "ABILITY_CHARM")) {
-            console.log(w, i, comptext);
-            this.charmList.push(`${w} ${i} ${comptext}`);
-          }
-        }
-      }, w);
-    }
-  }
-
-  InitScouting(charms: number) {
-    globalScene.sessionSlotId = 0;
-    globalScene.gameData.loadSession(globalScene.sessionSlotId).then((success: boolean) => {
-      this.ScoutingWithoutUI(charms);
-    }).catch(err => {
-      console.error(err);
-      globalScene.ui.showText("something went wrong, see console error", null);
-    });
-  }
-
-  private encounterList: string[] = [];
-  ScoutingWithoutUI(charms: number) {
-    const startingBiome = globalScene.arena.biomeType;
-
-    const starters: string[] = [];
-    const party = globalScene.getPlayerParty();
-    party.forEach(p => {
-      starters.push(`Pokemon: ${getPokemonNameWithAffix(p)} ` +
-        `Form: ${p.getSpeciesForm().getSpriteAtlasPath(false, p.formIndex)} Species ID: ${p.species.speciesId} Stats: ${p.stats} IVs: ${p.ivs} Ability: ${p.getAbility().name} ` +
-        `Passive Ability: ${p.getPassiveAbility().name} Nature: ${Nature[p.nature]} Gender: ${Gender[p.gender]} Rarity: undefined AbilityIndex: ${p.abilityIndex} ` +
-        `ID: ${p.id} Type: ${p.getTypes().map(t => PokemonType[t]).join(",")} Moves: ${p.getMoveset().map(m => MoveId[m?.moveId ?? 0]).join(",")}`);
-    });
-
-    this.ClearParty(party);
-    this.FillParty(party, [ SpeciesId.VENUSAUR ], 20);
-
-    var output: string[][] = [];
-    output.push([ "startstarters" ]);
-    output.push(starters);
-    output.push([ "endstarters" ]);
-    localStorage.setItem("scouting", JSON.stringify(output));
-
-    // Remove any lures or charms
-    globalScene.RemoveModifiers();
-
-    // Add 0 to 4 charms
-    if (charms > 0) {
-      globalScene.InsertAbilityCharm(charms);
-    }
-
-    // Keep track of encounters, Generate Biomes and encounters
-    console.log(`Starting 0 lures and ${charms} charms ${new Date().toLocaleString()}`);
-    this.encounterList = [];
-    this.GenerateBiomes(startingBiome, 0);
-    this.StoreEncounters(`0${charms}`);
-
-    console.log(`Starting 1 lures and ${charms} charms ${new Date().toLocaleString()}`);
-    this.encounterList = [];
-    globalScene.InsertLure();
-    this.GenerateBiomes(startingBiome, 0);
-    this.StoreEncounters(`1${charms}`);
-
-    console.log(`Starting 2 lures and ${charms} charms ${new Date().toLocaleString()}`);
-    this.encounterList = [];
-    globalScene.InsertSuperLure();
-    this.GenerateBiomes(startingBiome, 0);
-    this.StoreEncounters(`2${charms}`);
-
-    // Only generate wave 10 for 3 lures.
-    console.log(`Starting 3 lures and ${charms} charms ${new Date().toLocaleString()}`);
-    this.encounterList = [];
-    globalScene.InsertMaxLure();
-    globalScene.newArena(startingBiome);
-    globalScene.currentBattle.waveIndex = 9;
-    globalScene.arena.updatePoolsForTimeOfDay();
-    this.GenerateBattle();
-    this.StoreEncounters(`3${charms}`);
-
-    var output = JSON.parse(localStorage.getItem("scouting")!) as string[][];
-    console.log("All scouting data:", output);
-    output = [];
-    globalScene.ui.showText("DONE! Copy the data from the console and then you can refresh this page.", null);
-  }
-
-  StoreEncounters(lurecharm: string) {
-    let output = JSON.parse(localStorage.getItem("scouting")!) as string[][];
-    output.push([ `start${lurecharm}` ]);
-    output.push(this.encounterList);
-    output.push([ `end${lurecharm}` ]);
-    localStorage.setItem("scouting", JSON.stringify(output));
-    output = [];
-  }
-
-  GenerateBattle(nolog: boolean = false) {
-    console.log(`%%%%%  Wave: ${globalScene.currentBattle.waveIndex + 1}  %%%%%`);
-    const timeOfDay = globalScene.arena.getTimeOfDay();
-    const battle = globalScene.newBattle() as Battle;
-    while (LoggerTools.rarities.length > 0) {
-      LoggerTools.rarities.pop();
-    }
-    LoggerTools.rarityslot[0] = 0;
-    while (LoggerTools.haChances.length > 0) {
-      LoggerTools.haChances.pop();
-    }
-
-    if (!nolog && battle?.trainer != null) {
-      this.encounterList.push(`Wave: ${globalScene.currentBattle.waveIndex} Biome: ${BiomeId[globalScene.arena.biomeType]} Trainer: ${battle.trainer.config.name}`);
-    }
-
-    battle.enemyLevels?.forEach((level, e) => {
-      if (battle.battleType === BattleType.TRAINER) {
-        battle.enemyParty[e] = battle.trainer?.genPartyMember(e)!;
-      } else {
-        LoggerTools.rarityslot[0] = e;
-        const enemySpecies = globalScene.randomSpecies(battle.waveIndex, level, true);
-        battle.enemyParty[e] = globalScene.addEnemyPokemon(enemySpecies, level, TrainerSlot.NONE, !!globalScene.getEncounterBossSegments(battle.waveIndex, level, enemySpecies));
-        if (globalScene.currentBattle.battleSpec === BattleSpec.FINAL_BOSS) {
-          battle.enemyParty[e].ivs = new Array(6).fill(31);
-        }
-        globalScene.getPlayerParty().slice(0, !battle.double ? 1 : 2).reverse().forEach(playerPokemon => {
-          applyAbAttrs("SyncEncounterNatureAbAttr", { pokemon: playerPokemon, target: battle.enemyParty[e], passive: undefined });
-        });
-      }      
-
-      if (!nolog) {
-        const enemy = battle.enemyParty[e];
-        let atlaspath = enemy.getSpeciesForm().getSpriteAtlasPath(false, enemy.formIndex);
-        // Regional pokemon have the same name, instead get their atlas path.
-        if (enemy.species.speciesId > 1025) {
-          // Using nicknames here because i want the getPokemonNameWithAffix so i have Wild/Foe information
-          // Nicknames are stored in base 64? so convert btoa here
-          enemy.nickname = btoa(SpeciesId[enemy.species.speciesId]);
-        }
-
-        // Male/Female sprites for Frillish, Jellicent, Pyroar, Meowstic, Indeedee, Basculegion, Oinkologne...
-        if (["592","593","668","678","876","902","916"].includes(atlaspath)) {
-          atlaspath += `-${Gender[enemy.gender].toLowerCase()}`;
-        }
-
-        // Store encounters in a list, basically CSV (uses regex in sheets), but readable as well
-        const text = `Wave: ${globalScene.currentBattle.waveIndex} Biome: ${BiomeId[globalScene.arena.biomeType]} Pokemon: ${getPokemonNameWithAffix(enemy)} ` +
-        `Form: ${atlaspath} Species ID: ${enemy.species.speciesId} Stats: ${enemy.stats} IVs: ${enemy.ivs} Ability: ${enemy.getAbility().name} ` +
-        `Passive Ability: ${enemy.getPassiveAbility().name} Nature: ${Nature[enemy.nature]} Gender: ${Gender[enemy.gender]} Rarity: ${LoggerTools.rarities[e]} AbilityIndex: ${enemy.abilityIndex} ` +
-        `ID: ${enemy.id} Type: ${enemy.getTypes().map(t => PokemonType[t]).join(",")} Moves: ${enemy.getMoveset().map(m => MoveId[m?.moveId ?? 0]).join(",")} HARolls: ${LoggerTools.haChances[e].join(",")} ` +
-        `Hidden Ability: ${allAbilities[enemy.getSpeciesForm().abilityHidden].name}`;
-        this.encounterList.push(text);
-        console.log(text);
-        if (battle.waveIndex == 50) {
-          // separate print so its easier to find for discord pin
-          console.log(enemy.getMoveset().map(m => MoveId[m?.moveId ?? 0]));
-        }
-      }
-    });
-    
-    if (!nolog && globalScene.currentBattle.waveIndex % 10 === 1) {
-      regenerateModifierPoolThresholds(
-        globalScene.getEnemyField(),
-        battle.battleType === BattleType.TRAINER ? ModifierPoolType.TRAINER : ModifierPoolType.WILD,
-      );
-      globalScene.generateEnemyModifiers();
-      overrideModifiers(false);
-
-      for (const enemy of globalScene.getEnemyField()) {
-        overrideHeldItems(enemy, false);
-      }
-
-      const weather = getRandomWeatherType(globalScene.arena);
-      this.encounterList.push(`Wave: ${globalScene.currentBattle.waveIndex} Biome: ${BiomeId[globalScene.arena.biomeType]} TimeOfDay: ${TimeOfDay[timeOfDay]} Weather: ${WeatherType[weather]}`);
-    }
-
-    globalScene.resetSeed();
-  }
-
-  GenerateBiomes(biomeId: BiomeId, waveIndex: integer) {
-    globalScene.newArena(biomeId);
-    globalScene.currentBattle.waveIndex = waveIndex;
-    globalScene.arena.updatePoolsForTimeOfDay();
-
-    // Finish biome
-    for (let i = 1; i <= 10; i++) {
-      this.GenerateBattle();
-    }
-
-    // Victory
-    if (globalScene.currentBattle.waveIndex >= 50) {
-      return;
-    }
-
-    const biomeChoices: BiomeId[] = (!Array.isArray(biomeLinks[biomeId])
-      ? [ biomeLinks[biomeId] as BiomeId ]
-      : biomeLinks[biomeId] as (BiomeId | [BiomeId, integer])[])
-        .filter(b => !Array.isArray(b) || !randSeedInt(b[1], undefined, "Choosing next biome"))
-        .map(b => (!Array.isArray(b) ? b : b[0]));
-
-    // Recursively generate next biomes
-    for (const b of biomeChoices) {
-      // If waveindex is not the same anymore, that means a different path ended and we continue with a new branch
-      if (globalScene.currentBattle.waveIndex != waveIndex) {
-        // Back to x9 wave to generate the x0 wave again, that sets the correct rng
-        globalScene.newArena(biomeId);
-        globalScene.currentBattle.waveIndex = waveIndex + 9;
-        this.GenerateBattle(true);
-      }
-
-      this.GenerateBiomes(b, waveIndex + 10);
-    }
   }
 }

@@ -160,8 +160,6 @@ import Phaser from "phaser";
 import SoundFade from "phaser3-rex-plugins/plugins/soundfade";
 import type UIPlugin from "phaser3-rex-plugins/templates/ui/ui-plugin";
 import * as LoggerTools from "./logger";
-import { EnemyCommandPhase } from "./phases/enemy-command-phase";
-import { BattlerIndex } from "#enums/battler-index";
 
 const DEBUG_RNG = false;
 
@@ -267,8 +265,6 @@ export class BattleScene extends SceneBase {
   public typeHints = false;
 
   public disableMenu = false;
-
-  public pathingToolUI = true;
 
   public gameData: GameData;
   public sessionSlotId: number;
@@ -2075,6 +2071,7 @@ export class BattleScene extends SceneBase {
    * Executes everything in the given function from the current seed. 
    * After it is finished it resets back to the current seed stat.
    * Helpful when executing Pathing Tool code in the middle of a battle without affecting the battle.
+   * Pathing tool function
    */
   executeWithoutSeedAdvancement(
     // biome-ignore lint/complexity/noBannedTypes: Refactor to not use Function
@@ -2171,38 +2168,6 @@ export class BattleScene extends SceneBase {
 
   processInfoButton(pressed: boolean): void {
     this.arenaFlyout.toggleFlyout(pressed);
-  }
-
-  // Pathing tool function
-  // Activate enemy command phase for move and catch prediction
-  predictEnemy(): void {
-    this.currentBattle.executeWithoutBattleSeedAdvancement(() => {
-      this.getField().forEach((pokemon, i) => {
-        if (pokemon?.isActive() && !pokemon.isPlayer()) {
-          (pokemon as EnemyPokemon).toggleFlyout(false);
-          pokemon.resetTurnData();
-
-          const enemyCommandPhase = new EnemyCommandPhase(i - BattlerIndex.ENEMY, true);
-          enemyCommandPhase.start();
-
-          // update catch rate
-          this.updateCatchRate();
-
-          this.currentBattle.turnCommands = Object.fromEntries(getEnumValues(BattlerIndex).map(bt => [bt, null]));
-          this.currentBattle.preTurnCommands = Object.fromEntries(getEnumValues(BattlerIndex).map(bt => [bt, null]));
-        }
-      });
-    });
-  }
-
-  // Pathing tool function
-  togglePathingToolUI(): void {
-    this.pathingToolUI = !this.pathingToolUI;
-    if (this.pathingToolUI) {
-      this.updateCatchRate();
-    } else {
-      this.updateScoreText();
-    }
   }
 
   showFieldOverlay(duration: integer): Promise<void> {
@@ -2310,14 +2275,14 @@ export class BattleScene extends SceneBase {
   }
 
   updateScoreText(): void {
-    if (!this.pathingToolUI) {
+    if (!LoggerTools.pathingToolUI) {
       this.scoreText.setText(`Score: ${this.score.toString()}`);
       this.scoreText.setVisible(this.gameMode.isDaily);
     }
   }
 
   setScoreText(text: string): void {
-    if (!this.pathingToolUI) {
+    if (!LoggerTools.pathingToolUI) {
       return;
     }
     if (this.scoreText == undefined) {

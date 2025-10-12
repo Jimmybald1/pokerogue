@@ -140,7 +140,15 @@ export class EnemyCommandPhase extends FieldPhase {
       targetLabels[2] += " (R)";
     }
 
-    console.log(enemyPokemon.name + " selects:", mv.getName() + " → " + nextMove.targets.map((m) => targetLabels[m + 1]));
+    const willTera = trainer?.shouldTera(enemyPokemon);
+    let playerPokemon = globalScene.getPlayerParty()[nextMove.targets[0]];
+    let dmgText = LoggerTools.predictDamage(enemyPokemon, playerPokemon, mv, !!willTera, "Value");
+    if (nextMove.targets.length > 1) {
+      playerPokemon = globalScene.getPlayerParty()[nextMove.targets[1]];
+      dmgText += " & " + LoggerTools.predictDamage(enemyPokemon, playerPokemon, mv, !!willTera, "Value");  
+    }
+
+    console.log(enemyPokemon.name + " selects:", mv.getName() + " → " + nextMove.targets.map((m) => targetLabels[m + 1]) + " | " + dmgText);
     globalScene.currentBattle.enemySwitchCounter = Math.max(globalScene.currentBattle.enemySwitchCounter - 1, 0);
 
     globalScene.arenaFlyout.updateFieldText();

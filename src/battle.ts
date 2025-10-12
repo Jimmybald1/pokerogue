@@ -432,6 +432,7 @@ export class Battle {
     return null;
   }
 
+  // Pathing tool function
   multiInt(out: number[], count: number, range: number, min: number = 0, reason: string = "Unlabeled randSeedInt", offset: number = 0) {
     if (range <= 1) {
       return min;
@@ -499,6 +500,7 @@ export class Battle {
    * Executes everything in the given function from the current seed. 
    * After it is finished it resets back to the current seed stat.
    * Helpful when executing Pathing Tool code in the middle of a battle without affecting the battle.
+   * Pathing tool function
    */
   executeWithoutBattleSeedAdvancement(
     // biome-ignore lint/complexity/noBannedTypes: Refactor to not use Function

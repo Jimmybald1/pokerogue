@@ -2,14 +2,14 @@
 import type { PlayerPokemon, EnemyPokemon, Pokemon } from "./field/pokemon";
 import { getNatureDecrease, getNatureIncrease, getNatureName } from "./data/nature";
 import type { PokemonHeldItemModifier } from "./modifier/modifier";
-import { BypassSpeedChanceModifier, EnemyAttackStatusEffectChanceModifier } from "./modifier/modifier";
+import { BypassSpeedChanceModifier, EnemyAttackStatusEffectChanceModifier, overrideHeldItems, overrideModifiers } from "./modifier/modifier";
 import type { TitlePhase } from "./phases/title-phase";
 import { getStatusEffectCatchRateMultiplier } from "./data/status-effect";
 import type { SessionSaveData } from "./system/game-data";
 import { loggedInUser } from "./account";
 import { Challenges } from "./enums/challenges";
-import { getBiomeName } from "./data/balance/biomes";
-import type { Nature } from "./enums/nature";
+import { biomeLinks, getBiomeName } from "./data/balance/biomes";
+import { Nature } from "./enums/nature";
 import { StatusEffect } from "./enums/status-effect";
 import { getCriticalCaptureChance } from "./data/pokeball";
 import { globalScene } from "./global-scene";
@@ -19,7 +19,7 @@ import { GameModes } from "#enums/game-modes";
 import { getPokemonSpecies } from "./utils/pokemon-utils";
 import { AbilityId } from "#enums/ability-id";
 import { decrypt } from "./utils/data";
-import { BooleanHolder } from "#utils/common";
+import { BooleanHolder, isNullOrUndefined, NumberHolder, randSeedInt } from "#utils/common";
 import { PokemonData } from "#system/pokemon-data";
 import { getEnumKeys, getEnumValues } from "#utils/enums";
 import { Trainer } from "#field/trainer";
@@ -29,6 +29,30 @@ import { ArenaData } from "#system/arena-data";
 import { ChallengeData } from "#system/challenge-data";
 import { ModifierData as PersistentModifierData } from "#system/modifier-data";
 import { TrainerType } from "#enums/trainer-type";
+import { PokemonMove } from "#moves/pokemon-move";
+import { MoveCategory } from "#enums/move-category";
+import { applyMoveAttrs } from "#moves/apply-attrs";
+import { Command } from "#enums/command";
+import { MultiHitAttr } from "#types/move-types";
+import { MultiHitType } from "#enums/multi-hit-type";
+import { getPlayerModifierTypeOptions, ModifierTypeOption, PokemonMultiHitModifierType, regenerateModifierPoolThresholds } from "#modifiers/modifier-type";
+import { allAbilities, allSpecies } from "#data/data-lists";
+import { MoveId } from "#enums/move-id";
+import { ModifierPoolType } from "#enums/modifier-pool-type";
+import { getPokemonNameWithAffix } from "./messages";
+import { PokemonType } from "#enums/pokemon-type";
+import { Gender } from "#data/gender";
+import { BattleType } from "#enums/battle-type";
+import { TrainerSlot } from "#enums/trainer-slot";
+import { BattleSpec } from "#enums/battle-spec";
+import { applyAbAttrs } from "#abilities/apply-ab-attrs";
+import { Battle } from "./battle";
+import { BiomeId } from "#enums/biome-id";
+import { getRandomWeatherType } from "#data/weather";
+import { WeatherType } from "#enums/weather-type";
+import { TimeOfDay } from "#enums/time-of-day";
+import { EnemyCommandPhase } from "#phases/enemy-command-phase";
+import { BattlerIndex } from "#enums/battler-index";
 
 /*
 SECTIONS
@@ -69,8 +93,10 @@ export const acceptedVersions = [
   "1.1.0b",
 ];
 
-/** Toggles console messages about catch prediction. */
+/** Toggles console messages about predictions. */
 const catchDebug: boolean = false;
+const logDamagePrediction: boolean = false;
+export let pathingToolUI: boolean = true;
 
 // Value holders
 /** Holds the encounter rarities for the Pokemon in this wave. */
@@ -84,7 +110,7 @@ export const haChances: Number[][] = [];
  * The second index is (very lazily) used to store a log's name/seed for `setFileInfo`.
  * @see setFileInfo
  */
-export const rarityslot = [ 0, "" ];
+export const rarityslot = [0, ""];
 
 /** Stores a list of the user's battle actions in a turn.
  *
@@ -110,7 +136,7 @@ export const logCommand: BooleanHolder = new BooleanHolder(true);
 export function downloadLogByID(i: number) {
   console.log(i);
   const d = JSON.parse(localStorage.getItem(logs[i][1])!);
-  const blob = new Blob([ printDRPD("", "", d as DRPD) ], { type: "text/json" });
+  const blob = new Blob([printDRPD("", "", d as DRPD)], { type: "text/json" });
   const link = document.createElement("a");
   link.href = window.URL.createObjectURL(blob);
   const date: string = (d as DRPD).date;
@@ -129,9 +155,9 @@ export function downloadLogByIDToCSV(i: number) {
   const d = JSON.parse(localStorage.getItem(logs[i][1])!);
   const waves = d["waves"];
   const encounterList: string[] = [];
-  encounterList.push(convertPokemonToCSV({ "id": "a", "biome": waves[0].biome, "actions": []}, d.starters[0], false));
-  encounterList.push(convertPokemonToCSV({ "id": "b", "biome": waves[0].biome, "actions": []}, d.starters[1], false));
-  encounterList.push(convertPokemonToCSV({ "id": "c", "biome": waves[0].biome, "actions": []}, d.starters[2], false));
+  encounterList.push(convertPokemonToCSV({ "id": "a", "biome": waves[0].biome, "actions": [] }, d.starters[0], false));
+  encounterList.push(convertPokemonToCSV({ "id": "b", "biome": waves[0].biome, "actions": [] }, d.starters[1], false));
+  encounterList.push(convertPokemonToCSV({ "id": "c", "biome": waves[0].biome, "actions": [] }, d.starters[2], false));
 
   for (var i = 1; i < waves.length; i++) {
     const wave = waves[i];
@@ -154,7 +180,7 @@ export function downloadLogByIDToCSV(i: number) {
     }
   }
   const encounters = encounterList.join("\n");
-  const blob = new Blob([ encounters ], { type: "text/csv" });
+  const blob = new Blob([encounters], { type: "text/csv" });
   const link = document.createElement("a");
   link.href = window.URL.createObjectURL(blob);
   const date: string = (d as DRPD).date;
@@ -180,7 +206,7 @@ export function downloadLogByIDToSheet(i: number) {
   console.log(i);
   const d = JSON.parse(localStorage.getItem(logs[i][1])!);
   SheetsMode.value = true;
-  const blob = new Blob([ printDRPD("", "", d as DRPD) ], { type: "text/json" });
+  const blob = new Blob([printDRPD("", "", d as DRPD)], { type: "text/json" });
   SheetsMode.value = false;
   const link = document.createElement("a");
   link.href = window.URL.createObjectURL(blob);
@@ -207,7 +233,7 @@ export function downloadLogByIDToSheet(i: number) {
  * @see getLogs
  */
 export const logs: string[][] = [
-  [ "drpd.json", "drpd", "DRPD", "", "wide_lens", "" ],
+  ["drpd.json", "drpd", "DRPD", "", "wide_lens", ""],
 ];
 
 /** @deprecated */
@@ -246,7 +272,7 @@ export function getLogs() {
   }
   for (let i = 0; i < localStorage.length; i++) {
     if (localStorage.key(i)!.substring(0, 9) == "drpd_log:") {
-      logs.push([ "drpd.json", localStorage.key(i)!, localStorage.key(i)!.substring(9), "", "", "" ]);
+      logs.push(["drpd.json", localStorage.key(i)!, localStorage.key(i)!.substring(9), "", "", ""]);
       for (let j = 0; j < 5; j++) {
         const D = parseSlotData(j);
         if (D != undefined) {
@@ -368,7 +394,7 @@ export const autoCheckpoints: number[] = [
 /**
  * Used to get the filesize of a string.
  */
-export const byteSize = str => new Blob([ str ]).size;
+export const byteSize = str => new Blob([str]).size;
 
 /**
  * Contains names for different file size units.
@@ -383,7 +409,7 @@ export const byteSize = str => new Blob([ str ]).size;
  *
  * TB: 1,000,000,000,000 bytes
  */
-const filesizes = [ "b", "kb", "mb", "gb", "tb" ];
+const filesizes = ["b", "kb", "mb", "gb", "tb"];
 
 /**
  * Returns the size of a file, in bytes, KB, MB, GB, or (hopefully not) TB.
@@ -421,7 +447,7 @@ export function playerPokeName(index: number | Pokemon | PlayerPokemon) {
   if (typeof index === "number") {
     //console.log(globalScene.getParty()[index], species, dupeSpecies)
     if (dupeSpecies.includes(globalScene.getPlayerParty()[index].name)) {
-      return globalScene.getPlayerParty()[index].name + " (Slot " + (index  + 1) + ")";
+      return globalScene.getPlayerParty()[index].name + " (Slot " + (index + 1) + ")";
     }
     return globalScene.getPlayerParty()[index].name;
   }
@@ -455,7 +481,7 @@ export function enemyPokeName(index: number | Pokemon | EnemyPokemon) {
   if (typeof index === "number") {
     //console.log(globalScene.getEnemyParty()[index], species, dupeSpecies)
     if (dupeSpecies.includes(globalScene.getEnemyParty()[index].name)) {
-      return globalScene.getEnemyParty()[index].name + " (Slot " + (index  + 1) + ")";
+      return globalScene.getEnemyParty()[index].name + " (Slot " + (index + 1) + ")";
     }
     return globalScene.getEnemyParty()[index].name;
   }
@@ -468,7 +494,7 @@ export function enemyPokeName(index: number | Pokemon | EnemyPokemon) {
   }
   return index.name;
 }
-// LoggerTools.logActions(globalScene, this.globalScene.currentBattle.waveIndex, "")
+// LoggerTools.logActions(globalScene, globalScene.currentBattle.waveIndex, "")
 
 // #endregion
 
@@ -531,7 +557,7 @@ export function newDocument(name: string = "Untitled Run", authorName: string | 
     title: name,
     label: "unnamedRoute",
     uuid: "",
-    authors: (Array.isArray(authorName) ? authorName : [ authorName ]),
+    authors: (Array.isArray(authorName) ? authorName : [authorName]),
     date: new Date().getUTCFullYear() + "-" + (new Date().getUTCMonth() + 1 < 10 ? "0" : "") + (new Date().getUTCMonth() + 1) + "-" + (new Date().getUTCDate() < 10 ? "0" : "") + new Date().getUTCDate(),
     waves: new Array(50),
     starters: new Array(3),
@@ -642,7 +668,7 @@ function updateLog(drpd: DRPD): DRPD {
   if (drpd.version == "1.1.0") {
     drpd.version = "1.1.0a";
     drpd.maxluck = 14;
-    drpd.minSafeLuckFloor = [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ];
+    drpd.minSafeLuckFloor = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
   } // 1.1.0 → 1.1.0a
   if (drpd.version == "1.1.0a") {
     drpd.version = "1.1.0b";
@@ -793,7 +819,7 @@ function printWave(inData: string, indent: string, wave: Wave): string {
           inData += wave.actions[i];
         }
       }
-      inData +=  "\"";
+      inData += "\"";
     } else {
       inData += ",\n" + indent + "  \"actions\": [";
       for (var i = 0; i < wave.actions.length; i++) {
@@ -1181,7 +1207,7 @@ function printPoke(inData: string, indent: string, pokemon: PokeData) {
         inData += printItemNoNewline(inData, "", pokemon.items[i]);
       }
     }
-    inData +=  "\"";
+    inData += "\"";
   } else {
     if (pokemon.items.length > 0) {
       inData += ",\n" + indent + "  \"items\": [\n";
@@ -1890,7 +1916,7 @@ export function logShop(floor: number = globalScene.currentBattle.waveIndex, act
   console.log("--> ", drpd);
   localStorage.setItem(getLogID(), JSON.stringify(drpd));
   if (action != "") {
-    this.logActions(floor, `Shop: ${action}`);
+    logActions(floor, `Shop: ${action}`);
   }
 }
 
@@ -1969,7 +1995,7 @@ export function resetWaveActions(floor: number = globalScene.currentBattle.waveI
 //#endregion
 
 
-// #region Utils from Phases.ts
+// #region 14 Utils from Phases.ts
 export const tierNames = [
   "Poké",
   "Great",
@@ -1996,10 +2022,10 @@ function generateCritChance(pk: EnemyPokemon, pokeballMultiplier: number) {
 
 function catchCalc(pokemon: EnemyPokemon) {
   const rates = [
-    [ generateBallChance(pokemon, 1), 0, generateCritChance(pokemon, 1), 0 ],
-    [ generateBallChance(pokemon, 1.5), 0, generateCritChance(pokemon, 1.5), 1 ],
-    [ generateBallChance(pokemon, 2), 0, generateCritChance(pokemon, 2), 2 ],
-    [ generateBallChance(pokemon, 3), 0, generateCritChance(pokemon, 3), 3 ]
+    [generateBallChance(pokemon, 1), 0, generateCritChance(pokemon, 1), 0],
+    [generateBallChance(pokemon, 1.5), 0, generateCritChance(pokemon, 1.5), 1],
+    [generateBallChance(pokemon, 2), 0, generateCritChance(pokemon, 2), 2],
+    [generateBallChance(pokemon, 3), 0, generateCritChance(pokemon, 3), 3]
   ];
   for (let i = 0; i < rates.length; i++) {
     rates[i][1] = (rates[i][0] / 65536) ** 3;
@@ -2066,7 +2092,7 @@ export function findBest(pokemon: EnemyPokemon, override?: boolean) {
     console.log("Note: if middle number is less than " + critCap[0] + ", a critical capture should occur");
   }
 
-  rates.sort(function(a, b) {
+  rates.sort(function (a, b) {
     return b[0] - a[0];
   });
 
@@ -2302,5 +2328,1110 @@ export function parseSlotData(slotId: number): SessionSaveData | undefined {
   }
   Save.description += " (" + getBiomeName(Save.arena.biome) + " " + Save.waveIndex + ")";
   return Save;
+}
+
+// Activate enemy command phase for move and catch prediction
+export function predictEnemy(): void {
+  globalScene.currentBattle.executeWithoutBattleSeedAdvancement(() => {
+    globalScene.getField().forEach((pokemon, i) => {
+      if (pokemon?.isActive() && !pokemon.isPlayer()) {
+        (pokemon as EnemyPokemon).toggleFlyout(false);
+        pokemon.resetTurnData();
+
+        const enemyCommandPhase = new EnemyCommandPhase(i - BattlerIndex.ENEMY, true);
+        enemyCommandPhase.start();
+
+        // update catch rate
+        globalScene.updateCatchRate();
+
+        globalScene.currentBattle.turnCommands = Object.fromEntries(getEnumValues(BattlerIndex).map(bt => [bt, null]));
+        globalScene.currentBattle.preTurnCommands = Object.fromEntries(getEnumValues(BattlerIndex).map(bt => [bt, null]));
+      }
+    });
+  });
+}
+
+// Pathing tool function
+export function togglePathingToolUI(): void {
+  pathingToolUI = !pathingToolUI;
+  if (pathingToolUI) {
+    globalScene.updateCatchRate();
+  } else {
+    globalScene.updateScoreText();
+  }
+}
+
+/**
+ * PathingTool function
+ * Calculates the damage ranges that are possible if this move would be selected.
+ */
+export function predictDamage(user: Pokemon, target: Pokemon, move: PokemonMove, willTera: boolean, damageDisplay?: string) {
+  const moveObj = move.getMove();
+  if (moveObj.category == MoveCategory.STATUS) {
+    return ""; // Don't give a damage estimate for status moves
+  }
+
+  if (target.getMoveEffectiveness(user, moveObj, false, true) == undefined) {
+    return ""; // Target is immune
+  }
+
+  if (logDamagePrediction) {
+    console.log(`HP left: ${target.hp}`);
+  }
+
+  let dmgRange = 0.85;
+  const fixedDamage = new NumberHolder(0);
+  applyMoveAttrs("FixedDamageAttr", user, target, moveObj, fixedDamage);
+  if (fixedDamage.value > 0) {
+    dmgRange = 1;
+  }
+
+  const isGuaranteedCrit = target.isGuaranteedCrit(user, moveObj, true);
+  const isTera = user.isTerastallized;
+  user.isTerastallized = isTera ? isTera : willTera; // If not yet terastallized, check if command wants to terastallize
+  let dmgLow = target.getAttackDamage(
+    {
+      source: user,
+      move: moveObj,
+      isCritical: isGuaranteedCrit,
+      simulated: true,
+    }
+  ).damage * dmgRange;
+  let dmgHigh = target.getAttackDamage(
+    {
+      source: user,
+      move: moveObj,
+      isCritical: isGuaranteedCrit,
+      simulated: true,
+    }
+  ).damage;
+  user.isTerastallized = isTera; // Revert to whatever the terastallize state was before
+
+  if (logDamagePrediction) {
+    console.log(`Damage min: ${dmgLow} | Damage max: ${dmgHigh}`);
+  }
+
+  let minHits = 1;
+  let maxHits = -1; // If nothing changes this value, it is set to minHits
+  const mh = moveObj.getAttrs("MultiHitAttr");
+  for (var i = 0; i < mh.length; i++) {
+    const mh2 = mh[i] as MultiHitAttr;
+    switch (mh2.getMultiHitType()) {
+      case MultiHitType._2:
+        minHits = 2;
+      case MultiHitType._2_TO_5:
+        minHits = 2;
+        maxHits = 5;
+      case MultiHitType._3:
+        minHits = 3;
+      case MultiHitType._10:
+        minHits = 1;
+        maxHits = 10;
+      case MultiHitType.BEAT_UP:
+        const party = user.isPlayer() ? globalScene.getPlayerParty() : globalScene.getEnemyParty();
+        // No status means the ally pokemon can contribute to Beat Up
+        minHits = party.reduce((total, pokemon) => {
+          return total + (pokemon.id === user.id ? 1 : pokemon?.status && pokemon.status.effect !== StatusEffect.NONE ? 0 : 1);
+        }, 0);
+    }
+  }
+
+  if (maxHits == -1) {
+    maxHits = minHits;
+  }
+
+  // Add Multi Lens if its not a multi-hit move
+  if (minHits == 1) {
+    const h = user.getHeldItems();
+    for (var i = 0; i < h.length; i++) {
+      if (h[i].type instanceof PokemonMultiHitModifierType) {
+        minHits *= h[i].getStackCount();
+        maxHits *= h[i].getStackCount();
+      }
+    }
+  }
+
+  if (logDamagePrediction) {
+    console.log(`MinHits: ${minHits} | MaxHits: ${maxHits}`);
+  }
+
+  // Actual damage dealt
+  let dmgLowF = Math.floor(dmgLow);
+  let dmgHighF = Math.floor(dmgHigh);
+
+  if (logDamagePrediction) {
+    console.log(`HP min: ${dmgLowF} | HP max: ${dmgHighF}`);
+  }
+
+  let maxEHP = target.getMaxHp();
+
+  let koText = "";
+  if (dmgLowF >= target.hp) {
+    koText = " KO";
+  } else if (dmgHighF >= target.hp) {
+    var percentChance = rangemap(target.hp, dmgLow, dmgHigh);
+    koText = " " + Math.floor(percentChance * 100) + "% KO";
+  }
+
+  // Calculate boss shield segments cleared
+  let qSuffix = "";
+  if (target.isBoss()) {
+    const segmentRequirements = (target as EnemyPokemon).calculateBossShieldRequirements();
+    if (logDamagePrediction) {
+      console.log(`Segments: ${segmentRequirements}`);
+    }
+
+    maxEHP = segmentRequirements[segmentRequirements.length - 1];
+
+    // Count amount of segments cleared.
+    const segmentClearedLow = segmentRequirements.reduce((total, req) => {
+      return total + (dmgLowF >= req ? 1 : 0);
+    }, 0);
+    const segmentClearedHigh = segmentRequirements.reduce((total, req) => {
+      return total + (dmgHighF >= req ? 1 : 0);
+    }, 0);
+
+    // Set info suffix text
+    qSuffix = ` (${segmentClearedLow}-${segmentClearedHigh})`;
+    if (segmentClearedLow == segmentClearedHigh) {
+      qSuffix = ` (${segmentClearedLow})`;
+    }
+
+    if (logDamagePrediction) {
+      console.log(`Segments min: ${segmentClearedLow} | Segments max: ${segmentClearedHigh}`);
+    }
+
+    if (segmentClearedLow == segmentRequirements.length) {
+      // Same segment, Guaranteed kill
+      // 100% KO
+      // show damage ranges
+      koText = " KO";
+    } else if (segmentClearedHigh == segmentRequirements.length) {
+      // Different segment, only high is a kill
+      // ~% KO
+      // show segment damage for low and damage range for high
+      var percentChance = rangemap(maxEHP, dmgLow, dmgHigh);
+      koText = " " + Math.floor(percentChance * 100) + "% KO";
+
+      dmgLow = segmentClearedLow > 0 ? segmentRequirements[0] * segmentClearedLow : dmgLow;
+    } else if (segmentClearedLow == segmentClearedHigh) {
+      // Same segment
+      // no KO
+      // show segment damage for both
+      koText = "";
+
+      dmgLow = segmentClearedLow > 0 ? segmentRequirements[0] * segmentClearedLow : dmgLow;
+      dmgHigh = segmentClearedHigh > 0 ? segmentRequirements[0] * segmentClearedHigh : dmgHigh;
+    } else {
+      // Different segment
+      // no KO
+      // show segment damage for both
+      koText = "";
+
+      dmgLow = segmentClearedLow > 0 ? segmentRequirements[0] * segmentClearedLow : dmgLow;
+      dmgHigh = segmentClearedHigh > 0 ? segmentRequirements[0] * segmentClearedHigh : dmgHigh;
+    }
+
+    // Re-Floor based on the new numbers
+    dmgLowF = Math.floor(dmgLow);
+    dmgHighF = Math.floor(dmgHigh);
+    if (logDamagePrediction) {
+      console.log(`Boss damage min: ${dmgLow} | Boss damage max: ${dmgHigh}`);
+    }
+  }
+
+  // %HP removed
+  const dmgLowP = Math.round((dmgLowF) / maxEHP * 100);
+  const dmgHighP = Math.round((dmgHighF) / maxEHP * 100);
+
+  if (logDamagePrediction) {
+    console.log(`HP% min: ${dmgLowP} | HP% max: ${dmgHighP}`);
+  }
+
+  if (logDamagePrediction) {
+    console.log(`Enemy HP: ${target.hp} | Enemy HP%: ${target.getHpRatio() * 100}`);
+  }
+  if (logDamagePrediction) {
+    console.log(`Max EHP: ${maxEHP}`);
+  }
+  if (logDamagePrediction && !isNullOrUndefined(koText)) {
+    console.log(`KO%: ${koText}`);
+  }
+
+  if (!damageDisplay) {
+    damageDisplay = globalScene.damageDisplay;
+  }
+
+  if (damageDisplay === "Percent") {
+    return (dmgLowP == dmgHighP ? dmgLowP + "%" + qSuffix : dmgLowP + "%-" + dmgHighP + "%" + qSuffix) + koText;
+  }
+  if (damageDisplay === "Value") {
+    return (dmgLowF == dmgHighF ? dmgLowF + qSuffix : dmgLowF + "-" + dmgHighF + qSuffix) + koText;
+  }
+  return "";
+}
+
+function rangemap(value: integer, min: integer, max: integer) {
+  return (max - value) / (max - min);
+}
+// #endregion
+
+// #region 15 Scouting
+export function InitScouting(charms: number) {
+  globalScene.sessionSlotId = 0;
+  globalScene.gameData.loadSession(globalScene.sessionSlotId).then(() => {
+    ScoutingWithoutUI(charms);
+  }).catch(err => {
+    console.error(err);
+    globalScene.ui.showText("something went wrong, see console error", null);
+  });
+}
+
+let encounterList: string[] = [];
+function ScoutingWithoutUI(charms: number) {
+  const startingBiome = globalScene.arena.biomeType;
+
+  const starters: string[] = [];
+  const party = globalScene.getPlayerParty();
+  party.forEach(p => {
+    starters.push(`Pokemon: ${getPokemonNameWithAffix(p)} ` +
+      `Form: ${p.getSpeciesForm().getSpriteAtlasPath(false, p.formIndex)} Species ID: ${p.species.speciesId} Stats: ${p.stats} IVs: ${p.ivs} Ability: ${p.getAbility().name} ` +
+      `Passive Ability: ${p.getPassiveAbility().name} Nature: ${Nature[p.nature]} Gender: ${Gender[p.gender]} Rarity: undefined AbilityIndex: ${p.abilityIndex} ` +
+      `ID: ${p.id} Type: ${p.getTypes().map(t => PokemonType[t]).join(",")} Moves: ${p.getMoveset().map(m => MoveId[m?.moveId ?? 0]).join(",")}`);
+  });
+
+  ClearParty(party);
+  FillParty(party, [SpeciesId.VENUSAUR], 20);
+
+  var output: string[][] = [];
+  output.push(["startstarters"]);
+  output.push(starters);
+  output.push(["endstarters"]);
+  localStorage.setItem("scouting", JSON.stringify(output));
+
+  // Remove any lures or charms
+  globalScene.RemoveModifiers();
+
+  // Add 0 to 4 charms
+  if (charms > 0) {
+    globalScene.InsertAbilityCharm(charms);
+  }
+
+  // Keep track of encounters, Generate Biomes and encounters
+  console.log(`Starting 0 lures and ${charms} charms ${new Date().toLocaleString()}`);
+  encounterList = [];
+  GenerateBiomes(startingBiome, 0);
+  StoreEncounters(`0${charms}`);
+
+  console.log(`Starting 1 lures and ${charms} charms ${new Date().toLocaleString()}`);
+  encounterList = [];
+  globalScene.InsertLure();
+  GenerateBiomes(startingBiome, 0);
+  StoreEncounters(`1${charms}`);
+
+  console.log(`Starting 2 lures and ${charms} charms ${new Date().toLocaleString()}`);
+  encounterList = [];
+  globalScene.InsertSuperLure();
+  GenerateBiomes(startingBiome, 0);
+  StoreEncounters(`2${charms}`);
+
+  // Only generate wave 10 for 3 lures.
+  console.log(`Starting 3 lures and ${charms} charms ${new Date().toLocaleString()}`);
+  encounterList = [];
+  globalScene.InsertMaxLure();
+  globalScene.newArena(startingBiome);
+  globalScene.currentBattle.waveIndex = 9;
+  globalScene.arena.updatePoolsForTimeOfDay();
+  GenerateBattle();
+  StoreEncounters(`3${charms}`);
+
+  var output = JSON.parse(localStorage.getItem("scouting")!) as string[][];
+  console.log("All scouting data:", output);
+  output = [];
+  globalScene.ui.showText("DONE! Copy the data from the console and then you can refresh this page.", null);
+}
+
+function StoreEncounters(lurecharm: string) {
+  let output = JSON.parse(localStorage.getItem("scouting")!) as string[][];
+  output.push([`start${lurecharm}`]);
+  output.push(encounterList);
+  output.push([`end${lurecharm}`]);
+  localStorage.setItem("scouting", JSON.stringify(output));
+  output = [];
+}
+
+function GenerateBattle(nolog: boolean = false) {
+  console.log(`%%%%%  Wave: ${globalScene.currentBattle.waveIndex + 1}  %%%%%`);
+  const timeOfDay = globalScene.arena.getTimeOfDay();
+  const battle = globalScene.newBattle() as Battle;
+  while (rarities.length > 0) {
+    rarities.pop();
+  }
+  rarityslot[0] = 0;
+  while (haChances.length > 0) {
+    haChances.pop();
+  }
+
+  if (!nolog && battle?.trainer != null) {
+    encounterList.push(`Wave: ${globalScene.currentBattle.waveIndex} Biome: ${BiomeId[globalScene.arena.biomeType]} Trainer: ${battle.trainer.config.name}`);
+  }
+
+  battle.enemyLevels?.forEach((level, e) => {
+    if (battle.battleType === BattleType.TRAINER) {
+      battle.enemyParty[e] = battle.trainer?.genPartyMember(e)!;
+    } else {
+      rarityslot[0] = e;
+      const enemySpecies = globalScene.randomSpecies(battle.waveIndex, level, true);
+      battle.enemyParty[e] = globalScene.addEnemyPokemon(enemySpecies, level, TrainerSlot.NONE, !!globalScene.getEncounterBossSegments(battle.waveIndex, level, enemySpecies));
+      if (globalScene.currentBattle.battleSpec === BattleSpec.FINAL_BOSS) {
+        battle.enemyParty[e].ivs = new Array(6).fill(31);
+      }
+      globalScene
+        .getPlayerParty()
+        .slice(0, !battle.double ? 1 : 2)
+        .reverse()
+        .forEach(playerPokemon => {
+          applyAbAttrs("SyncEncounterNatureAbAttr", { pokemon: playerPokemon, target: battle.enemyParty[e] });
+        });
+    }
+
+    if (!nolog) {
+      const enemy = battle.enemyParty[e];
+      let atlaspath = enemy.getSpeciesForm().getSpriteAtlasPath(false, enemy.formIndex);
+      // Regional pokemon have the same name, instead get their atlas path.
+      if (enemy.species.speciesId > 1025) {
+        // Using nicknames here because i want the getPokemonNameWithAffix so i have Wild/Foe information
+        // Nicknames are stored in base 64? so convert btoa here
+        enemy.nickname = btoa(SpeciesId[enemy.species.speciesId]);
+      }
+
+      // Male/Female sprites for Frillish, Jellicent, Pyroar, Meowstic, Indeedee, Basculegion, Oinkologne...
+      if (["592", "593", "668", "678", "876", "902", "916"].includes(atlaspath)) {
+        atlaspath += `-${Gender[enemy.gender].toLowerCase()}`;
+      }
+
+      // Store encounters in a list, basically CSV (uses regex in sheets), but readable as well
+      const text = `Wave: ${globalScene.currentBattle.waveIndex} Biome: ${BiomeId[globalScene.arena.biomeType]} Pokemon: ${getPokemonNameWithAffix(enemy)} ` +
+        `Form: ${atlaspath} Species ID: ${enemy.species.speciesId} Stats: ${enemy.stats} IVs: ${enemy.ivs} Ability: ${enemy.getAbility().name} ` +
+        `Passive Ability: ${enemy.getPassiveAbility().name} Nature: ${Nature[enemy.nature]} Gender: ${Gender[enemy.gender]} Rarity: ${rarities[e]} AbilityIndex: ${enemy.abilityIndex} ` +
+        `ID: ${enemy.id} Type: ${enemy.getTypes().map(t => PokemonType[t]).join(",")} Moves: ${enemy.getMoveset().map(m => MoveId[m?.moveId ?? 0]).join(",")} HARolls: ${haChances[e].join(",")} ` +
+        `Hidden Ability: ${allAbilities[enemy.getSpeciesForm().abilityHidden].name}`;
+      encounterList.push(text);
+      console.log(text);
+      if (battle.waveIndex == 50) {
+        // separate print so its easier to find for discord pin
+        console.log(enemy.getMoveset().map(m => MoveId[m?.moveId ?? 0]));
+      }
+    }
+  });
+
+  // Do rest of rng steps + get weather only on wave x1
+  if (!nolog && globalScene.currentBattle.waveIndex % 10 === 1) {
+    regenerateModifierPoolThresholds(
+      globalScene.getEnemyField(),
+      battle.battleType === BattleType.TRAINER ? ModifierPoolType.TRAINER : ModifierPoolType.WILD,
+    );
+    globalScene.generateEnemyModifiers();
+    overrideModifiers(false);
+
+    for (const enemy of globalScene.getEnemyField()) {
+      overrideHeldItems(enemy, false);
+    }
+
+    const weather = getRandomWeatherType(globalScene.arena);
+    encounterList.push(`Wave: ${globalScene.currentBattle.waveIndex} Biome: ${BiomeId[globalScene.arena.biomeType]} TimeOfDay: ${TimeOfDay[timeOfDay]} Weather: ${WeatherType[weather]}`);
+  }
+
+  globalScene.resetSeed();
+}
+
+function GenerateBiomes(biomeId: BiomeId, waveIndex: integer) {
+  globalScene.newArena(biomeId);
+  globalScene.currentBattle.waveIndex = waveIndex;
+  globalScene.arena.updatePoolsForTimeOfDay();
+
+  // Finish biome
+  for (let i = 1; i <= 10; i++) {
+    GenerateBattle();
+  }
+
+  // Victory
+  if (globalScene.currentBattle.waveIndex >= 50) {
+    return;
+  }
+
+  const biomeChoices: BiomeId[] = (!Array.isArray(biomeLinks[biomeId])
+    ? [biomeLinks[biomeId] as BiomeId]
+    : biomeLinks[biomeId] as (BiomeId | [BiomeId, integer])[])
+    .filter(b => !Array.isArray(b) || !randSeedInt(b[1], undefined, "Choosing next biome"))
+    .map(b => (!Array.isArray(b) ? b : b[0]));
+
+  // Recursively generate next biomes
+  for (const b of biomeChoices) {
+    // If waveindex is not the same anymore, that means a different path ended and we continue with a new branch
+    if (globalScene.currentBattle.waveIndex != waveIndex) {
+      // Back to x9 wave to generate the x0 wave again, that sets the correct rng
+      globalScene.newArena(biomeId);
+      globalScene.currentBattle.waveIndex = waveIndex + 9;
+      GenerateBattle(true);
+    }
+
+    GenerateBiomes(b, waveIndex + 10);
+  }
+}
+// #endregion
+
+// #region 16 Shop Scouting
+export function InitShopScouting(method) {
+  globalScene.sessionSlotId = 0;
+  globalScene.gameData.loadSession(globalScene.sessionSlotId).then(() => {
+    console.time('Shop Scouting');
+    ShopScouting(method);
+    console.timeEnd('Shop Scouting');
+  }).catch(err => {
+    console.error(err);
+    globalScene.ui.showText("something went wrong, see console error", null);
+  });
+}
+
+let iterations: string[] = [];
+const charmList: string[] = [];
+function ShopScouting(method) {
+  // Remove any lures or charms
+  globalScene.RemoveModifiers();
+  console.log(`Starting shop scouting ${new Date().toLocaleTimeString()}`);
+
+  const comps = GetPartyCompositions();
+  const comp = comps[method];
+
+  const party = globalScene.getPlayerParty();
+
+  const globals = GetGlobalItemSetups();
+  const mushroom = GetMushroomSetups(party, comp);
+  const lures = GetLureSetups();
+  const ethers = GetEtherSetups();
+  const revives = GetReviveSetups(party);
+  const potions = GetPotionSetups(party);
+
+  iterations = [];
+
+  // ClearParty(party);
+  // overrides.MOVESET_OVERRIDE = [Moves.TACKLE, Moves.SPLASH, Moves.SPLASH, Moves.SPLASH];
+  // FillParty(party, comps[0], 39);
+  // party[0].hp = 0;
+  // GenerateShop(party, "test", 9, 10);
+  // party[0].hp = party[0].getMaxHp();
+  // GenerateShop(party, "test", 9, 10);
+  // return
+
+  globals.forEach(g => {
+    globalScene.RemoveModifiers();
+
+    // globalScene.InsertDynamaxBand();
+    // globalScene.InsertMegaBracelet();
+    // globalScene.InsertLockCapsule();
+    // globalScene.InsertTeraOrb();
+    // globalScene.InsertIVScanner();
+
+    const rogueItem = g();
+    mushroom.forEach(m => {
+      const mu = {
+        start: 0,
+        end: 0,
+        level: 0
+      };
+      m(mu);
+
+      const partynames = party.map(p => p.name);
+      console.log(rogueItem, mu.level, partynames, party);
+
+      lures.forEach(lure => {
+        const text = lure();
+
+        ethers.forEach(ether => {
+          const e = ether(party[0]);
+
+          revives.forEach(revive => {
+            const r = revive();
+
+            potions.forEach(potion => {
+              const p = potion();
+              if (p) {
+                const comptext = CreateLog(p.pot, p.suppot, p.hyppot, p.maxpot, r, e, text, mu.level, rogueItem);
+                GenerateShop(party, comptext, mu.start, mu.end);
+              }
+            });
+          });
+        });
+      });
+    });
+  });
+
+  console.log(charmList);
+  console.log(`Shop scouting done ${new Date().toLocaleTimeString()}`);
+  globalScene.ui.showText("DONE! Copy the list from the console and refresh the page.", null);
+}
+
+function CreateLog(pot = 0, suppot = 0, hyppot = 0, maxpot = 0, revive = 0, eth = 0, lure = "", level = 79, rogueItem = "") {
+  const items: string[] = [];
+  if (pot - suppot > 0) {
+    items.push(`${pot - suppot}x <87.5% HP and 10+ dmg taken`);
+  }
+  if (suppot - hyppot > 0) {
+    items.push(`${suppot - hyppot}x <75% HP and 25+ dmg taken`);
+  }
+  if (hyppot - maxpot > 0) {
+    items.push(`${hyppot - maxpot}x <62.5% and 100+ dmg taken`);
+  }
+  if (maxpot > 0) {
+    items.push(`${maxpot}x <50% and 100+ dmg taken`);
+  }
+  if (revive > 0) {
+    items.push(`${revive}x fainted`);
+  }
+  if (eth > 0) {
+    items.push(`${eth}x low PP`);
+  }
+  if (lure != "") {
+    items.push(`${lure}`);
+  }
+  if (rogueItem != "") {
+    items.push(`${rogueItem}`);
+  }
+
+  if (items.length == 0) {
+    items.push("nothing");
+  }
+
+  items.push(`Highest lvl: ${level - 19}-${level}`);
+
+  return items.join(" + ");
+}
+
+function GenerateShop(party: PlayerPokemon[], comptext: string, start: integer, end: integer) {
+  for (var w = start; w < end; w++) {
+    if (w % 10 == 0) {
+      continue;
+    }
+
+    globalScene.executeWithSeedOffset(() => {
+      globalScene.currentBattle.waveIndex = w;
+      for (let i = 0; i < 4; i++) {
+        regenerateModifierPoolThresholds(party, ModifierPoolType.PLAYER, i);
+        const typeOptions: ModifierTypeOption[] = getPlayerModifierTypeOptions(Math.min(6, Math.max(3, 3 + Math.floor((w / 10) - 1))), party);
+        if (typeOptions.some(t => t.type.id == "ABILITY_CHARM")) {
+          console.log(w, i, comptext);
+          charmList.push(`${w} ${i} ${comptext}`);
+        }
+      }
+    }, w);
+  }
+}
+
+enum PotionType {
+  POTION,
+  SUPER_POTION,
+  HYPER_POTION,
+  MAX_POTION,
+}
+
+function GetPotionSetups(party: PlayerPokemon[]) {
+  return [
+    // 0 Pokemon
+    () => {
+      ResetPotionHealth(party);
+      return { pot: 0, suppot: 0, hyppot: 0, maxpot: 0 }
+    },
+    // 1 Pokemon
+    () => {
+      if (ApplyPotionType(party[2], PotionType.POTION)) {
+        return { pot: 1, suppot: 0, hyppot: 0, maxpot: 0 }
+      }
+
+      return null;
+    },
+    () => {
+      if (ApplyPotionType(party[2], PotionType.SUPER_POTION)) {
+        return { pot: 1, suppot: 1, hyppot: 0, maxpot: 0 }
+      }
+
+      return null;
+    },
+    () => {
+      if (ApplyPotionType(party[2], PotionType.HYPER_POTION)) {
+        return { pot: 1, suppot: 1, hyppot: 1, maxpot: 0 }
+      }
+
+      return null;
+    },
+    () => {
+      if (ApplyPotionType(party[2], PotionType.MAX_POTION)) {
+        return { pot: 1, suppot: 1, hyppot: 1, maxpot: 1 }
+      }
+
+      return null;
+    },
+    // 2 Pokemon
+    // POTION
+    () => {
+      if (ApplyPotionType(party[2], PotionType.POTION) && ApplyPotionType(party[1], PotionType.POTION)) {
+        return { pot: 2, suppot: 0, hyppot: 0, maxpot: 0 }
+      }
+
+      return null;
+    },
+    () => {
+      if (ApplyPotionType(party[2], PotionType.POTION) && ApplyPotionType(party[1], PotionType.SUPER_POTION)) {
+        return { pot: 2, suppot: 1, hyppot: 0, maxpot: 0 }
+      }
+
+      return null;
+    },
+    () => {
+      if (ApplyPotionType(party[2], PotionType.POTION) && ApplyPotionType(party[1], PotionType.HYPER_POTION)) {
+        return { pot: 2, suppot: 1, hyppot: 1, maxpot: 0 }
+      }
+
+      return null;
+    },
+    () => {
+      if (ApplyPotionType(party[2], PotionType.POTION) && ApplyPotionType(party[1], PotionType.MAX_POTION)) {
+        return { pot: 2, suppot: 1, hyppot: 1, maxpot: 1 }
+      }
+
+      return null;
+    },
+    // SUPER POTION
+    () => {
+      if (ApplyPotionType(party[2], PotionType.SUPER_POTION) && ApplyPotionType(party[1], PotionType.SUPER_POTION)) {
+        return { pot: 2, suppot: 2, hyppot: 0, maxpot: 0 }
+      }
+
+      return null;
+    },
+    () => {
+      if (ApplyPotionType(party[2], PotionType.SUPER_POTION) && ApplyPotionType(party[1], PotionType.HYPER_POTION)) {
+        return { pot: 2, suppot: 2, hyppot: 1, maxpot: 0 }
+      }
+
+      return null;
+    },
+    () => {
+      if (ApplyPotionType(party[2], PotionType.SUPER_POTION) && ApplyPotionType(party[1], PotionType.MAX_POTION)) {
+        return { pot: 2, suppot: 2, hyppot: 1, maxpot: 1 }
+      }
+
+      return null;
+    },
+    // HYPER POTION
+    () => {
+      if (ApplyPotionType(party[2], PotionType.HYPER_POTION) && ApplyPotionType(party[1], PotionType.HYPER_POTION)) {
+        return { pot: 2, suppot: 2, hyppot: 2, maxpot: 0 }
+      }
+
+      return null;
+    },
+    () => {
+      if (ApplyPotionType(party[2], PotionType.HYPER_POTION) && ApplyPotionType(party[1], PotionType.MAX_POTION)) {
+        return { pot: 2, suppot: 2, hyppot: 2, maxpot: 1 }
+      }
+
+      return null;
+    },
+    // MAX POTION
+    () => {
+      if (ApplyPotionType(party[2], PotionType.MAX_POTION) && ApplyPotionType(party[1], PotionType.MAX_POTION)) {
+        return { pot: 2, suppot: 2, hyppot: 2, maxpot: 2 }
+      }
+
+      return null;
+    },
+    // 3 Pokemon
+    // POTION / POTION
+    () => {
+      if (ApplyPotionType(party[2], PotionType.POTION) && ApplyPotionType(party[1], PotionType.POTION) && ApplyPotionType(party[0], PotionType.POTION)) {
+        return { pot: 3, suppot: 0, hyppot: 0, maxpot: 0 }
+      }
+
+      return null;
+    },
+    () => {
+      if (ApplyPotionType(party[2], PotionType.POTION) && ApplyPotionType(party[1], PotionType.POTION) && ApplyPotionType(party[0], PotionType.SUPER_POTION)) {
+        return { pot: 3, suppot: 1, hyppot: 0, maxpot: 0 }
+      }
+
+      return null;
+    },
+    () => {
+      if (ApplyPotionType(party[2], PotionType.POTION) && ApplyPotionType(party[1], PotionType.POTION) && ApplyPotionType(party[0], PotionType.HYPER_POTION)) {
+        return { pot: 3, suppot: 1, hyppot: 1, maxpot: 0 }
+      }
+
+      return null;
+    },
+    () => {
+      if (ApplyPotionType(party[2], PotionType.POTION) && ApplyPotionType(party[1], PotionType.POTION) && ApplyPotionType(party[0], PotionType.MAX_POTION)) {
+        return { pot: 3, suppot: 1, hyppot: 1, maxpot: 1 }
+      }
+
+      return null;
+    },
+    // POTION / SUPER POTION
+    () => {
+      if (ApplyPotionType(party[2], PotionType.POTION) && ApplyPotionType(party[1], PotionType.SUPER_POTION) && ApplyPotionType(party[0], PotionType.SUPER_POTION)) {
+        return { pot: 3, suppot: 2, hyppot: 0, maxpot: 0 }
+      }
+
+      return null;
+    },
+    () => {
+      if (ApplyPotionType(party[2], PotionType.POTION) && ApplyPotionType(party[1], PotionType.SUPER_POTION) && ApplyPotionType(party[0], PotionType.HYPER_POTION)) {
+        return { pot: 3, suppot: 2, hyppot: 1, maxpot: 0 }
+      }
+
+      return null;
+    },
+    () => {
+      if (ApplyPotionType(party[2], PotionType.POTION) && ApplyPotionType(party[1], PotionType.SUPER_POTION) && ApplyPotionType(party[0], PotionType.MAX_POTION)) {
+        return { pot: 3, suppot: 2, hyppot: 1, maxpot: 1 }
+      }
+
+      return null;
+    },
+    // POTION / HYPER POTION
+    () => {
+      if (ApplyPotionType(party[2], PotionType.POTION) && ApplyPotionType(party[1], PotionType.HYPER_POTION) && ApplyPotionType(party[0], PotionType.HYPER_POTION)) {
+        return { pot: 3, suppot: 2, hyppot: 2, maxpot: 0 }
+      }
+
+      return null;
+    },
+    () => {
+      if (ApplyPotionType(party[2], PotionType.POTION) && ApplyPotionType(party[1], PotionType.HYPER_POTION) && ApplyPotionType(party[0], PotionType.MAX_POTION)) {
+        return { pot: 3, suppot: 2, hyppot: 2, maxpot: 1 }
+      }
+
+      return null;
+    },
+    // POTION / MAX POTION
+    () => {
+      if (ApplyPotionType(party[2], PotionType.POTION) && ApplyPotionType(party[1], PotionType.MAX_POTION) && ApplyPotionType(party[0], PotionType.MAX_POTION)) {
+        return { pot: 3, suppot: 2, hyppot: 2, maxpot: 2 }
+      }
+
+      return null;
+    },
+    // SUPER POTION / SUPER POTION
+    () => {
+      if (ApplyPotionType(party[2], PotionType.SUPER_POTION) && ApplyPotionType(party[1], PotionType.SUPER_POTION) && ApplyPotionType(party[0], PotionType.SUPER_POTION)) {
+        return { pot: 3, suppot: 3, hyppot: 0, maxpot: 0 }
+      }
+
+      return null;
+    },
+    () => {
+      if (ApplyPotionType(party[2], PotionType.SUPER_POTION) && ApplyPotionType(party[1], PotionType.SUPER_POTION) && ApplyPotionType(party[0], PotionType.HYPER_POTION)) {
+        return { pot: 3, suppot: 3, hyppot: 1, maxpot: 0 }
+      }
+
+      return null;
+    },
+    () => {
+      if (ApplyPotionType(party[2], PotionType.SUPER_POTION) && ApplyPotionType(party[1], PotionType.SUPER_POTION) && ApplyPotionType(party[0], PotionType.MAX_POTION)) {
+        return { pot: 3, suppot: 3, hyppot: 1, maxpot: 1 }
+      }
+
+      return null;
+    },
+    // SUPER POTION / HYPER POTION
+    () => {
+      if (ApplyPotionType(party[2], PotionType.SUPER_POTION) && ApplyPotionType(party[1], PotionType.HYPER_POTION) && ApplyPotionType(party[0], PotionType.HYPER_POTION)) {
+        return { pot: 3, suppot: 3, hyppot: 2, maxpot: 0 }
+      }
+
+      return null;
+    },
+    () => {
+      if (ApplyPotionType(party[2], PotionType.SUPER_POTION) && ApplyPotionType(party[1], PotionType.HYPER_POTION) && ApplyPotionType(party[0], PotionType.MAX_POTION)) {
+        return { pot: 3, suppot: 3, hyppot: 2, maxpot: 1 }
+      }
+
+      return null;
+    },
+    // SUPER POTION / MAX POTION
+    () => {
+      if (ApplyPotionType(party[2], PotionType.SUPER_POTION) && ApplyPotionType(party[1], PotionType.MAX_POTION) && ApplyPotionType(party[0], PotionType.MAX_POTION)) {
+        return { pot: 3, suppot: 3, hyppot: 2, maxpot: 2 }
+      }
+
+      return null;
+    },
+    // HYPER POTION / HYPER POTION
+    () => {
+      if (ApplyPotionType(party[2], PotionType.HYPER_POTION) && ApplyPotionType(party[1], PotionType.HYPER_POTION) && ApplyPotionType(party[0], PotionType.HYPER_POTION)) {
+        return { pot: 3, suppot: 3, hyppot: 3, maxpot: 0 }
+      }
+
+      return null;
+    },
+    () => {
+      if (ApplyPotionType(party[2], PotionType.HYPER_POTION) && ApplyPotionType(party[1], PotionType.HYPER_POTION) && ApplyPotionType(party[0], PotionType.MAX_POTION)) {
+        return { pot: 3, suppot: 3, hyppot: 3, maxpot: 1 }
+      }
+
+      return null;
+    },
+    // HYPER POTION / MAX POTION
+    () => {
+      if (ApplyPotionType(party[2], PotionType.HYPER_POTION) && ApplyPotionType(party[1], PotionType.MAX_POTION) && ApplyPotionType(party[0], PotionType.MAX_POTION)) {
+        return { pot: 3, suppot: 3, hyppot: 3, maxpot: 2 }
+      }
+
+      return null;
+    },
+    // MAX POTION / MAX POTION
+    () => {
+      if (ApplyPotionType(party[2], PotionType.MAX_POTION) && ApplyPotionType(party[1], PotionType.MAX_POTION) && ApplyPotionType(party[0], PotionType.MAX_POTION)) {
+        return { pot: 3, suppot: 3, hyppot: 3, maxpot: 3 }
+      }
+
+      return null;
+    },
+  ]
+}
+
+function ApplyPotionType(pokemon: PlayerPokemon, type: PotionType) {
+  switch (type) {
+    case PotionType.POTION:
+      return ApplyPotion(pokemon, 0.80, 10, 0.75);
+    case PotionType.SUPER_POTION:
+      return ApplyPotion(pokemon, 0.70, 25, 0.625);
+    case PotionType.HYPER_POTION:
+      return ApplyPotion(pokemon, 0.55, 100, 0.50);
+    case PotionType.MAX_POTION:
+      return ApplyPotion(pokemon, 0.40, 100, 0);
+    default:
+      return false;
+  }
+}
+
+function ApplyPotion(pokemon: PlayerPokemon, percent: number, value: number, percentLimit: number): boolean {
+  const maxhp = pokemon.getMaxHp();
+  if (maxhp <= value) {
+    return false;
+  }
+
+  pokemon.hp = Math.max(1, Math.min((maxhp * percent), (maxhp - value)));
+  if (pokemon.getHpRatio() <= percentLimit) {
+    return false;
+  }
+
+  return true;
+}
+
+function ResetPotionHealth(party: PlayerPokemon[]) {
+  party[0].hp = party[0].getMaxHp();
+  party[1].hp = party[1].getMaxHp();
+  party[2].hp = party[2].getMaxHp();
+}
+
+function GetReviveSetups(party: PlayerPokemon[]) {
+  return [
+    () => {
+      party[3].hp = party[3].getMaxHp();
+      party[4].hp = party[4].getMaxHp();
+      party[5].hp = party[5].getMaxHp();
+      return 0;
+    },
+    () => {
+      party[3].hp = 0;
+      return 1;
+    },
+    () => {
+      party[4].hp = 0;
+      return 2;
+    },
+    () => {
+      party[5].hp = 0;
+      return 3;
+    }
+  ];
+}
+
+function GetEtherSetups() {
+  return [
+    (pokemon: PlayerPokemon) => {
+      SetFullPP(pokemon);
+      return 0;
+    },
+    (pokemon: PlayerPokemon) => {
+      SetFullPP(pokemon);
+      pokemon.moveset[0]?.usePp(pokemon.moveset[0].getMovePp());
+      return 1;
+    },
+    (pokemon: PlayerPokemon) => {
+      SetFullPP(pokemon);
+      pokemon.moveset[1]?.usePp(pokemon.moveset[1].getMovePp());
+      return 2;
+    },
+    (pokemon: PlayerPokemon) => {
+      SetFullPP(pokemon);
+      pokemon.moveset[2]?.usePp(pokemon.moveset[2].getMovePp());
+      return 3;
+    },
+  ];
+}
+
+function SetFullPP(pokemon: PlayerPokemon) {
+  pokemon.getMoveset().forEach(ms => {
+    ms?.setFullPp();
+  });
+}
+
+function GetLureSetups() {
+  return [
+    () => {
+      globalScene.RemoveLures();
+      return "";
+    },
+    () => {
+      globalScene.RemoveLures();
+      globalScene.InsertLure();
+      return "Lure";
+    },
+    () => {
+      globalScene.RemoveLures();
+      globalScene.InsertSuperLure();
+      return "Super Lure";
+    },
+    () => {
+      globalScene.RemoveLures();
+      globalScene.InsertMaxLure();
+      return "Max Lure";
+    },
+    () => {
+      globalScene.RemoveLures();
+      globalScene.InsertLure();
+      globalScene.InsertSuperLure();
+      return "Lure + Super Lure";
+    },
+    () => {
+      globalScene.RemoveLures();
+      globalScene.InsertSuperLure();
+      globalScene.InsertMaxLure();
+      return "Super Lure + Max Lure";
+    },
+    () => {
+      globalScene.RemoveLures();
+      globalScene.InsertThreeLures();
+      return "All Lures";
+    },
+  ];
+}
+
+function GetMushroomSetups(party: PlayerPokemon[], comp: SpeciesId[]) {
+  return [
+    (mu: { start: integer, end: integer, level: integer }) => {
+      ClearParty(party);
+      mu.level = 39;
+      FillParty(party, comp, mu.level);
+      mu.start = 1;
+      mu.end = 20;
+    },
+    (mu: { start: integer, end: integer, level: integer }) => {
+      ClearParty(party);
+      mu.level = 59;
+      FillParty(party, comp, mu.level);
+      mu.start = 15;
+      mu.end = 40;
+    },
+    (mu: { start: integer, end: integer, level: integer }) => {
+      ClearParty(party);
+      mu.level = 79;
+      FillParty(party, comp, mu.level);
+      mu.start = 35;
+      mu.end = 49;
+    },
+  ];
+}
+
+function GetGlobalItemSetups() {
+  return [
+    () => {
+      return "";
+    },
+    // () => {
+    //   globalScene.InsertMegaBracelet();
+    //   return "Mega";
+    // },
+    // () => {
+    //   globalScene.InsertDynamaxBand();
+    //   return "Band";
+    // },
+    // () => {
+    //   globalScene.InsertLockCapsule();
+    //   return "Lock";
+    // },
+    // () => {
+    //   globalScene.InsertMegaBracelet();
+    //   globalScene.InsertDynamaxBand();
+    //   return "Mega + Band";
+    // },
+    // () => {
+    //   globalScene.InsertMegaBracelet();
+    //   globalScene.InsertLockCapsule();
+    //   return "Mega + Lock";
+    // },
+    // () => {
+    //   globalScene.InsertDynamaxBand();
+    //   globalScene.InsertLockCapsule();
+    //   return "Band + Lock";
+    // },
+    // () => {
+    //   globalScene.InsertMegaBracelet();
+    //   globalScene.InsertDynamaxBand();
+    //   globalScene.InsertLockCapsule();
+    //   return "Mega + Band + Lock";
+    // },
+    // () => {
+    //   globalScene.InsertTeraOrb();
+    //   return "Tera";
+    // },
+  ];
+}
+
+function GetPartyCompositions() {
+  // Make sure the final 3 slots are always generic Mew. Those are selected to faint for the Revives tests.
+  return [
+    [SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY],
+    [SpeciesId.BULBASAUR, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY],
+    [SpeciesId.JIGGLYPUFF, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY],
+    [SpeciesId.POLIWHIRL, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY],
+    // Swellow for Guts tests:
+    // [ SpeciesId.BLISSEY, SpeciesId.SWELLOW, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY ],
+    // [ SpeciesId.BULBASAUR, SpeciesId.SWELLOW, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY ],
+    // [ SpeciesId.JIGGLYPUFF, SpeciesId.SWELLOW, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY ],
+    // [ SpeciesId.POLIWHIRL, SpeciesId.SWELLOW, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY ],
+  ];
+}
+
+function ClearParty(party: PlayerPokemon[]) {
+  do {
+    globalScene.removePokemonFromPlayerParty(party[0], true);
+  }
+  while (party.length > 0);
+}
+
+function FillParty(party: PlayerPokemon[], comp: SpeciesId[], level: integer) {
+  comp.forEach((s: SpeciesId) => {
+    AddPokemon(party, s, level);
+  });
+}
+
+function AddPokemon(party: PlayerPokemon[], speciesId: SpeciesId, level: integer) {
+  const pokemon = allSpecies.filter(sp => sp.speciesId == speciesId)[0];
+  const playerPokemon = globalScene.addPlayerPokemon(pokemon, level);
+  playerPokemon.moveset = [new PokemonMove(MoveId.TACKLE), new PokemonMove(MoveId.SPLASH), new PokemonMove(MoveId.SPLASH), new PokemonMove(MoveId.SPLASH)];
+  party.push(playerPokemon);
 }
 // #endregion
