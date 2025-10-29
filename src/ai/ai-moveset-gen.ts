@@ -639,7 +639,7 @@ function debugMoveWeights(pokemon: Pokemon, pool: Map<MoveId, number>, note: str
     for (const [moveId, weight] of sortedByValue) {
       moveNameToWeightMap.set(allMoves[moveId].name, weight);
     }
-    console.log("%cComputed move weights [%s] for %s", "color: blue", note, pokemon.name, moveNameToWeightMap);
+    //console.log("%cComputed move weights [%s] for %s", "color: blue", note, pokemon.name, moveNameToWeightMap);
   }
 }
 
