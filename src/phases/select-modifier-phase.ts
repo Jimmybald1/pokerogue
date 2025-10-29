@@ -28,7 +28,7 @@ import { BattlePhase } from "#phases/battle-phase";
 import type { ModifierSelectUiHandler } from "#ui/modifier-select-ui-handler";
 import { SHOP_OPTIONS_ROW_LIMIT } from "#ui/modifier-select-ui-handler";
 import { PartyOption, PartyUiHandler, PartyUiMode } from "#ui/party-ui-handler";
-import { isNullOrUndefined, NumberHolder } from "#utils/common";
+import { NumberHolder } from "#utils/common";
 import i18next from "i18next";
 
 export type ModifierSelectCallback = (rowCursor: number, cursor: number) => boolean;
@@ -306,11 +306,11 @@ export class SelectModifierPhase extends BattlePhase {
       -1,
       (fromSlotIndex: number, itemIndex: number, itemQuantity: number, toSlotIndex: number, isAll: boolean) => {
         if (
-          toSlotIndex !== undefined &&
-          fromSlotIndex < 6 &&
-          toSlotIndex < 6 &&
-          fromSlotIndex !== toSlotIndex &&
-          itemIndex > -1
+          toSlotIndex !== undefined
+          && fromSlotIndex < 6
+          && toSlotIndex < 6
+          && fromSlotIndex !== toSlotIndex
+          && itemIndex > -1
         ) {
           const itemModifiers = globalScene.findModifiers(
             m => m instanceof PokemonHeldItemModifier && m.isTransferable && m.pokemonId === party[fromSlotIndex].id,
@@ -405,10 +405,10 @@ export class SelectModifierPhase extends BattlePhase {
       -1,
       (fromSlotIndex: number, spliceSlotIndex: number) => {
         if (
-          spliceSlotIndex !== undefined &&
-          fromSlotIndex < 6 &&
-          spliceSlotIndex < 6 &&
-          fromSlotIndex !== spliceSlotIndex
+          spliceSlotIndex !== undefined
+          && fromSlotIndex < 6
+          && spliceSlotIndex < 6
+          && fromSlotIndex !== spliceSlotIndex
         ) {
           globalScene.ui.setMode(UiMode.MODIFIER_SELECT, this.isPlayer()).then(() => {
             const modifier = modifierType.newModifier(party[fromSlotIndex], party[spliceSlotIndex])!; //TODO: is the bang correct?
@@ -487,9 +487,9 @@ export class SelectModifierPhase extends BattlePhase {
     // If custom modifiers are specified, overrides default item count
     if (this.customModifierSettings) {
       const newItemCount =
-        (this.customModifierSettings.guaranteedModifierTiers?.length ?? 0) +
-        (this.customModifierSettings.guaranteedModifierTypeOptions?.length ?? 0) +
-        (this.customModifierSettings.guaranteedModifierTypeFuncs?.length ?? 0);
+        (this.customModifierSettings.guaranteedModifierTiers?.length ?? 0)
+        + (this.customModifierSettings.guaranteedModifierTypeOptions?.length ?? 0)
+        + (this.customModifierSettings.guaranteedModifierTypeFuncs?.length ?? 0);
       if (this.customModifierSettings.fillRemaining) {
         const originalCount = modifierCountHolder.value;
         modifierCountHolder.value = originalCount > newItemCount ? originalCount : newItemCount;
@@ -536,7 +536,7 @@ export class SelectModifierPhase extends BattlePhase {
     }
 
     let multiplier = 1;
-    if (!isNullOrUndefined(this.customModifierSettings?.rerollMultiplier)) {
+    if (this.customModifierSettings?.rerollMultiplier != null) {
       if (this.customModifierSettings.rerollMultiplier < 0) {
         // Completely overrides reroll cost to -1 and early exits
         return -1;

@@ -5,10 +5,9 @@ import type { PokemonHeldItemModifier } from "./modifier/modifier";
 import { BypassSpeedChanceModifier, EnemyAttackStatusEffectChanceModifier, overrideHeldItems, overrideModifiers } from "./modifier/modifier";
 import type { TitlePhase } from "./phases/title-phase";
 import { getStatusEffectCatchRateMultiplier } from "./data/status-effect";
-import type { SessionSaveData } from "./system/game-data";
 import { loggedInUser } from "./account";
 import { Challenges } from "./enums/challenges";
-import { biomeLinks, getBiomeName } from "./data/balance/biomes";
+import { biomeLinks } from "./data/balance/biomes";
 import { Nature } from "./enums/nature";
 import { StatusEffect } from "./enums/status-effect";
 import { getCriticalCaptureChance } from "./data/pokeball";
@@ -19,7 +18,7 @@ import { GameModes } from "#enums/game-modes";
 import { getPokemonSpecies } from "./utils/pokemon-utils";
 import { AbilityId } from "#enums/ability-id";
 import { decrypt } from "./utils/data";
-import { BooleanHolder, isNullOrUndefined, NumberHolder, randSeedInt } from "#utils/common";
+import { BooleanHolder, getBiomeName, NumberHolder, randSeedInt } from "#utils/common";
 import { PokemonData } from "#system/pokemon-data";
 import { getEnumKeys, getEnumValues } from "#utils/enums";
 import { Trainer } from "#field/trainer";
@@ -53,6 +52,7 @@ import { WeatherType } from "#enums/weather-type";
 import { TimeOfDay } from "#enums/time-of-day";
 import { EnemyCommandPhase } from "#phases/enemy-command-phase";
 import { BattlerIndex } from "#enums/battler-index";
+import { SessionSaveData } from "#types/save-data";
 
 /*
 SECTIONS
@@ -124,6 +124,18 @@ export const SheetsMode = new BooleanHolder(false);
 export const isTransferAll: BooleanHolder = new BooleanHolder(false);
 
 export const logCommand: BooleanHolder = new BooleanHolder(true);
+  
+export const tiernames: string[] = [
+  "Common",
+  "Uncommon",
+  "Rare",
+  "Super Rare",
+  "Ultra Rare",
+  "Common",
+  "Rare",
+  "Super Rare",
+  "Ultra Rare",
+];
 
 // #endregion
 
@@ -2239,94 +2251,6 @@ export function parseSlotData(slotId: number): SessionSaveData | undefined {
 
     return v;
   }) as SessionSaveData;
-  Save.slot = slotId;
-  Save.description = (slotId + 1) + " - ";
-  const challengeParts: ChallengeData[] | undefined[] = new Array(5);
-  const nameParts: string[] | undefined[] = new Array(5);
-  if (Save.challenges != undefined) {
-    for (var i = 0; i < Save.challenges.length; i++) {
-      switch (Save.challenges[i].id) {
-        case Challenges.SINGLE_TYPE:
-          challengeParts[0] = Save.challenges[i];
-          nameParts[1] = Save.challenges[i].toChallenge().getValue();
-          nameParts[1] = nameParts[1][0].toUpperCase() + nameParts[1].substring(1);
-          if (nameParts[1] == "unknown") {
-            nameParts[1] = undefined;
-            challengeParts[1] = undefined;
-          }
-          break;
-        case Challenges.SINGLE_GENERATION:
-          challengeParts[1] = Save.challenges[i];
-          nameParts[0] = "Gen " + Save.challenges[i].value;
-          if (nameParts[0] == "Gen 0") {
-            nameParts[0] = undefined;
-            challengeParts[0] = undefined;
-          }
-          break;
-        case Challenges.LOWER_MAX_STARTER_COST:
-          challengeParts[2] = Save.challenges[i];
-          nameParts[3] = (10 - challengeParts[0]!.value) + "cost";
-          break;
-        case Challenges.LOWER_STARTER_POINTS:
-          challengeParts[3] = Save.challenges[i];
-          nameParts[4] = (10 - challengeParts[0]!.value) + "pt";
-          break;
-        case Challenges.FRESH_START:
-          challengeParts[4] = Save.challenges[i];
-          nameParts[2] = "FS";
-          break;
-      }
-    }
-  }
-  for (var i = 0; i < challengeParts.length; i++) {
-    if (challengeParts[i] == undefined || challengeParts[i] == null) {
-      challengeParts.splice(i, 1);
-      i--;
-    }
-  }
-  for (var i = 0; i < nameParts.length; i++) {
-    if (nameParts[i] == undefined || nameParts[i] == null || nameParts[i] == "") {
-      nameParts.splice(i, 1);
-      i--;
-    }
-  }
-  if (challengeParts.length == 1 && false) {
-    switch (challengeParts[0]!.id) {
-      case Challenges.SINGLE_TYPE:
-        Save.description += "Mono " + challengeParts[0]!.toChallenge().getValue();
-        break;
-      case Challenges.SINGLE_GENERATION:
-        Save.description += "Gen " + challengeParts[0]!.value;
-        break;
-      case Challenges.LOWER_MAX_STARTER_COST:
-        Save.description += "Max cost " + (10 - challengeParts[0]!.value);
-        break;
-      case Challenges.LOWER_STARTER_POINTS:
-        Save.description += (10 - challengeParts[0]!.value) + "-point";
-        break;
-      case Challenges.FRESH_START:
-        Save.description += "Fresh Start";
-        break;
-    }
-  } else if (challengeParts.length == 0) {
-    switch (Save.gameMode) {
-      case GameModes.CLASSIC:
-        Save.description += "Classic";
-        break;
-      case GameModes.ENDLESS:
-        Save.description += "Endless";
-        break;
-      case GameModes.SPLICED_ENDLESS:
-        Save.description += "Endless+";
-        break;
-      case GameModes.DAILY:
-        Save.description += "Daily";
-        break;
-    }
-  } else {
-    Save.description += nameParts.join(" ");
-  }
-  Save.description += " (" + getBiomeName(Save.arena.biome) + " " + Save.waveIndex + ")";
   return Save;
 }
 
@@ -2554,7 +2478,7 @@ export function predictDamage(user: Pokemon, target: Pokemon, move: PokemonMove,
   if (logDamagePrediction) {
     console.log(`Max EHP: ${maxEHP}`);
   }
-  if (logDamagePrediction && !isNullOrUndefined(koText)) {
+  if (logDamagePrediction && koText !== undefined) {
     console.log(`KO%: ${koText}`);
   }
 
@@ -2777,6 +2701,35 @@ function GenerateBiomes(biomeId: BiomeId, waveIndex: integer) {
     }
 
     GenerateBiomes(b, waveIndex + 10);
+  }
+}
+
+export function TestAllAbilityCharms(baseChance: number, abilityHidden: AbilityId) {
+  if (abilityHidden) {
+    const haRolls: Number[] = []
+    globalScene.executeWithoutSeedAdvancement(() => {
+      haRolls.push(randSeedInt(baseChance, undefined, "Hidden Ability chance 0 charms"));
+    });
+    
+    globalScene.executeWithoutSeedAdvancement(() => {
+      haRolls.push(randSeedInt(baseChance/4, undefined, "Hidden Ability chance 1 charm")); // first charm is 4x
+    });
+    
+    globalScene.executeWithoutSeedAdvancement(() => {
+      haRolls.push(randSeedInt(baseChance/8, undefined, "Hidden Ability chance 2 charms"));
+    });
+    
+    globalScene.executeWithoutSeedAdvancement(() => {
+      haRolls.push(randSeedInt(baseChance/16, undefined, "Hidden Ability chance 3 charms"));
+    });
+    
+    globalScene.executeWithoutSeedAdvancement(() => {
+      haRolls.push(randSeedInt(baseChance/32, undefined, "Hidden Ability chance 4 charms"));
+    });
+    haChances.push(haRolls);
+  }
+  else {
+    haChances.push([-1, -1, -1, -1, -1]);
   }
 }
 // #endregion

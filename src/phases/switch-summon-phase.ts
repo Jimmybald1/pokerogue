@@ -5,12 +5,14 @@ import { SubstituteTag } from "#data/battler-tags";
 import { allMoves } from "#data/data-lists";
 import { SpeciesFormChangeActiveTrigger } from "#data/form-change-triggers";
 import { getPokeballTintColor } from "#data/pokeball";
+import { ArenaTagSide } from "#enums/arena-tag-side";
 import { Command } from "#enums/command";
 import { SwitchType } from "#enums/switch-type";
 import { TrainerSlot } from "#enums/trainer-slot";
 import type { Pokemon } from "#field/pokemon";
 import { SwitchEffectTransferModifier } from "#modifiers/modifier";
 import { SummonPhase } from "#phases/summon-phase";
+import { inSpeedOrder } from "#utils/speed-order-generator";
 import i18next from "i18next";
 import * as LoggerTools from "../logger";
 
@@ -57,9 +59,9 @@ export class SwitchSummonPhase extends SummonPhase {
     }
 
     if (
-      !this.doReturn ||
-      (this.slotIndex !== -1 &&
-        !(this.player ? globalScene.getPlayerParty() : globalScene.getEnemyParty())[this.slotIndex])
+      !this.doReturn
+      || (this.slotIndex !== -1
+        && !(this.player ? globalScene.getPlayerParty() : globalScene.getEnemyParty())[this.slotIndex])
     ) {
       if (this.player) {
         this.switchAndSummon();
@@ -70,9 +72,9 @@ export class SwitchSummonPhase extends SummonPhase {
     }
 
     const pokemon = this.getPokemon();
-    (this.player ? globalScene.getEnemyField() : globalScene.getPlayerField()).forEach(enemyPokemon =>
-      enemyPokemon.removeTagsBySourceId(pokemon.id),
-    );
+    for (const enemyPokemon of inSpeedOrder(this.player ? ArenaTagSide.ENEMY : ArenaTagSide.PLAYER)) {
+      enemyPokemon.removeTagsBySourceId(pokemon.id);
+    }
 
     if (this.switchType === SwitchType.SWITCH || this.switchType === SwitchType.INITIAL_SWITCH) {
       const substitute = pokemon.getTag(SubstituteTag);
@@ -145,14 +147,14 @@ export class SwitchSummonPhase extends SummonPhase {
       if (
         !globalScene.findModifier(
           m =>
-            m instanceof SwitchEffectTransferModifier &&
-            (m as SwitchEffectTransferModifier).pokemonId === switchedInPokemon.id,
+            m instanceof SwitchEffectTransferModifier
+            && (m as SwitchEffectTransferModifier).pokemonId === switchedInPokemon.id,
         )
       ) {
         const batonPassModifier = globalScene.findModifier(
           m =>
-            m instanceof SwitchEffectTransferModifier &&
-            (m as SwitchEffectTransferModifier).pokemonId === this.lastPokemon.id,
+            m instanceof SwitchEffectTransferModifier
+            && (m as SwitchEffectTransferModifier).pokemonId === this.lastPokemon.id,
         ) as SwitchEffectTransferModifier;
 
         if (batonPassModifier) {
@@ -218,9 +220,9 @@ export class SwitchSummonPhase extends SummonPhase {
     // Compensate for turn spent summoning/forced switch if switched out pokemon is not fainted.
     // Needed as we increment turn counters in `TurnEndPhase`.
     if (
-      currentCommand === Command.POKEMON ||
-      lastPokemonIsForceSwitchedAndNotFainted ||
-      lastPokemonHasForceSwitchAbAttr
+      currentCommand === Command.POKEMON
+      || lastPokemonIsForceSwitchedAndNotFainted
+      || lastPokemonHasForceSwitchAbAttr
     ) {
       pokemon.tempSummonData.turnCount--;
       pokemon.tempSummonData.waveTurnCount--;
@@ -245,11 +247,11 @@ export class SwitchSummonPhase extends SummonPhase {
 
     globalScene.triggerPokemonFormChange(pokemon, SpeciesFormChangeActiveTrigger, true);
     // Reverts to weather-based forms when weather suppressors (Cloud Nine/Air Lock) are switched out
-    globalScene.arena.triggerWeatherBasedFormChanges();
+    globalScene.arena.triggerWeatherBasedFormChanges(pokemon);
   }
 
   queuePostSummon(): void {
-    globalScene.phaseManager.startNewDynamicPhase("PostSummonPhase", this.getPokemon().getBattlerIndex());
+    globalScene.phaseManager.unshiftNew("PostSummonPhase", this.getPokemon().getBattlerIndex());
   }
 
   /**

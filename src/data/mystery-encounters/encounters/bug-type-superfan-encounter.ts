@@ -48,7 +48,7 @@ import { getRandomPartyMemberFunc, trainerConfigs } from "#trainers/trainer-conf
 import { TrainerPartyCompoundTemplate, TrainerPartyTemplate } from "#trainers/trainer-party-template";
 import type { OptionSelectItem } from "#ui/abstract-option-select-ui-handler";
 import { MoveInfoOverlay } from "#ui/move-info-overlay";
-import { isNullOrUndefined, randSeedInt, randSeedShuffle } from "#utils/common";
+import { randSeedInt, randSeedShuffle } from "#utils/common";
 import i18next from "i18next";
 
 /** the i18n namespace for the encounter */
@@ -78,7 +78,7 @@ const POOL_1_POKEMON = [
   SpeciesId.RIBOMBEE,
   SpeciesId.SPIDOPS,
   SpeciesId.LOKIX,
-];
+] as const;
 
 const POOL_2_POKEMON = [
   SpeciesId.SCYTHER,
@@ -104,41 +104,20 @@ const POOL_2_POKEMON = [
   SpeciesId.CENTISKORCH,
   SpeciesId.FROSMOTH,
   SpeciesId.KLEAVOR,
-];
+] as const;
 
-const POOL_3_POKEMON: { species: SpeciesId; formIndex?: number }[] = [
-  {
-    species: SpeciesId.PINSIR,
-    formIndex: 1,
-  },
-  {
-    species: SpeciesId.SCIZOR,
-    formIndex: 1,
-  },
-  {
-    species: SpeciesId.HERACROSS,
-    formIndex: 1,
-  },
-  {
-    species: SpeciesId.ORBEETLE,
-    formIndex: 1,
-  },
-  {
-    species: SpeciesId.CENTISKORCH,
-    formIndex: 1,
-  },
-  {
-    species: SpeciesId.DURANT,
-  },
-  {
-    species: SpeciesId.VOLCARONA,
-  },
-  {
-    species: SpeciesId.GOLISOPOD,
-  },
-];
+const POOL_3_POKEMON = [
+  { species: SpeciesId.PINSIR, formIndex: 1 },
+  { species: SpeciesId.SCIZOR, formIndex: 1 },
+  { species: SpeciesId.HERACROSS, formIndex: 1 },
+  { species: SpeciesId.ORBEETLE, formIndex: 1 },
+  { species: SpeciesId.CENTISKORCH, formIndex: 1 },
+  { species: SpeciesId.DURANT } as { species: SpeciesId.DURANT; formIndex: undefined },
+  { species: SpeciesId.VOLCARONA } as { species: SpeciesId.VOLCARONA; formIndex: undefined },
+  { species: SpeciesId.GOLISOPOD } as { species: SpeciesId.GOLISOPOD; formIndex: undefined },
+] as const;
 
-const POOL_4_POKEMON = [SpeciesId.GENESECT, SpeciesId.SLITHER_WING, SpeciesId.BUZZWOLE, SpeciesId.PHEROMOSA];
+const POOL_4_POKEMON = [SpeciesId.GENESECT, SpeciesId.SLITHER_WING, SpeciesId.BUZZWOLE, SpeciesId.PHEROMOSA] as const;
 
 const PHYSICAL_TUTOR_MOVES = [
   MoveId.MEGAHORN,
@@ -146,7 +125,7 @@ const PHYSICAL_TUTOR_MOVES = [
   MoveId.BUG_BITE,
   MoveId.FIRST_IMPRESSION,
   MoveId.LUNGE,
-];
+] as const;
 
 const SPECIAL_TUTOR_MOVES = [
   MoveId.SILVER_WIND,
@@ -154,7 +133,7 @@ const SPECIAL_TUTOR_MOVES = [
   MoveId.BUG_BUZZ,
   MoveId.POLLEN_PUFF,
   MoveId.STRUGGLE_BUG,
-];
+] as const;
 
 const STATUS_TUTOR_MOVES = [
   MoveId.STRING_SHOT,
@@ -162,14 +141,20 @@ const STATUS_TUTOR_MOVES = [
   MoveId.RAGE_POWDER,
   MoveId.STICKY_WEB,
   MoveId.SILK_TRAP,
-];
+] as const;
 
-const MISC_TUTOR_MOVES = [MoveId.LEECH_LIFE, MoveId.U_TURN, MoveId.HEAL_ORDER, MoveId.QUIVER_DANCE, MoveId.INFESTATION];
+const MISC_TUTOR_MOVES = [
+  MoveId.LEECH_LIFE,
+  MoveId.U_TURN,
+  MoveId.HEAL_ORDER,
+  MoveId.QUIVER_DANCE,
+  MoveId.INFESTATION,
+] as const;
 
 /**
  * Wave breakpoints that determine how strong to make the Bug-Type Superfan's team
  */
-const WAVE_LEVEL_BREAKPOINTS = [30, 50, 70, 100, 120, 140, 160];
+const WAVE_LEVEL_BREAKPOINTS = [30, 50, 70, 100, 120, 140, 160] as const;
 
 /**
  * Bug Type Superfan encounter.
@@ -213,7 +198,8 @@ export const BugTypeSuperfanEncounter: MysteryEncounter = MysteryEncounterBuilde
       female: true,
     });
 
-    let beedrillKeys: { spriteKey: string; fileRoot: string }, butterfreeKeys: { spriteKey: string; fileRoot: string };
+    let beedrillKeys: { spriteKey: string; fileRoot: string };
+    let butterfreeKeys: { spriteKey: string; fileRoot: string };
     if (globalScene.currentBattle.waveIndex < WAVE_LEVEL_BREAKPOINTS[3]) {
       beedrillKeys = getSpriteKeysFromSpecies(SpeciesId.BEEDRILL, false);
       butterfreeKeys = getSpriteKeysFromSpecies(SpeciesId.BUTTERFREE, false);
@@ -247,7 +233,7 @@ export const BugTypeSuperfanEncounter: MysteryEncounter = MysteryEncounterBuilde
         yShadow: -4,
       },
       {
-        spriteKey: spriteKey,
+        spriteKey,
         fileRoot: "trainer",
         hasShadow: true,
         x: 4,
@@ -440,11 +426,11 @@ export const BugTypeSuperfanEncounter: MysteryEncounter = MysteryEncounterBuilde
           // Get Pokemon held items and filter for valid ones
           const validItems = pokemon.getHeldItems().filter(item => {
             return (
-              (item instanceof BypassSpeedChanceModifier ||
-                item instanceof ContactHeldItemTransferChanceModifier ||
-                (item instanceof AttackTypeBoosterModifier &&
-                  (item.type as AttackTypeBoosterModifierType).moveType === PokemonType.BUG)) &&
-              item.isTransferable
+              (item instanceof BypassSpeedChanceModifier
+                || item instanceof ContactHeldItemTransferChanceModifier
+                || (item instanceof AttackTypeBoosterModifier
+                  && (item.type as AttackTypeBoosterModifierType).moveType === PokemonType.BUG))
+              && item.isTransferable
             );
           });
 
@@ -469,10 +455,10 @@ export const BugTypeSuperfanEncounter: MysteryEncounter = MysteryEncounterBuilde
           // If pokemon has valid item, it can be selected
           const hasValidItem = pokemon.getHeldItems().some(item => {
             return (
-              item instanceof BypassSpeedChanceModifier ||
-              item instanceof ContactHeldItemTransferChanceModifier ||
-              (item instanceof AttackTypeBoosterModifier &&
-                (item.type as AttackTypeBoosterModifierType).moveType === PokemonType.BUG)
+              item instanceof BypassSpeedChanceModifier
+              || item instanceof ContactHeldItemTransferChanceModifier
+              || (item instanceof AttackTypeBoosterModifier
+                && (item.type as AttackTypeBoosterModifierType).moveType === PokemonType.BUG)
             );
           });
           if (!hasValidItem) {
@@ -516,8 +502,8 @@ function getTrainerConfigForWave(waveIndex: number) {
   const config = trainerConfigs[TrainerType.BUG_TYPE_SUPERFAN].clone();
   config.name = i18next.t("trainerNames:bugTypeSuperfan");
 
-  let pool3Copy = POOL_3_POKEMON.slice(0);
-  pool3Copy = randSeedShuffle(pool3Copy, "Shuffle pool 3 pokemon");
+  const pool3Copy = randSeedShuffle(POOL_3_POKEMON.slice(), "Shuffle pool 3 pokemon");
+  // Bang is fine here, as we know pool3Copy has at least 1 entry
   const pool3Mon = pool3Copy.pop()!;
 
   if (waveIndex < WAVE_LEVEL_BREAKPOINTS[0]) {
@@ -570,7 +556,7 @@ function getTrainerConfigForWave(waveIndex: number) {
       .setPartyMemberFunc(
         4,
         getRandomPartyMemberFunc([pool3Mon.species], TrainerSlot.TRAINER, true, p => {
-          if (!isNullOrUndefined(pool3Mon.formIndex)) {
+          if (pool3Mon.formIndex != null) {
             p.formIndex = pool3Mon.formIndex;
             p.generateAndPopulateMoveset();
             p.generateName();
@@ -578,7 +564,6 @@ function getTrainerConfigForWave(waveIndex: number) {
         }),
       );
   } else if (waveIndex < WAVE_LEVEL_BREAKPOINTS[5]) {
-    pool3Copy = randSeedShuffle(pool3Copy, "Shuffle pool 3 pokemon 2");
     const pool3Mon2 = pool3Copy.pop()!;
     config
       .setPartyTemplates(new TrainerPartyTemplate(5, PartyMemberStrength.AVERAGE))
@@ -602,7 +587,7 @@ function getTrainerConfigForWave(waveIndex: number) {
       .setPartyMemberFunc(
         3,
         getRandomPartyMemberFunc([pool3Mon.species], TrainerSlot.TRAINER, true, p => {
-          if (!isNullOrUndefined(pool3Mon.formIndex)) {
+          if (pool3Mon.formIndex != null) {
             p.formIndex = pool3Mon.formIndex;
             p.generateAndPopulateMoveset();
             p.generateName();
@@ -612,7 +597,7 @@ function getTrainerConfigForWave(waveIndex: number) {
       .setPartyMemberFunc(
         4,
         getRandomPartyMemberFunc([pool3Mon2.species], TrainerSlot.TRAINER, true, p => {
-          if (!isNullOrUndefined(pool3Mon2.formIndex)) {
+          if (pool3Mon2.formIndex != null) {
             p.formIndex = pool3Mon2.formIndex;
             p.generateAndPopulateMoveset();
             p.generateName();
@@ -647,7 +632,7 @@ function getTrainerConfigForWave(waveIndex: number) {
       .setPartyMemberFunc(
         3,
         getRandomPartyMemberFunc([pool3Mon.species], TrainerSlot.TRAINER, true, p => {
-          if (!isNullOrUndefined(pool3Mon.formIndex)) {
+          if (pool3Mon.formIndex != null) {
             p.formIndex = pool3Mon.formIndex;
             p.generateAndPopulateMoveset();
             p.generateName();
@@ -656,7 +641,6 @@ function getTrainerConfigForWave(waveIndex: number) {
       )
       .setPartyMemberFunc(4, getRandomPartyMemberFunc(POOL_4_POKEMON, TrainerSlot.TRAINER, true));
   } else {
-    pool3Copy = randSeedShuffle(pool3Copy, "Shuffle pool 3 pokemon 2");
     const pool3Mon2 = pool3Copy.pop()!;
     config
       .setPartyTemplates(
@@ -686,7 +670,7 @@ function getTrainerConfigForWave(waveIndex: number) {
       .setPartyMemberFunc(
         2,
         getRandomPartyMemberFunc([pool3Mon.species], TrainerSlot.TRAINER, true, p => {
-          if (!isNullOrUndefined(pool3Mon.formIndex)) {
+          if (pool3Mon.formIndex != null) {
             p.formIndex = pool3Mon.formIndex;
             p.generateAndPopulateMoveset();
             p.generateName();
@@ -696,7 +680,7 @@ function getTrainerConfigForWave(waveIndex: number) {
       .setPartyMemberFunc(
         3,
         getRandomPartyMemberFunc([pool3Mon2.species], TrainerSlot.TRAINER, true, p => {
-          if (!isNullOrUndefined(pool3Mon2.formIndex)) {
+          if (pool3Mon2.formIndex != null) {
             p.formIndex = pool3Mon2.formIndex;
             p.generateAndPopulateMoveset();
             p.generateName();

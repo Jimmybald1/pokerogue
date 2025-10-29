@@ -8,12 +8,12 @@ import { fixedInt } from "#app/utils/common";
 import { allSpecies } from "#app/data/data-lists";
 import { SpeciesId } from "#enums/species-id";
 import { getPokemonSpecies } from "#app/utils/pokemon-utils";
-import { MessageUiHandler } from "./message-ui-handler";
 import { addTextObject } from "./text";
 import { TextStyle } from "#enums/text-style";
 import { getEnumValues } from "#utils/enums";
 import { PokemonData } from "#system/pokemon-data";
 import { BattleScene } from "#app/battle-scene";
+import { MessageUiHandler } from "#ui/message-ui-handler";
 
 const sessionSlotCount = 5;
 const gap = 20;

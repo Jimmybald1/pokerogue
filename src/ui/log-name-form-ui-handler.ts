@@ -1,10 +1,9 @@
-import type { InputFieldConfig } from "./form-modal-ui-handler";
-import { FormModalUiHandler } from "./form-modal-ui-handler";
-import type { ModalConfig } from "./modal-ui-handler";
 import i18next from "i18next";
 import * as LoggerTools from "../logger";
 import { globalScene } from "#app/global-scene";
 import { UiMode } from "#enums/ui-mode";
+import { FormModalUiHandler, InputFieldConfig } from "#ui/form-modal-ui-handler";
+import { ModalConfig } from "#ui/modal-ui-handler";
 
 export default class LogNameFormUiHandler extends FormModalUiHandler {
   name: string;

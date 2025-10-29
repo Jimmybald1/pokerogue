@@ -32,8 +32,7 @@ export class SelectTargetPhase extends PokemonPhase {
         globalScene.phaseManager.queueMessage(i18next.t(errorMessage, { moveName: moveObject.name }), 0, true);
         targets = [];
       }
-      // Cancel this action
-      if (targets.length < 1) {
+      if (targets.length === 0) {
         globalScene.currentBattle.turnCommands[this.fieldIndex] = null;
         LoggerTools.Actions[this.fieldIndex] = "";
         globalScene.phaseManager.unshiftNew("CommandPhase", this.fieldIndex);
