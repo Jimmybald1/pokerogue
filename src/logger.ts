@@ -6,7 +6,6 @@ import { BypassSpeedChanceModifier, EnemyAttackStatusEffectChanceModifier, overr
 import type { TitlePhase } from "./phases/title-phase";
 import { getStatusEffectCatchRateMultiplier } from "./data/status-effect";
 import { loggedInUser } from "./account";
-import { Challenges } from "./enums/challenges";
 import { biomeLinks } from "./data/balance/biomes";
 import { Nature } from "./enums/nature";
 import { StatusEffect } from "./enums/status-effect";
@@ -31,7 +30,6 @@ import { TrainerType } from "#enums/trainer-type";
 import { PokemonMove } from "#moves/pokemon-move";
 import { MoveCategory } from "#enums/move-category";
 import { applyMoveAttrs } from "#moves/apply-attrs";
-import { Command } from "#enums/command";
 import { MultiHitAttr } from "#types/move-types";
 import { MultiHitType } from "#enums/multi-hit-type";
 import { getPlayerModifierTypeOptions, ModifierTypeOption, PokemonMultiHitModifierType, regenerateModifierPoolThresholds } from "#modifiers/modifier-type";
@@ -97,6 +95,10 @@ export const acceptedVersions = [
 const catchDebug: boolean = false;
 const logDamagePrediction: boolean = false;
 export let pathingToolUI: boolean = true;
+export let incomingMon: string | undefined;
+export function setIncomingMon(mon: string | undefined) {
+  incomingMon = mon;
+}
 
 // Value holders
 /** Holds the encounter rarities for the Pokemon in this wave. */
@@ -136,7 +138,6 @@ export const tiernames: string[] = [
   "Super Rare",
   "Ultra Rare",
 ];
-
 // #endregion
 
 

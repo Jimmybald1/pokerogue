@@ -18,16 +18,15 @@ import { BattleSceneEventType } from "#events/battle-scene";
 import { addTextObject } from "#ui/text";
 import { TimeOfDayWidget } from "#ui/time-of-day-widget";
 import { addWindow, WindowVariant } from "#ui/ui-theme";
-import { fixedInt } from "#utils/common";
+import { fixedInt, getBiomeName } from "#utils/common";
 import { toCamelCase, toTitleCase } from "#utils/strings";
 import type { ParseKeys } from "i18next";
 import i18next from "i18next";
 import { getNatureDecrease, getNatureIncrease, getNatureName } from "#app/data/nature";
-import * as LoggerTools from "../logger";
+import * as LoggerTools from "../../logger";
 import { Gender } from "#app/data/gender";
 import { getLuckString } from "#app/modifier/modifier-type";
 import { Region } from "#app/data/pokemon-species";
-import { getBiomeName } from "#app/data/balance/biomes";
 import { SpeciesId } from "#enums/species-id";
 
 /** Enum used to differentiate {@linkcode Arena} effects */
@@ -446,18 +445,12 @@ export class ArenaFlyout extends Phaser.GameObjects.Container {
 
     this.fieldEffectInfo.sort((infoA, infoB) => infoA.duration - infoB.duration);
 
-<<<<<<< HEAD:src/ui/arena-flyout.ts
     this.flyoutTextHeaderPlayer.text = "Player";
     this.flyoutTextHeaderField.text = "Neutral";
     this.flyoutTextHeaderEnemy.text = "Enemy";
     this.flyoutTextHeader.text = "Active Battle Effects";
 
-    for (let i = 0; i < this.fieldEffectInfo.length; i++) {
-      const fieldEffectInfo = this.fieldEffectInfo[i];
-
-=======
     for (const fieldEffectInfo of this.fieldEffectInfo) {
->>>>>>> beta:src/ui/containers/arena-flyout.ts
       // Creates a proxy object to decide which text object needs to be updated
       let textObject: Phaser.GameObjects.Text;
       switch (fieldEffectInfo.effectType) {

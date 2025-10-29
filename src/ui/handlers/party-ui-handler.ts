@@ -31,8 +31,8 @@ import { BooleanHolder, getLocalizedSpriteKey, randInt } from "#utils/common";
 import { toCamelCase, toTitleCase } from "#utils/strings";
 import i18next from "i18next";
 import type BBCodeText from "phaser3-rex-plugins/plugins/bbcodetext";
-import * as LoggerTools from "../logger";
 import { BerryType } from "#enums/berry-type";
+import * as LoggerTools from "../../logger";
 
 const DISCARD_BUTTON_X = 60;
 const DISCARD_BUTTON_X_DOUBLES = 64;
@@ -205,13 +205,7 @@ export class PartyUiHandler extends MessageUiHandler {
   private tmMoveId: MoveId;
   private showMovePp: boolean;
 
-<<<<<<< HEAD:src/ui/party-ui-handler.ts
-  private incomingMon: string;
-
-  private iconAnimHandler: PokemonIconAnimHandler;
-=======
   private iconAnimHandler: PokemonIconAnimHelper;
->>>>>>> beta:src/ui/handlers/party-ui-handler.ts
 
   private blockInput: boolean;
 
@@ -374,7 +368,7 @@ export class PartyUiHandler extends MessageUiHandler {
         : PartyUiHandler.FilterAllMoves;
     this.tmMoveId = args.length > 5 && args[5] ? args[5] : MoveId.NONE;
     this.showMovePp = args.length > 6 && args[6];
-    this.incomingMon = args.length > 7 && args[7] ? args[7] : undefined;
+    LoggerTools.setIncomingMon(args.length > 7 && args[7] ? args[7] : undefined);
 
     this.partyContainer.setVisible(true);
     if (this.isItemManageMode()) {
@@ -1750,28 +1744,20 @@ export class PartyUiHandler extends MessageUiHandler {
     LoggerTools.isTransferAll.value = false;
 
     this.partySlots[this.transferCursor].setTransfer(false);
-<<<<<<< HEAD:src/ui/party-ui-handler.ts
-    for (let i = 0; i < this.partySlots.length; i++) {
-      this.partySlots[i].slotDescriptionLabel.setVisible(false);
-      this.partySlots[i].slotHpBar.setVisible(true);
-      this.partySlots[i].slotHpOverlay.setVisible(true);
-      this.partySlots[i].slotHpText.setVisible(true);
-      this.partySlots[i].slotHpPercentageText.setVisible(LoggerTools.pathingToolUI);
-      this.partySlots[i].slotEtherText.setVisible(LoggerTools.pathingToolUI);
-=======
     for (const partySlot of this.partySlots) {
       partySlot.slotDescriptionLabel.setVisible(false);
       partySlot.slotHpLabel.setVisible(true);
       partySlot.slotHpBar.setVisible(true);
       partySlot.slotHpOverlay.setVisible(true);
       partySlot.slotHpText.setVisible(true);
->>>>>>> beta:src/ui/handlers/party-ui-handler.ts
+      partySlot.slotHpPercentageText.setVisible(LoggerTools.pathingToolUI);
+      partySlot.slotEtherText.setVisible(LoggerTools.pathingToolUI);
     }
   }
 
   doRelease(slotIndex: number): void {
-    if (this.incomingMon != undefined) {
-      LoggerTools.logActions(globalScene.currentBattle.waveIndex, `${this.incomingMon} > ${globalScene.getPlayerParty()[this.cursor].name} (Slot ${this.cursor + 1})`);
+    if (LoggerTools.incomingMon != undefined) {
+      LoggerTools.logActions(globalScene.currentBattle.waveIndex, `${LoggerTools.incomingMon} > ${globalScene.getPlayerParty()[this.cursor].name} (Slot ${this.cursor + 1})`);
     } else {
       LoggerTools.logActions(globalScene.currentBattle.waveIndex, `Release ${globalScene.getPlayerParty()[this.cursor].name} (Slot ${this.cursor + 1})`);
     }
@@ -2196,17 +2182,15 @@ class PartySlot extends Phaser.GameObjects.Container {
       .setVisible(false)
       .setPositionRelative(this.slotBg, descriptionLabelPosition.x, descriptionLabelPosition.y);
 
-<<<<<<< HEAD:src/ui/party-ui-handler.ts
-    slotInfoContainer.add([this.slotHpBar, this.slotHpOverlay, this.slotHpText, this.slotDescriptionLabel, this.slotHpPercentageText, this.slotEtherText]);
-=======
     slotInfoContainer.add([
       this.slotHpLabel,
       this.slotHpBar,
       this.slotHpOverlay,
       this.slotHpText,
       this.slotDescriptionLabel,
+      this.slotHpPercentageText, 
+      this.slotEtherText,
     ]);
->>>>>>> beta:src/ui/handlers/party-ui-handler.ts
 
     if (partyUiMode !== PartyUiMode.TM_MODIFIER) {
       this.slotDescriptionLabel.setVisible(false);

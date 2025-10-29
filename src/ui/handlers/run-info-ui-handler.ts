@@ -76,7 +76,7 @@ export class RunInfoUiHandler extends UiHandler {
   override async setup() {
     this.runContainer = globalScene.add.container(1, -globalScene.scaledCanvas.height + 1);
     // The import of the modifiersModule is loaded here to sidestep async/await issues.
-    this.modifiersModule = await import("../modifier/modifier");
+    this.modifiersModule = await import("../../modifier/modifier");
     this.runContainer.setVisible(false);
     globalScene.loadImage("encounter_exclaim", "mystery-encounters");
   }

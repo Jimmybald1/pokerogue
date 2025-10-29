@@ -17,7 +17,7 @@ import { addTextObject, getTextColor } from "#ui/text";
 import { UiHandler } from "#ui/ui-handler";
 import { fixedInt, getLocalizedSpriteKey, padInt } from "#utils/common";
 import i18next from "i18next";
-import * as LoggerTools from "../logger";
+import * as LoggerTools from "../../logger";
 
 export class FightUiHandler extends UiHandler implements InfoToggle {
   public static readonly MOVES_CONTAINER_NAME = "moves";
