@@ -611,8 +611,6 @@ export abstract class Pokemon extends Phaser.GameObjects.Container {
 
   /** Generate `abilityIndex` based on species and hidden ability if not pre-defined. */
   private generateAbilityIndex(): number {
-    LoggerTools.TestAllAbilityCharms(BASE_HIDDEN_ABILITY_CHANCE, this.species.abilityHidden);
-
     // Roll for hidden ability chance, applying any ability charms for enemy mons
     const hiddenAbilityChance = new NumberHolder(BASE_HIDDEN_ABILITY_CHANCE);
     // Ability Charms should only affect wild Pokemon
@@ -623,6 +621,8 @@ export abstract class Pokemon extends Phaser.GameObjects.Container {
 
     // Neither RNG roll depends on the outcome of the other, so that Ability Charms do not affect RNG.
     const regularAbility = this.species.ability2 !== this.species.ability1 ? randSeedInt(2, undefined, "Random normal ability") : 0;
+    
+    LoggerTools.TestAllAbilityCharms(BASE_HIDDEN_ABILITY_CHANCE, this.species.abilityHidden);
     const useHiddenAbility = this.species.abilityHidden ? !randSeedInt(hiddenAbilityChance.value, undefined, "Hidden Ability chance") : false;
 
     return useHiddenAbility ? 2 : regularAbility;

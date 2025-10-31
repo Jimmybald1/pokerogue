@@ -2537,11 +2537,6 @@ function ScoutingWithoutUI(charms: number) {
   // Remove any lures or charms
   globalScene.RemoveModifiers();
 
-  // Add 0 to 4 charms
-  if (charms > 0) {
-    globalScene.InsertAbilityCharm(charms);
-  }
-
   // Keep track of encounters, Generate Biomes and encounters
   console.log(`Starting 0 lures and ${charms} charms ${new Date().toLocaleString()}`);
   encounterList = [];
@@ -2607,7 +2602,12 @@ function GenerateBattle(nolog: boolean = false) {
     } else {
       rarityslot[0] = e;
       const enemySpecies = globalScene.randomSpecies(battle.waveIndex, level, true);
-      battle.enemyParty[e] = globalScene.addEnemyPokemon(enemySpecies, level, TrainerSlot.NONE, !!globalScene.getEncounterBossSegments(battle.waveIndex, level, enemySpecies));
+      battle.enemyParty[e] = globalScene.addEnemyPokemon(
+        enemySpecies,
+        level,
+        TrainerSlot.NONE,
+        !!globalScene.getEncounterBossSegments(battle.waveIndex, level, enemySpecies),
+      );
       if (globalScene.currentBattle.battleSpec === BattleSpec.FINAL_BOSS) {
         battle.enemyParty[e].ivs = new Array(6).fill(31);
       }
@@ -2705,6 +2705,7 @@ function GenerateBiomes(biomeId: BiomeId, waveIndex: integer) {
   }
 }
 
+// Try out all ability charms without advancing the seed
 export function TestAllAbilityCharms(baseChance: number, abilityHidden: AbilityId) {
   if (abilityHidden) {
     const haRolls: Number[] = []
