@@ -1601,9 +1601,8 @@ export class PartyUiHandler extends MessageUiHandler {
         this.updateOptionsWithModifierTransferMode(pokemon);
         break;
       case PartyUiMode.SWITCH:
-        this.options.push(PartyOption.RELEASE);
-        break;
       case PartyUiMode.RELEASE:
+      case PartyUiMode.CHECK:
         this.options.push(PartyOption.RELEASE);
         break;
     }
