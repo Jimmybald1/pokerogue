@@ -467,39 +467,6 @@ export class BattleScene extends SceneBase {
 
     this.fieldUI = fieldUI;
 
-    /*
-    const transition = this.make.rexTransitionImagePack(
-      {
-        x: 0,
-        y: 0,
-        scale: 6,
-        key: "loading_bg",
-        origin: { x: 0, y: 0 },
-      },
-      true,
-    );
-
-    // TODO: fix the typing in a `.d.ts` file so the `ts-ignore` is no longer necessary
-    /* biome-ignore lint/suspicious/noTsIgnore: ts-ignore is necessary because `tsc` and `tsgo` require the directive to be on different lines,
-     *   meaning `@ts-expect-error` is guaranteed to emit a diagnostic on one of the lines depending on which one is used
-     */
-    // @ts-ignore
-    transition.transit({
-      mode: "blinds",
-      /* biome-ignore lint/suspicious/noTsIgnore: ts-ignore is necessary because `tsc` and `tsgo` require the directive to be on different lines,
-       *   meaning `@ts-expect-error` is guaranteed to emit a diagnostic on one of the lines depending on which one is used
-       */
-      // @ts-ignore
-      ease: "Cubic.easeInOut",
-      duration: 1250,
-    });
-    transition.once("complete", () => {
-      transition.destroy();
-    });
-
-    this.add.existing(transition);
-    */
-
     const uiContainer = this.add.container(0, 0);
     uiContainer.setName("ui");
     uiContainer.setDepth(2);
