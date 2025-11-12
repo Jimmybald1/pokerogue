@@ -2637,7 +2637,7 @@ function GenerateBattle(nolog: boolean = false) {
 
       // Store encounters in a list, basically CSV (uses regex in sheets), but readable as well
       const text = `Wave: ${globalScene.currentBattle.waveIndex} Biome: ${BiomeId[globalScene.arena.biomeType]} Pokemon: ${getPokemonNameWithAffix(enemy)} ` +
-        `Form: ${atlaspath} Species ID: ${enemy.species.speciesId} Stats: ${enemy.stats} IVs: ${enemy.ivs} Ability: ${enemy.getAbility().name} ` +
+        `Form: ${atlaspath} FormIndex: ${enemy.formIndex} Species ID: ${enemy.species.speciesId} Stats: ${enemy.stats} IVs: ${enemy.ivs} Ability: ${enemy.getAbility().name} ` +
         `Passive Ability: ${enemy.getPassiveAbility().name} Nature: ${Nature[enemy.nature]} Gender: ${Gender[enemy.gender]} Rarity: ${rarities[e]} AbilityIndex: ${enemy.abilityIndex} ` +
         `ID: ${enemy.id} Type: ${enemy.getTypes().map(t => PokemonType[t]).join(",")} Moves: ${enemy.getMoveset().map(m => MoveId[m?.moveId ?? 0]).join(",")} HARolls: ${haChances[e].join(",")} ` +
         `Hidden Ability: ${allAbilities[enemy.getSpeciesForm().abilityHidden].name}`;
