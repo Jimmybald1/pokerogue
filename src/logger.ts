@@ -2520,7 +2520,7 @@ function ScoutingWithoutUI(charms: number) {
   const party = globalScene.getPlayerParty();
   party.forEach(p => {
     starters.push(`Pokemon: ${getPokemonNameWithAffix(p)} ` +
-      `Form: ${p.getSpeciesForm().getSpriteAtlasPath(false, p.formIndex)} Species ID: ${p.species.speciesId} Stats: ${p.stats} IVs: ${p.ivs} Ability: ${p.getAbility().name} ` +
+      `Form: ${p.getSpeciesForm().getSpriteAtlasPath(false, p.formIndex)} FormIndex: ${p.formIndex} Species ID: ${p.species.speciesId} Stats: ${p.stats} IVs: ${p.ivs} Ability: ${p.getAbility().name} ` +
       `Passive Ability: ${p.getPassiveAbility().name} Nature: ${Nature[p.nature]} Gender: ${Gender[p.gender]} Rarity: undefined AbilityIndex: ${p.abilityIndex} ` +
       `ID: ${p.id} Type: ${p.getTypes().map(t => PokemonType[t]).join(",")} Moves: ${p.getMoveset().map(m => MoveId[m?.moveId ?? 0]).join(",")}`);
   });
