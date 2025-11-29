@@ -2622,6 +2622,11 @@ function GenerateBattle(nolog: boolean = false) {
 
     if (!nolog) {
       const enemy = battle.enemyParty[e];
+      
+      enemy.shiny = true;
+      const variant = enemy.generateShinyVariant();
+      enemy.shiny = false;
+
       let atlaspath = enemy.getSpeciesForm().getSpriteAtlasPath(false, enemy.formIndex);
       // Regional pokemon have the same name, instead get their atlas path.
       if (enemy.species.speciesId > 1025) {
@@ -2640,7 +2645,7 @@ function GenerateBattle(nolog: boolean = false) {
         `Form: ${atlaspath} FormIndex: ${enemy.formIndex} Species ID: ${enemy.species.speciesId} Stats: ${enemy.stats} IVs: ${enemy.ivs} Ability: ${enemy.getAbility().name} ` +
         `Passive Ability: ${enemy.getPassiveAbility().name} Nature: ${Nature[enemy.nature]} Gender: ${Gender[enemy.gender]} Rarity: ${rarities[e]} AbilityIndex: ${enemy.abilityIndex} ` +
         `ID: ${enemy.id} Type: ${enemy.getTypes().map(t => PokemonType[t]).join(",")} Moves: ${enemy.getMoveset().map(m => MoveId[m?.moveId ?? 0]).join(",")} HARolls: ${haChances[e].join(",")} ` +
-        `Hidden Ability: ${allAbilities[enemy.getSpeciesForm().abilityHidden].name}`;
+        `Hidden Ability: ${allAbilities[enemy.getSpeciesForm().abilityHidden].name} ShinyVariant: ${variant}`;
       encounterList.push(text);
       console.log(text);
       if (battle.waveIndex == 50) {

@@ -2993,7 +2993,7 @@ export abstract class Pokemon extends Phaser.GameObjects.Container {
    *
    * @returns The randomly chosen shiny variant
    */
-  protected generateShinyVariant(): Variant {
+  public generateShinyVariant(): Variant {
     const formIndex: number = this.formIndex;
     let variantDataIndex: string | number = this.species.speciesId;
     if (this.species.forms.length > 0) {
