@@ -33,7 +33,6 @@ const STRONG_LEVEL_DIFF_PERCENT = 1;
  */
 function calcEvoChance(ev: SpeciesFormEvolution, level: number, encounterKind: EvoLevelThresholdKind): number {
   /** The level requirement based on the trainer type */
-  console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@", ev.speciesId, encounterKind);
   const levelThreshold = Math.max(ev.level, ev.evoLevelThreshold?.[encounterKind] ?? 0);
   // Disallow evolution if the level is below its required threshold.
   if (level < ev.level || level < levelThreshold) {
