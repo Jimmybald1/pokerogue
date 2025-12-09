@@ -33,6 +33,7 @@ const STRONG_LEVEL_DIFF_PERCENT = 1;
  */
 function calcEvoChance(ev: SpeciesFormEvolution, level: number, encounterKind: EvoLevelThresholdKind): number {
   /** The level requirement based on the trainer type */
+  console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@", ev.speciesId, encounterKind);
   const levelThreshold = Math.max(ev.level, ev.evoLevelThreshold?.[encounterKind] ?? 0);
   // Disallow evolution if the level is below its required threshold.
   if (level < ev.level || level < levelThreshold) {
@@ -165,9 +166,10 @@ export function determineEnemySpecies(
   const randomLevel = randSeedIntRange(choice, Math.round(choice * multiplier), "Random level evolution range");
   // Pathing Tool log
   const maxThreshold = Math.round(choice * multiplier);
-  const evolutionSuccessCount = Math.max(0, maxThreshold - level + 1);
-  const evolutionChance = (evolutionSuccessCount / (maxThreshold - choice)) * 100;
-  console.log(`Chance to evolve was ${evolutionChance}% (Roll: ${randomLevel} <= ${level})`);
+  const totalCount = maxThreshold - choice + 1;
+  const evolutionSuccessCount = level > maxThreshold ? totalCount : level - choice + 1;
+  const evolutionChance = (evolutionSuccessCount / totalCount) * 100;
+  console.log(`Chance to evolve was ${evolutionChance}% (Range: ${choice} - ${Math.round(choice * multiplier)}) (Roll: ${randomLevel} <= ${level})`);
   // Pathing Tool log - End
   if (randomLevel <= level) {
     return determineEnemySpecies(
