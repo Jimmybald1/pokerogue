@@ -128,7 +128,7 @@ export class SelectModifierPhase extends BattlePhase {
         console.log("\n\nReroll Prediction\n\n\n");
         this.predictionCost = 0;
         this.costTiers = [];
-        for (let idx = 0; idx < 10 && this.predictionCost < globalScene.money; idx++) {
+        for (let idx = 0; idx < 10 && this.predictionCost <= globalScene.money; idx++) {
           this.generateSelection(idx, undefined);
         }
 
