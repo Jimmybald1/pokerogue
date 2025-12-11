@@ -7,6 +7,7 @@ import { PartyMemberStrength } from "#enums/party-member-strength";
 import type { SpeciesId } from "#enums/species-id";
 import { randSeedIntRange, randSeedItem } from "#utils/common";
 import { getPokemonSpecies } from "#utils/pokemon-utils";
+import * as LoggerTools from "../logger";
 
 /**
  * Controls the maximum level difference that a Pokémon spawned with
@@ -168,7 +169,7 @@ export function determineEnemySpecies(
   const totalCount = maxThreshold - choice + 1;
   const evolutionSuccessCount = level > maxThreshold ? totalCount : level - choice + 1;
   const evolutionChance = (evolutionSuccessCount / totalCount) * 100;
-  console.log(`Chance to evolve was ${evolutionChance}% (Range: ${choice} - ${Math.round(choice * multiplier)}) (Roll: ${randomLevel} <= ${level})`);
+  if (LoggerTools.logRNG) console.log(`Chance to evolve was ${evolutionChance}% (Range: ${choice} - ${Math.round(choice * multiplier)}) (Roll: ${randomLevel} <= ${level})`);
   // Pathing Tool log - End
   if (randomLevel <= level) {
     return determineEnemySpecies(

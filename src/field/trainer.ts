@@ -22,6 +22,7 @@ import { getRandomLocaleEntry } from "#utils/i18n";
 import { getPokemonSpecies } from "#utils/pokemon-utils";
 import { toCamelCase } from "#utils/strings";
 import i18next from "i18next";
+import * as LoggerTools from "../logger";
 
 export class Trainer extends Phaser.GameObjects.Container {
   public config: TrainerConfig;
@@ -576,9 +577,9 @@ export class Trainer extends Phaser.GameObjects.Container {
       } else {
         tier = TrainerPoolTier.ULTRA_RARE;
       }
-      console.log(TrainerPoolTier[tier]);
+      if (LoggerTools.logRNG) console.log(TrainerPoolTier[tier]);
       while (!this.config.speciesPools.hasOwnProperty(tier) || this.config.speciesPools[tier].length === 0) {
-        console.log(
+        if (LoggerTools.logRNG) console.log(
           `Downgraded trainer Pokemon rarity tier from ${TrainerPoolTier[tier]} to ${TrainerPoolTier[tier - 1]}`,
         );
         tier--;
@@ -598,7 +599,7 @@ export class Trainer extends Phaser.GameObjects.Container {
     );
     let retry = false;
 
-    console.log(ret.getName());
+    if (LoggerTools.logRNG) console.log(ret.getName());
 
     if (pokemonPrevolutions.hasOwnProperty(baseSpecies.speciesId) && ret.speciesId !== baseSpecies.speciesId) {
       retry = true;
@@ -616,13 +617,13 @@ export class Trainer extends Phaser.GameObjects.Container {
     // Can be removed by adding a type parameter to getTrainerSpeciesForLevel and filtering the list of evolutions for that type.
     if (!retry && this.config.hasSpecialtyType() && !ret.isOfType(this.config.specialtyType)) {
       retry = true;
-      console.log("Attempting reroll of species evolution to fit specialty type...");
+      if (LoggerTools.logRNG) console.log("Attempting reroll of species evolution to fit specialty type...");
       let evoAttempt = 0;
       while (retry && evoAttempt++ < 10) {
         ret = getPokemonSpecies(
           baseSpecies.getTrainerSpeciesForLevel(level, true, strength, template.evoLevelThresholdKind),
         );
-        console.log(ret.name);
+        if (LoggerTools.logRNG) console.log(ret.name);
         if (ret.isOfType(this.config.specialtyType)) {
           retry = false;
         }
@@ -631,12 +632,12 @@ export class Trainer extends Phaser.GameObjects.Container {
 
     // Prompts reroll of party member species if species already present in the enemy party
     if (this.checkDuplicateSpecies(baseSpecies.speciesId)) {
-      console.log("Duplicate species detected, prompting reroll...");
+      if (LoggerTools.logRNG) console.log("Duplicate species detected, prompting reroll...");
       retry = true;
     }
 
     if (retry && (attempt ?? 0) < 10) {
-      console.log("Rerolling party member...");
+      if (LoggerTools.logRNG) console.log("Rerolling party member...");
       ret = this.genNewPartyMemberSpecies(level, strength, (attempt ?? 0) + 1);
     }
 

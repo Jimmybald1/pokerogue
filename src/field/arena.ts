@@ -149,9 +149,9 @@ export class Arena {
           : tierValue >= 1
             ? BiomePoolTier.BOSS_SUPER_RARE
             : BiomePoolTier.BOSS_ULTRA_RARE;
-    console.log(BiomePoolTier[tier]);
+    if (LoggerTools.logRNG) console.log(BiomePoolTier[tier]);
     while (this.pokemonPool[tier]?.length === 0) {
-      console.log(`Downgraded rarity tier from ${BiomePoolTier[tier]} to ${BiomePoolTier[tier - 1]}`);
+      if (LoggerTools.logRNG) console.log(`Downgraded rarity tier from ${BiomePoolTier[tier]} to ${BiomePoolTier[tier - 1]}`);
       tier--;
     }
     LoggerTools.rarities[LoggerTools.rarityslot[0]] = LoggerTools.tiernames[tier];
@@ -202,7 +202,7 @@ export class Arena {
 
     const newSpeciesId = ret.getWildSpeciesForLevel(level, true, isBoss ?? isBossSpecies, globalScene.gameMode);
     if (newSpeciesId !== ret.speciesId) {
-      console.log("Replaced", SpeciesId[ret.speciesId], "with", SpeciesId[newSpeciesId]);
+      if (LoggerTools.logRNG) console.log("Replaced", SpeciesId[ret.speciesId], "with", SpeciesId[newSpeciesId]);
       ret = getPokemonSpecies(newSpeciesId);
     }
     return ret;
@@ -212,7 +212,7 @@ export class Arena {
     const isTrainerBoss =
       this.trainerPool[BiomePoolTier.BOSS].length > 0
       && (globalScene.gameMode.isTrainerBoss(waveIndex, this.biomeType, globalScene.offsetGym) || isBoss);
-    console.log(isBoss, this.trainerPool);
+    if (LoggerTools.logRNG) console.log(isBoss, this.trainerPool);
     const tierValue = randSeedInt(!isTrainerBoss ? 512 : 64, undefined, "Selecting random trainer");
     let tier = !isTrainerBoss
       ? tierValue >= 156
@@ -231,9 +231,9 @@ export class Arena {
           : tierValue >= 1
             ? BiomePoolTier.BOSS_SUPER_RARE
             : BiomePoolTier.BOSS_ULTRA_RARE;
-    console.log(BiomePoolTier[tier]);
+    if (LoggerTools.logRNG) console.log(BiomePoolTier[tier]);
     while (tier && this.trainerPool[tier].length === 0) {
-      console.log(`Downgraded trainer rarity tier from ${BiomePoolTier[tier]} to ${BiomePoolTier[tier - 1]}`);
+      if (LoggerTools.logRNG) console.log(`Downgraded trainer rarity tier from ${BiomePoolTier[tier]} to ${BiomePoolTier[tier - 1]}`);
       tier--;
     }
     const tierPool = this.trainerPool[tier] || [];

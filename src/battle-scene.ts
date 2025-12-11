@@ -1677,7 +1677,7 @@ export class BattleScene extends SceneBase {
 
     this.battleRNGState = Phaser.Math.RND.state();
 
-    console.log(this.battleBaseRNGState, this.battleRNGState);
+    if (LoggerTools.logRNG) console.log(this.battleBaseRNGState, this.battleRNGState);
 
     return this.currentBattle;
   }
@@ -2007,7 +2007,7 @@ export class BattleScene extends SceneBase {
     this.tempRngCounter = this.rngCounter;
     this.waveSeed = shiftCharCodes(this.seed, wave);
     Phaser.Math.RND.sow([this.waveSeed]);
-    console.log("Temporarily reset wave RNG");
+    if (LoggerTools.logRNG) console.log("Temporarily reset wave RNG");
     this.rngCounter = 0;
     //this.setScoreText("RNG: 0")
   }
@@ -2015,7 +2015,7 @@ export class BattleScene extends SceneBase {
     const wave = waveIndex || this.currentBattle?.waveIndex || 0;
     this.waveSeed = this.tempWaveSeed;
     Phaser.Math.RND.sow([this.waveSeed]);
-    console.log("Restored wave RNG");
+    if (LoggerTools.logRNG) console.log("Restored wave RNG");
     this.rngCounter = this.tempRngCounter;
     //this.setScoreText("RNG: 0")
   }
@@ -2024,7 +2024,7 @@ export class BattleScene extends SceneBase {
     const wave = waveIndex ?? this.currentBattle?.waveIndex ?? 0;
     this.waveSeed = shiftCharCodes(this.seed, wave);
     Phaser.Math.RND.sow([this.waveSeed]);
-    console.log("Wave Seed:", this.waveSeed, wave);
+    if (LoggerTools.logRNG) console.log("Wave Seed:", this.waveSeed, wave);
     this.rngCounter = 0;
     this.battleRNGState = Phaser.Math.RND.state();
     this.battleBaseRNGState = Phaser.Math.RND.state();

@@ -94,6 +94,7 @@ export const acceptedVersions = [
 /** Toggles console messages about predictions. */
 const catchDebug: boolean = false;
 const logDamagePrediction: boolean = false;
+export const logRNG: boolean = false;
 export let pathingToolUI: boolean = true;
 export let incomingMon: string | undefined;
 export function setIncomingMon(mon: string | undefined) {
@@ -2568,7 +2569,7 @@ function ScoutingWithoutUI(charms: number) {
   var output = JSON.parse(localStorage.getItem("scouting")!) as string[][];
   console.log("All scouting data:", output);
   output = [];
-  globalScene.ui.showText("DONE! Copy the data from the console and then you can refresh this page.", null);
+  // globalScene.ui.showText("DONE! Copy the data from the console and then you can refresh this page.", null);
 }
 
 function StoreEncounters(lurecharm: string) {
@@ -2581,7 +2582,6 @@ function StoreEncounters(lurecharm: string) {
 }
 
 function GenerateBattle(nolog: boolean = false) {
-  console.log(`%%%%%  Wave: ${globalScene.currentBattle.waveIndex + 1}  %%%%%`);
   const timeOfDay = globalScene.arena.getTimeOfDay();
   const battle = globalScene.newBattle() as Battle;
   while (rarities.length > 0) {
@@ -2647,9 +2647,10 @@ function GenerateBattle(nolog: boolean = false) {
         `ID: ${enemy.id} Type: ${enemy.getTypes().map(t => PokemonType[t]).join(",")} Moves: ${enemy.getMoveset().map(m => MoveId[m?.moveId ?? 0]).join(",")} HARolls: ${haChances[e].join(",")} ` +
         `Hidden Ability: ${allAbilities[enemy.getSpeciesForm().abilityHidden].name} ShinyVariant: ${variant}`;
       encounterList.push(text);
-      console.log(text);
+      if (logRNG) console.log(text);
       if (battle.waveIndex == 50) {
         // separate print so its easier to find for discord pin
+        console.log(text);
         console.log(enemy.getMoveset().map(m => MoveId[m?.moveId ?? 0]));
       }
     }
@@ -2673,6 +2674,15 @@ function GenerateBattle(nolog: boolean = false) {
   }
 
   globalScene.resetSeed();
+  globalScene.phaseManager.clearPhaseQueue();
+  globalScene.ui.freeUIData();
+  globalScene.uiContainer.remove(globalScene.ui, true);
+  globalScene.uiContainer.destroy();
+  globalScene.children.removeAll(true);
+  globalScene.game.domContainer.innerHTML = "";
+  for (const p of globalScene.getEnemyParty()) {
+    p.destroy();
+  }
 }
 
 function GenerateBiomes(biomeId: BiomeId, waveIndex: integer) {
