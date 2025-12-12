@@ -2817,6 +2817,7 @@ function ShopScouting(method) {
 
       lures.forEach(lure => {
         const text = lure();
+        console.log("Setup:", text);
 
         ethers.forEach(ether => {
           const e = ether(party[0]);
@@ -2890,7 +2891,7 @@ function GenerateShop(party: PlayerPokemon[], comptext: string, start: integer, 
         regenerateModifierPoolThresholds(party, ModifierPoolType.PLAYER, i);
         const typeOptions: ModifierTypeOption[] = getPlayerModifierTypeOptions(Math.min(6, Math.max(3, 3 + Math.floor((w / 10) - 1))), party);
         if (typeOptions.some(t => t.type.id == "ABILITY_CHARM")) {
-          console.log(w, i, comptext);
+          if (logRNG) console.log(w, i, comptext);
           charmList.push(`${w} ${i} ${comptext}`);
         }
       }
