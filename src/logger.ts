@@ -92,9 +92,9 @@ export const acceptedVersions = [
 ];
 
 /** Toggles console messages about predictions. */
-const catchDebug: boolean = false;
 const logDamagePrediction: boolean = false;
 export const logRNG: boolean = false;
+export const logCatchRNG: boolean = false;
 export let pathingToolUI: boolean = true;
 export let incomingMon: string | undefined;
 export function setIncomingMon(mon: string | undefined) {
@@ -2064,7 +2064,7 @@ export function findBest(pokemon: EnemyPokemon, override?: boolean) {
     const p = m.getPokemon();
     globalScene.getField().forEach((p2, idx) => {
       if (p == p2) {
-        if (catchDebug) {
+        if (logCatchRNG) {
           console.log(m.getPokemon()?.name + " (Position: " + (idx + 1) + ") has a Quick Claw");
         }
         offset++;
@@ -2092,17 +2092,17 @@ export function findBest(pokemon: EnemyPokemon, override?: boolean) {
     rates[3][0] = 0;
   }
 
-  if (catchDebug) {
+  if (logCatchRNG) {
     console.log("Rate data [raw rate, % odds of success, crit rate, idx]");
   }
 
-  if (catchDebug) {
+  if (logCatchRNG) {
     for (let i = 0; i < rates.length; i++) {
       console.log(rates[i]);
     }
   }
 
-  if (catchDebug) {
+  if (logCatchRNG) {
     console.log("Note: if middle number is less than " + critCap[0] + ", a critical capture should occur");
   }
 
@@ -2120,7 +2120,7 @@ export function findBest(pokemon: EnemyPokemon, override?: boolean) {
 
   let func_output = "";
   rates.forEach((v, i) => {
-    if (catchDebug) {
+    if (logCatchRNG) {
       console.log("Ball: " + ballNames[v[3]], v);
     }
 
@@ -2128,7 +2128,7 @@ export function findBest(pokemon: EnemyPokemon, override?: boolean) {
     const catchRate = v[1];
     const critRate = v[2];
     if (globalScene.pokeballCounts[v[3]] == 0 && !override) {
-      if (catchDebug) {
+      if (logCatchRNG) {
         console.log("  Skipped because the player doesn't have any of this ball");
       }
 
@@ -2140,45 +2140,45 @@ export function findBest(pokemon: EnemyPokemon, override?: boolean) {
     //console.log(v, rolls[offset + 1], v > rolls[offset + 1])
     //console.log(v, rolls[offset + 2], v > rolls[offset + 2])
 
-    if (catchDebug) {
+    if (logCatchRNG) {
       console.log(`  Critical capture requirement: (${critCap[0]} < ${critRate})`);
     }
 
     if (rawRate > rolls[offset + 0]) {
-      if (catchDebug) {
+      if (logCatchRNG) {
         console.log(`  Passed roll 1 (${rolls[offset + 0]} < ${rawRate})`);
       }
 
       //console.log("1 roll")
       if (critCap[0] < critRate) {
         func_output = ballNames[v[3]] + " crits";
-        if (catchDebug) {
+        if (logCatchRNG) {
           console.log(`  Critical capture triggered (${critCap[0]} < ${critRate}) - ended early`);
         }
       } else if (rawRate > rolls[offset + 1]) {
         //console.log("2 roll")
-        if (catchDebug) {
+        if (logCatchRNG) {
           console.log(`  Passed roll 2 (${rolls[offset + 1]} < ${rawRate} )`);
         }
 
         if (rawRate > rolls[offset + 2]) {
           //console.log("Caught!")
-          if (catchDebug) {
+          if (logCatchRNG) {
             console.log(`  Passed roll 3 (${rolls[offset + 2]} < ${rawRate} ) - capture successful`);
           }
           func_output = ballNames[v[3]] + " catches";
         } else {
-          if (catchDebug) {
+          if (logCatchRNG) {
             console.log(`  Failed roll 3 (checked for ${rolls[offset + 2]} < ${rawRate})`);
           }
         }
       } else {
-        if (catchDebug) {
+        if (logCatchRNG) {
           console.log(`  Failed roll 2 (checked for ${rolls[offset + 1]} < ${rawRate})`);
         }
       }
     } else {
-      if (catchDebug) {
+      if (logCatchRNG) {
         console.log(`  Failed roll 1 (checked for ${rolls[offset + 0]} < ${rawRate})`);
       }
     }

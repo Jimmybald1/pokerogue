@@ -85,7 +85,7 @@ export class AttemptCapturePhase extends PokemonPhase {
     const shakeProbability = Math.round(65536 / Math.pow(255 / modifiedCatchRate, 0.1875)); // Formula taken from gen 6
     const criticalCaptureChance = getCriticalCaptureChance(modifiedCatchRate);
 
-    if ((isBeta || isDev) && import.meta.env.NODE_ENV !== "test") {
+    if ((isBeta || isDev) && import.meta.env.NODE_ENV !== "test" && LoggerTools.logCatchRNG) {
       console.log(
         "Base Catch Rate: %d\nBall Mult: %d\nStatus Mult: %d\nShiny Bonus: %d\nModified Catch Rate: %d\nShake Probability: %d\nCritical Catch Chance: %d",
         catchRate,
