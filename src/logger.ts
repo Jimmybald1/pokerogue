@@ -1415,7 +1415,7 @@ export interface LogTrainerData {
 export function exportTrainer(trainer: Trainer): LogTrainerData {
   return {
     id: trainer.config.trainerType,
-    name: trainer.getNameOnly(),
+    name: trainer.getName(TrainerSlot.NONE, false),
     type: TrainerType[trainer.config.trainerType]
   };
 }
@@ -1940,7 +1940,7 @@ export function logShop(floor: number = globalScene.currentBattle.waveIndex, act
  */
 export function logTrainer(floor: number = globalScene.currentBattle.waveIndex) {
   const drpd: DRPD = getDRPD();
-  console.log(`Logging trainer: ${globalScene.currentBattle.trainer!.getTitleOnly()} ${globalScene.currentBattle.trainer!.getNameOnly()}`);
+  console.log(`Logging trainer: ${globalScene.currentBattle.trainer!.getName(TrainerSlot.NONE, true)}`);
   const wv: Wave = getWave(drpd, floor);
   const t: LogTrainerData = exportTrainer(globalScene.currentBattle.trainer!);
   wv.trainer = t;
