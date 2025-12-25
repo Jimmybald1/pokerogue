@@ -1037,7 +1037,7 @@ export abstract class Move implements Localizable {
 
     const power = new NumberHolder(this.power);
 
-    applyMoveAttrs("VariablePowerAttr", source, target, this, power);
+    applyMoveAttrs("VariablePowerAttr", source, target, this, power, simulated);
 
     const typeChangeMovePowerMultiplier = new NumberHolder(1);
     const typeChangeHolder = new NumberHolder(this.type);
@@ -4900,6 +4900,12 @@ export class PunishmentPowerAttr extends VariablePowerAttr {
 
 export class PresentPowerAttr extends VariablePowerAttr {
   apply(user: Pokemon, target: Pokemon, _move: Move, args: any[]): boolean {
+    if (args[1]) {
+      // LoggerTools Simulated
+      (args[0] as NumberHolder).value = 40;
+      return true;
+    }
+    
     /**
      * If this move is multi-hit, and this attribute is applied to any hit
      * other than the first, this move cannot result in a heal.
