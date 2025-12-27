@@ -2530,6 +2530,9 @@ function ScoutingWithoutUI(charms: number) {
   FillParty(party, [SpeciesId.VENUSAUR], 20);
 
   var output: string[][] = [];
+  const date = new Date();
+  const formattedDate = `${date.getUTCDate()} ${date.getUTCMonth()+1} ${date.getUTCFullYear()} ${date.getUTCHours()}:${date.getUTCMinutes()}:${date.getUTCSeconds()}`
+  output.push([formattedDate]);
   output.push(["startstarters"]);
   output.push(starters);
   output.push(["endstarters"]);
