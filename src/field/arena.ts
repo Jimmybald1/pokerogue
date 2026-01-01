@@ -35,9 +35,11 @@ import type { Move } from "#moves/move";
 import type { BiomeTierTrainerPools, PokemonPools } from "#types/biomes";
 import type { Constructor } from "#types/common";
 import type { AbstractConstructor } from "#types/type-helpers";
+import { coerceArray } from "#utils/array";
 import { NumberHolder, randSeedInt } from "#utils/common";
 import { getPokemonSpecies } from "#utils/pokemon-utils";
 import { inSpeedOrder } from "#utils/speed-order-generator";
+import type { NonEmptyTuple } from "type-fest";
 import * as LoggerTools from "../logger";
 
 export class Arena {
@@ -706,8 +708,8 @@ export class Arena {
    * @param side - The {@linkcode ArenaTagSide}(s) to which the tag should apply; default `ArenaTagSide.BOTH`.
    * @param quiet - Whether to suppress messages produced by tag addition; default `false`.
    * @returns `true` if the tag was successfully added without overlapping.
-  // TODO: Do we need the return value here? literally nothing uses it
    */
+  // TODO: Do we need the return value here? literally nothing uses it
   addTag(
     tagType: ArenaTagType,
     turnCount: number,
@@ -760,10 +762,24 @@ export class Arena {
     return this.getTagOnSide(tagType, ArenaTagSide.BOTH);
   }
 
-  hasTag(tagType: ArenaTagType): boolean {
-    return !!this.getTag(tagType);
+  /**
+   * Check whether the Arena has any of the given tags.
+   * @param tagTypes - One or more tag types to check
+   * @returns Whether a tag exists on either side of the field with any of the given type(s).
+   */
+  hasTag(tagTypes: ArenaTagType | NonEmptyTuple<ArenaTagType>): boolean {
+    tagTypes = coerceArray(tagTypes);
+    return this.tags.some(tag => tagTypes.includes(tag.tagType));
   }
 
+  /**
+   * Attempts to get a tag from the Arena from a specific side (the tag passed in has to either apply to both sides, or the specific side only)
+   *
+   * eg: `MIST` only applies to the user's side, while `MUD_SPORT` applies to both user and enemy side
+   * @param tagType The {@linkcode ArenaTagType} or {@linkcode ArenaTag} to get
+   * @param side The {@linkcode ArenaTagSide} to look at
+   * @returns either the {@linkcode ArenaTag}, or `undefined` if it isn't there
+   */
   getTagOnSide(
     tagType: ArenaTagType | Constructor<ArenaTag> | AbstractConstructor<ArenaTag>,
     side: ArenaTagSide,
@@ -835,7 +851,7 @@ export class Arena {
    * @param side - The {@linkcode ArenaTagSide} to remove the tags from (for side-based tags), or {@linkcode ArenaTagSide.BOTH}
    * to clear all tags on either side of the field
    * @param quiet - Whether to suppress removal messages from currently-present tags; default `false`
-   * @todo Review the other tag manipulation functions to see if they can be migrated towards using this (more efficient)
+   * @todo Review the other tag manipulation functions to see if they can be migrated towards using this (more efficient + foolproof)
    */
   public removeTagsOnSide(tagTypes: ArenaTagType[] | readonly ArenaTagType[], side: ArenaTagSide, quiet = false): void {
     const leftoverTags: ArenaTag[] = [];
@@ -850,6 +866,7 @@ export class Arena {
       }
 
       tag.onRemove(quiet);
+      this.eventTarget.dispatchEvent(new TagRemovedEvent(tag.tagType, tag.side, tag.turnCount));
     }
 
     this.tags = leftoverTags;

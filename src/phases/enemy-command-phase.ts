@@ -4,6 +4,7 @@ import { AbilityId } from "#enums/ability-id";
 import { BattlerIndex } from "#enums/battler-index";
 import { BattlerTagType } from "#enums/battler-tag-type";
 import { Command } from "#enums/command";
+import type { EnemyPokemon } from "#field/pokemon";
 import { FieldPhase } from "#phases/field-phase";
 import { PokemonMove } from "#moves/pokemon-move";
 
@@ -109,7 +110,7 @@ export class EnemyCommandPhase extends FieldPhase {
     const nextMove = enemyPokemon.getNextMove();
     const mv = new PokemonMove(nextMove.move);
 
-    if (trainer?.shouldTera(enemyPokemon)) {
+    if (this.shouldTera(enemyPokemon)) {
       globalScene.currentBattle.preTurnCommands[this.fieldIndex + BattlerIndex.ENEMY] = { command: Command.TERA };
     }
 
@@ -160,6 +161,10 @@ export class EnemyCommandPhase extends FieldPhase {
     }
 
     this.end();
+  }
+
+  private shouldTera(pokemon: EnemyPokemon): boolean {
+    return !!globalScene.currentBattle.trainer?.shouldTera(pokemon);
   }
 
   getFieldIndex(): number {
