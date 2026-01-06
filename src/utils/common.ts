@@ -190,15 +190,17 @@ export function randSeedItem<T>(items: ArrayLike<T>, reason?: string): T {
 export function randSeedShuffle<T>(items: T[], reason?: string): T[] {
   for (let i = items.length - 1; i > 0; i--) {
     const j = Phaser.Math.RND.integerInRange(0, i);
-    if (doRNGLogging) { 
-      if (reason) {
-        console.log(reason, j);
-      } else if (doUnlabeledRNGLogging) {
-        console.error("unlabeled randSeedShuffle", j);
-      }
-    }
     [items[i], items[j]] = [items[j], items[i]];
   }
+  
+  if (doRNGLogging) { 
+    if (reason) {
+      console.log(reason, items);
+    } else if (doUnlabeledRNGLogging) {
+      console.error("unlabeled randSeedShuffle", items);
+    }
+  }
+
   return items;
 }
 

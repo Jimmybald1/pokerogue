@@ -30,7 +30,7 @@ function shufflePokemonList<T extends Pokemon | hasPokemon>(pokemonList: T[][]):
   // This is seeded with the current turn to prevent an inconsistency where it
   // was varying based on how long since you last reloaded
   globalScene.executeWithSeedOffset(
-    () => randSeedShuffle(pokemonList),
+    () => randSeedShuffle(pokemonList, "Shuffle Pokemon list"),
     globalScene.currentBattle.turn * 1000 + pokemonList.length,
     globalScene.waveSeed,
   );
