@@ -1,4 +1,3 @@
-import * as LoggerTools from "../logger";
 import { globalScene } from "#app/global-scene";
 import Overrides from "#app/overrides";
 import { ModifierPoolType } from "#enums/modifier-pool-type";
@@ -30,6 +29,7 @@ import { SHOP_OPTIONS_ROW_LIMIT } from "#ui/modifier-select-ui-handler";
 import { PartyOption, PartyUiHandler, PartyUiMode } from "#ui/party-ui-handler";
 import { NumberHolder } from "#utils/common";
 import i18next from "i18next";
+import * as LoggerTools from "../logger";
 
 export type ModifierSelectCallback = (rowCursor: number, cursor: number) => boolean;
 
@@ -66,18 +66,18 @@ export class SelectModifierPhase extends BattlePhase {
   }
 
   generateSelection(rerollOverride: integer, modifierOverride?: integer) {
-    //const STATE = Phaser.Math.RND.state() // Store RNG state
-    //console.log("====================")
-    console.log("  Reroll Prediction: " + rerollOverride);
     const party = globalScene.getPlayerParty();
     regenerateModifierPoolThresholds(party, this.getPoolType(), rerollOverride);
+
     const modifierCount = new NumberHolder(3);
     if (this.isPlayer()) {
       globalScene.applyModifiers(ExtraModifierModifier, true, modifierCount);
     }
+
     if (modifierOverride) {
       modifierCount.value = modifierOverride;
     }
+
     const typeOptions: ModifierTypeOption[] = this.getModifierTypeOptions(modifierCount.value);
     typeOptions.forEach((option, idx) => {
       option.netprice = this.predictionCost;
@@ -90,16 +90,15 @@ export class SelectModifierPhase extends BattlePhase {
       if (option.type.name == "Relic Gold") {
         option.netprice -= globalScene.getWaveMoneyAmount(10);
       }
-      //console.log(option.type.name)
     });
-    //console.log("====================")
+
     if (this.modifierPredictions == undefined) {
       this.modifierPredictions = [];
     }
+
     this.modifierPredictions[rerollOverride] = typeOptions;
     this.costTiers.push(this.predictionCost);
     this.predictionCost += this.getRerollCost(false, rerollOverride);
-    //Phaser.Math.RND.state(STATE) // Restore RNG state like nothing happened
   }
 
   indent(l: integer = 1, s: string = " ") {
@@ -117,15 +116,12 @@ export class SelectModifierPhase extends BattlePhase {
       return false;
     }
 
-    console.log(this.rerollCount);
-
     globalScene.executeWithSeedOffset(() => {
       if (!this.rerollCount) {
         // Don't want any custom modifiers, we want to see the entire shop
         const customMods = this.customModifierSettings;
         this.customModifierSettings = undefined;
 
-        console.log("\n\nReroll Prediction\n\n\n");
         this.predictionCost = 0;
         this.costTiers = [];
         for (let idx = 0; idx < 10 && this.predictionCost <= globalScene.money; idx++) {

@@ -21,6 +21,7 @@ import { randSeedInt } from "#utils/common";
 import { getPokemonSpecies } from "#utils/pokemon-utils";
 import { toCamelCase } from "#utils/strings";
 import i18next from "i18next";
+import * as LoggerTools from "../../logger";
 
 export enum EvolutionItem {
   NONE,
@@ -157,7 +158,7 @@ export class SpeciesEvolutionCondition {
   }
 
   public conditionsFulfilled(pokemon: Pokemon, forFusion = false): boolean {
-    console.log(this.data);
+    if (LoggerTools.logRNG) console.log(this.data);
     return this.data.every(cond => {
       switch (cond.key) {
         case EvoCondKey.FRIENDSHIP:
