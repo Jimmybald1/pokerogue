@@ -120,9 +120,6 @@ export class SwitchSummonPhase extends SummonPhase {
     const party = this.player ? this.getParty() : globalScene.getEnemyParty();
     const switchedInPokemon: Pokemon | undefined = party[this.slotIndex];
     this.lastPokemon = this.getPokemon();
-    if (this.player && this.switchType === SwitchType.INITIAL_SWITCH) {
-      LoggerTools.logActions(globalScene.currentBattle.waveIndex, `Pre-Switch ${this.lastPokemon.name} to ${switchedInPokemon.name}`);
-    }
 
     // Defensive programming: Overcome the bug where the summon data has somehow not been reset
     // prior to switching in a new Pokemon.

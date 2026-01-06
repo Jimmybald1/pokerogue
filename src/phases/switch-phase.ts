@@ -83,6 +83,17 @@ export class SwitchPhase extends BattlePhase {
           LoggerTools.logActions(waveIndex, `Send in ${globalScene.getPlayerParty()[slotIndex].name}`);
         }
         if (slotIndex >= globalScene.currentBattle.getBattlerCount() && slotIndex < 6) {
+          if (this.switchType === SwitchType.INITIAL_SWITCH) {
+            const lastPokemon = globalScene.getPlayerParty()[this.fieldIndex];
+            const switchedInPokemon = globalScene.getPlayerParty()[slotIndex];
+            if (option === PartyOption.PASS_BATON) {
+              LoggerTools.logActions(globalScene.currentBattle.waveIndex, `Pre-Switch Baton Pass ${lastPokemon.name} to ${switchedInPokemon.name}`);
+            }
+            else {
+              LoggerTools.logActions(globalScene.currentBattle.waveIndex, `Pre-Switch ${lastPokemon.name} to ${switchedInPokemon.name}`);
+            }
+          }
+          
           const switchType = option === PartyOption.PASS_BATON ? SwitchType.BATON_PASS : this.switchType;
           globalScene.phaseManager.unshiftNew("SwitchSummonPhase", switchType, fieldIndex, slotIndex, this.doReturn);
         }

@@ -1771,6 +1771,7 @@ export function logActions(floor: number = globalScene.currentBattle.waveIndex, 
   }
   wv.actions.push(action);
   console.log("--> ", drpd);
+  console.log("Actions:", wv.actions)
   localStorage.setItem(getLogID(), JSON.stringify(drpd));
 }
 
