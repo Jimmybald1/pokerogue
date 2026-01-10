@@ -51,6 +51,7 @@ import { TimeOfDay } from "#enums/time-of-day";
 import { EnemyCommandPhase } from "#phases/enemy-command-phase";
 import { BattlerIndex } from "#enums/battler-index";
 import { SessionSaveData } from "#types/save-data";
+import { TrainerVariant } from "#enums/trainer-variant";
 
 /*
 SECTIONS
@@ -209,7 +210,7 @@ function convertPokemonToCSV(wave: any, pokemon: any, second: boolean): string {
 }
 
 function convertTrainerToCSV(wave: any, trainer: any): string {
-  return `${wave.id}t,${wave.biome},${trainer.type},${trainer.name},,,,,,,,,,,,,${wave.actions.join(";")}`;
+  return `${wave.id}t,${wave.biome},${trainer.type},${trainer.name},${trainer.variant},,,,,,,,,,,,${wave.actions.join(";")}`;
 }
 
 /**
@@ -792,7 +793,8 @@ export function exportWave(): Wave {
       ret.trainer = {
         id: globalScene.currentBattle.trainer!.config.trainerType,
         name: globalScene.currentBattle.trainer!.name,
-        type: globalScene.currentBattle.trainer!.config.title
+        type: globalScene.currentBattle.trainer!.config.title,
+        variant: globalScene.currentBattle.trainer!.config.getSpriteKey(),
       };
       ret.pokemon = [];
       for (var i = 0; i < globalScene.getEnemyParty().length; i++) {
@@ -1405,6 +1407,8 @@ export interface LogTrainerData {
   name: string,
   /** The Trainer's ingame title. */
   type: string,
+  /** Sprite Name */
+  variant: string,
 }
 
 /**
@@ -1416,7 +1420,8 @@ export function exportTrainer(trainer: Trainer): LogTrainerData {
   return {
     id: trainer.config.trainerType,
     name: trainer.getName(TrainerSlot.NONE, false),
-    type: TrainerType[trainer.config.trainerType]
+    type: TrainerType[trainer.config.trainerType],
+    variant: TrainerVariant[trainer.variant],
   };
 }
 
