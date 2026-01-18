@@ -2016,13 +2016,105 @@ export function resetWaveActions(floor: number = globalScene.currentBattle.waveI
 
 
 // #region 14 Utils from Phases.ts
-export const tierNames = [
-  "Poké",
-  "Great",
-  "Ultra",
-  "Rogue",
-  "Master"
-];
+/**
+ * Finds the best Poké Ball to catch a Pokemon with, and the % chance of capturing it.
+ * @param pokemon The Pokémon to get the catch rate for.
+ * @param override Show the best Poké Ball to use, even if you don't have any.
+ * @returns The name and % rate of the best Poké Ball.
+ */
+export function findBest(pokemon: EnemyPokemon) {
+  const rates = catchCalc(pokemon);
+  const rolls = [];
+  const critCap = [];
+  globalScene.currentBattle.multiInt(critCap, 1, 256, undefined, "Critical Capture Check");
+  globalScene.currentBattle.multiInt(rolls, 3, 65536, undefined, "Catch prediction", 1); // offset 1 for the crit check
+
+  // Find lowest tier critical capture
+  let output = "---";
+  rates.forEach(cr => {    
+    if (critCap[0] < cr.critChance) {
+      output = cr.ballType + " Crits";
+      return;
+    }
+  });
+
+  if (output !== "---") {
+    return output;
+  }
+
+  // Find lowest tier normal capture
+  rates.forEach(cr => {    
+    if (
+      rolls[0] < cr.ballChance
+      && rolls[1] < cr.ballChance
+      && rolls[2] < cr.ballChance
+    ) {
+      output = cr.ballType + " Catches";
+      return;
+    }
+  });
+
+  return output;
+}
+
+export enum BallNames {
+  Poke = "Poké Ball",
+  Great = "Great Ball",
+  Ultra = "Ultra Ball",
+  Rogue = "Rogue Ball",
+  Master = "Master Ball",
+};
+
+export interface CatchRates {
+  ballType: BallNames
+  ballChance: number,
+  critChance: number,
+}
+
+function catchCalc(pokemon: EnemyPokemon) {
+  const rates: CatchRates[] = [];
+  if (globalScene.pokeballCounts[0] > 0) {
+    const r = {
+      ballType: BallNames.Poke,
+      ballChance: generateBallChance(pokemon, 1),
+      critChance: generateCritChance(pokemon, 1),
+    };
+    if (logCatchRNG) console.log("Rates", r);
+    rates.push(r);
+  }
+
+  if (globalScene.pokeballCounts[1] > 0) {
+    const r = {
+      ballType: BallNames.Great,
+      ballChance: generateBallChance(pokemon, 1.5),
+      critChance: generateCritChance(pokemon, 1.5),
+    };
+    if (logCatchRNG) console.log("Rates", r);
+    rates.push(r);
+  }
+
+  if (globalScene.pokeballCounts[2] > 0) {
+    const r = {
+      ballType: BallNames.Ultra,
+      ballChance: generateBallChance(pokemon, 2),
+      critChance: generateCritChance(pokemon, 2),
+    };
+    if (logCatchRNG) console.log("Rates", r);
+    rates.push(r);
+  }
+
+  if (globalScene.pokeballCounts[3] > 0) {
+    const r = {
+      ballType: BallNames.Rogue,
+      ballChance: generateBallChance(pokemon, 3),
+      critChance: generateCritChance(pokemon, 3),
+    };
+    if (logCatchRNG) console.log("Rates", r);
+    rates.push(r);
+  }
+
+  return rates;
+}
 
 function generateBallChance(pk: EnemyPokemon, pokeballMultiplier: number) {
   const _3m = 3 * pk.getMaxHp();
@@ -2038,161 +2130,6 @@ function generateCritChance(pk: EnemyPokemon, pokeballMultiplier: number) {
   const catchRate = pk.species.catchRate;
   const statusMultiplier = pk.status ? getStatusEffectCatchRateMultiplier(pk.status.effect) : 1;
   return getCriticalCaptureChance(Math.round((((_3m - _2h) * catchRate * pokeballMultiplier) / _3m) * statusMultiplier));
-}
-
-function catchCalc(pokemon: EnemyPokemon) {
-  const rates = [
-    [generateBallChance(pokemon, 1), 0, generateCritChance(pokemon, 1), 0],
-    [generateBallChance(pokemon, 1.5), 0, generateCritChance(pokemon, 1.5), 1],
-    [generateBallChance(pokemon, 2), 0, generateCritChance(pokemon, 2), 2],
-    [generateBallChance(pokemon, 3), 0, generateCritChance(pokemon, 3), 3]
-  ];
-  for (let i = 0; i < rates.length; i++) {
-    rates[i][1] = (rates[i][0] / 65536) ** 3;
-  }
-  return rates;
-}
-
-/**
- * Finds the best Poké Ball to catch a Pokemon with, and the % chance of capturing it.
- * @param pokemon The Pokémon to get the catch rate for.
- * @param override Show the best Poké Ball to use, even if you don't have any.
- * @returns The name and % rate of the best Poké Ball.
- */
-export function findBest(pokemon: EnemyPokemon, override?: boolean) {
-  const rates = catchCalc(pokemon);
-  const rolls = [];
-  const critCap = [];
-  let offset = 0;
-
-  globalScene.getModifiers(BypassSpeedChanceModifier, true).forEach(m => {
-    //console.log(m, m.getPokemon(globalScene), pokemon)
-    const p = m.getPokemon();
-    globalScene.getField().forEach((p2, idx) => {
-      if (p == p2) {
-        if (logCatchRNG) {
-          console.log(m.getPokemon()?.name + " (Position: " + (idx + 1) + ") has a Quick Claw");
-        }
-        offset++;
-      }
-    });
-  });
-
-  globalScene.currentBattle.multiInt(critCap, offset + 1, 256, undefined, "Critical Capture Check");
-  offset++;
-  globalScene.currentBattle.multiInt(rolls, offset + 3, 65536, undefined, "Catch prediction");
-
-  //console.log(rolls)
-  //console.log(rolls.slice(offset, offset + 3))
-
-  if (globalScene.pokeballCounts[0] == 0 && !override) {
-    rates[0][0] = 0;
-  }
-  if (globalScene.pokeballCounts[1] == 0 && !override) {
-    rates[1][0] = 0;
-  }
-  if (globalScene.pokeballCounts[2] == 0 && !override) {
-    rates[2][0] = 0;
-  }
-  if (globalScene.pokeballCounts[3] == 0 && !override) {
-    rates[3][0] = 0;
-  }
-
-  if (logCatchRNG) {
-    console.log("Rate data [raw rate, % odds of success, crit rate, idx]");
-  }
-
-  if (logCatchRNG) {
-    for (let i = 0; i < rates.length; i++) {
-      console.log(rates[i]);
-    }
-  }
-
-  if (logCatchRNG) {
-    console.log("Note: if middle number is less than " + critCap[0] + ", a critical capture should occur");
-  }
-
-  rates.sort(function (a, b) {
-    return b[0] - a[0];
-  });
-
-  const ballNames = [
-    "Poké Ball",
-    "Great Ball",
-    "Ultra Ball",
-    "Rogue Ball",
-    "Master Ball"
-  ];
-
-  let func_output = "";
-  rates.forEach((v, i) => {
-    if (logCatchRNG) {
-      console.log("Ball: " + ballNames[v[3]], v);
-    }
-
-    const rawRate = v[0];
-    const catchRate = v[1];
-    const critRate = v[2];
-    if (globalScene.pokeballCounts[v[3]] == 0 && !override) {
-      if (logCatchRNG) {
-        console.log("  Skipped because the player doesn't have any of this ball");
-      }
-
-      return; // Don't list success for Poke Balls we don't have
-    }
-
-    //console.log(ballNames[i])
-    //console.log(v, rolls[offset + 0], v > rolls[offset + 0])
-    //console.log(v, rolls[offset + 1], v > rolls[offset + 1])
-    //console.log(v, rolls[offset + 2], v > rolls[offset + 2])
-
-    if (logCatchRNG) {
-      console.log(`  Critical capture requirement: (${critCap[0]} < ${critRate})`);
-    }
-
-    if (rawRate > rolls[offset + 0]) {
-      if (logCatchRNG) {
-        console.log(`  Passed roll 1 (${rolls[offset + 0]} < ${rawRate})`);
-      }
-
-      //console.log("1 roll")
-      if (critCap[0] < critRate) {
-        func_output = ballNames[v[3]] + " crits";
-        if (logCatchRNG) {
-          console.log(`  Critical capture triggered (${critCap[0]} < ${critRate}) - ended early`);
-        }
-      } else if (rawRate > rolls[offset + 1]) {
-        //console.log("2 roll")
-        if (logCatchRNG) {
-          console.log(`  Passed roll 2 (${rolls[offset + 1]} < ${rawRate} )`);
-        }
-
-        if (rawRate > rolls[offset + 2]) {
-          //console.log("Caught!")
-          if (logCatchRNG) {
-            console.log(`  Passed roll 3 (${rolls[offset + 2]} < ${rawRate} ) - capture successful`);
-          }
-          func_output = ballNames[v[3]] + " catches";
-        } else {
-          if (logCatchRNG) {
-            console.log(`  Failed roll 3 (checked for ${rolls[offset + 2]} < ${rawRate})`);
-          }
-        }
-      } else {
-        if (logCatchRNG) {
-          console.log(`  Failed roll 2 (checked for ${rolls[offset + 1]} < ${rawRate})`);
-        }
-      }
-    } else {
-      if (logCatchRNG) {
-        console.log(`  Failed roll 1 (checked for ${rolls[offset + 0]} < ${rawRate})`);
-      }
-    }
-  });
-  if (func_output != "") {
-    return func_output;
-  }
-  return "---";
 }
 
 export function parseSlotData(slotId: number): SessionSaveData | undefined {

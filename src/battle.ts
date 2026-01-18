@@ -35,8 +35,7 @@ import {
 import { getEnumValues } from "#utils/enums";
 import { randSeedUniqueItem } from "#utils/random";
 import i18next from "i18next";
-
-const doCatchLogging: boolean = false;
+import * as LoggerTools from "./logger";
 
 export interface TurnCommand {
   command: Command;
@@ -470,6 +469,7 @@ export class Battle {
     if (range <= 1) {
       return min;
     }
+
     const tempRngCounter = globalScene.rngCounter;
     const tempSeedOverride = globalScene.rngSeedOverride;
     const state = Phaser.Math.RND.state();
@@ -477,22 +477,20 @@ export class Battle {
       Phaser.Math.RND.state(this.battleSeedState);
     } else {
       Phaser.Math.RND.sow([ shiftCharCodes(this.battleSeed, this.turn << 6) ]);
-      if (doCatchLogging) {
-        console.log("Battle Seed:", this.battleSeed);
-      }
     }
+    
     for (var i = 0; i < offset; i++) {
       // Perform useless rolls to offset RNG counter
+      if (LoggerTools.logCatchRNG) console.log("[Simulated] Battle RNG Counter:", this.rngCounter + i);
       randSeedInt(5, undefined, "[RNG offset]");
     }
+    
     for (var i = 0; i < count; i++) {
+      if (LoggerTools.logCatchRNG) console.log("[Simulated] Battle RNG Counter:", this.rngCounter + offset + i);
       out.push(randSeedInt(range, min, `[${i + 1}/${count}] ${reason}`));
     }
-    if (doCatchLogging) {
-      console.log("[SIMULATED] " + reason + " (x" + count + (offset ? " + offset " + offset : "") + ")", out);
-    }
+    
     Phaser.Math.RND.state(state);
-    //globalScene.setScoreText("RNG: " + tempRngCounter + " (Last sim: " + this.rngCounter + ")")
     globalScene.rngCounter = tempRngCounter;
     globalScene.rngSeedOverride = tempSeedOverride;
   }
@@ -507,6 +505,7 @@ export class Battle {
     if (range <= 1) {
       return min;
     }
+    
     const tempRngCounter = globalScene.rngCounter;
     const tempSeedOverride = globalScene.rngSeedOverride;
     const state = Phaser.Math.RND.state();
@@ -514,16 +513,14 @@ export class Battle {
       Phaser.Math.RND.state(this.battleSeedState);
     } else {
       Phaser.Math.RND.sow([shiftCharCodes(this.battleSeed, this.turn << 6)]);
-      if (doCatchLogging) {
-        console.log("Battle Seed:", this.battleSeed);
-      }
     }
+
+    if (LoggerTools.logRNG) console.log("Battle RNG Counter:", this.rngCounter);
     globalScene.rngCounter = this.rngCounter++;
     globalScene.rngSeedOverride = this.battleSeed;
     const ret = randSeedInt(range, min, reason);
     this.battleSeedState = Phaser.Math.RND.state();
     Phaser.Math.RND.state(state);
-    //scene.setScoreText("RNG: " + tempRngCounter + " (Last sim: " + this.rngCounter + ")")
     globalScene.rngCounter = tempRngCounter;
     globalScene.rngSeedOverride = tempSeedOverride;
     return ret;
