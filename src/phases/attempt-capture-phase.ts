@@ -97,7 +97,7 @@ export class AttemptCapturePhase extends PokemonPhase {
       );
     }
 
-    const isCritical = pokemon.randBattleSeedInt(256) < criticalCaptureChance;
+    const isCritical = pokemon.randBattleSeedInt(256, undefined, "Critical Capture Roll") < criticalCaptureChance;
     const fpOffset = pokemon.getFieldPositionOffset();
 
     LoggerTools.logActions(globalScene.currentBattle.waveIndex, getPokeballName(this.pokeballType));
