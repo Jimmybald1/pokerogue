@@ -2029,27 +2029,25 @@ export function findBest(pokemon: EnemyPokemon) {
   globalScene.currentBattle.multiInt(critCap, 1, 256, undefined, "Critical Capture Check");
   globalScene.currentBattle.multiInt(rolls, 3, 65536, undefined, "Catch prediction", 1); // offset 1 for the crit check
 
-  // Find lowest tier critical capture
+  // Easiest to just check lowest tier last, since it will override the output text
+  rates.reverse();
+
+  // Find lowest tier captures
   let output = "---";
-  rates.forEach(cr => {    
+  rates.forEach(cr => {
     if (critCap[0] < cr.critChance) {
       output = cr.ballType + " Crits";
+      if (logCatchRNG) console.log(output);
       return;
     }
-  });
-
-  if (output !== "---") {
-    return output;
-  }
-
-  // Find lowest tier normal capture
-  rates.forEach(cr => {    
+    
     if (
       rolls[0] < cr.ballChance
       && rolls[1] < cr.ballChance
       && rolls[2] < cr.ballChance
     ) {
       output = cr.ballType + " Catches";
+      if (logCatchRNG) console.log(output);
       return;
     }
   });
