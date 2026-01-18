@@ -2303,7 +2303,7 @@ export function predictDamage(user: Pokemon, target: Pokemon, move: PokemonMove,
     return ""; // Don't give a damage estimate for status moves
   }
 
-  if (target.getMoveEffectiveness(user, moveObj, false, true) == undefined) {
+  if (!target || target.getMoveEffectiveness(user, moveObj, false, true) == undefined) {
     return ""; // Target is immune
   }
 
