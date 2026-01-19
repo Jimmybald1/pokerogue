@@ -124,7 +124,6 @@ export const Actions: string[] = [];
 export const enemyPlan: string[] = [];
 
 // Booleans
-export const SheetsMode = new BooleanHolder(false);
 export const isTransferAll: BooleanHolder = new BooleanHolder(false);
 
 export const logCommand: BooleanHolder = new BooleanHolder(true);
@@ -533,7 +532,6 @@ export function newDocument(name: string = "Untitled Run", authorName: string | 
  * @see downloadLogByID
  */
 export function printDRPD(inData: string, indent: string, drpd: DRPD): string {
-  console.log("Printing for sheet?: " + SheetsMode.value);
   inData += indent + "{";
   inData += "\n" + indent + "  \"version\": \"" + drpd.version + "\"";
   inData += ",\n" + indent + "  \"seed\": \"" + drpd.seed + "\"";
@@ -758,48 +756,38 @@ function printWave(inData: string, indent: string, wave: Wave): string {
   inData += ",\n" + indent + "  \"reload\": " + wave.reload + "";
   inData += ",\n" + indent + "  \"type\": \"" + wave.type + "\"";
   inData += ",\n" + indent + "  \"double\": " + wave.double + "";
+
   var isFirst = true;
   if (wave.actions.length > 0) {
-    if (SheetsMode.value) {
-      inData += ",\n" + indent + "  \"actions\": \"";
-      var isFirst = true;
-      for (var i = 0; i < wave.actions.length; i++) {
-        if (wave.actions[i] != undefined) {
-          if (isFirst) {
-            isFirst = false;
-          } else {
-            inData += "CHAR(10)";
-          }
-          inData += wave.actions[i];
+    inData += ",\n" + indent + "  \"actions\": [";
+    for (var i = 0; i < wave.actions.length; i++) {
+      if (wave.actions[i] != undefined) {
+        if (isFirst) {
+          isFirst = false;
+        } else {
+          inData += ",";
         }
+
+        inData += "\n    " + indent + "\"" + wave.actions[i] + "\"";
       }
-      inData += "\"";
-    } else {
-      inData += ",\n" + indent + "  \"actions\": [";
-      for (var i = 0; i < wave.actions.length; i++) {
-        if (wave.actions[i] != undefined) {
-          if (isFirst) {
-            isFirst = false;
-          } else {
-            inData += ",";
-          }
-          inData += "\n    " + indent + "\"" + wave.actions[i] + "\"";
-        }
-      }
-      if (!isFirst) {
-        inData += "\n";
-      }
-      inData += indent + "  ]";
     }
+    if (!isFirst) {
+      inData += "\n";
+    }
+
+    inData += indent + "  ]";
   } else {
     inData += ",\n" + indent + "  \"actions\": [\"[No actions?]\"]";
   }
+
   inData += ",\n  " + indent + "\"shop\": \"" + wave.shop + "\"";
   inData += ",\n  " + indent + "\"biome\": \"" + wave.biome + "\"";
+
   if (wave.trainer) {
     inData += ",\n  " + indent + "\"trainer\": ";
     inData = printTrainer(inData, indent + "  ", wave.trainer);
   }
+
   if (wave.pokemon) {
     if (wave.pokemon.length > 0) {
       inData += ",\n  " + indent + "\"pokemon\": [\n";
@@ -814,12 +802,11 @@ function printWave(inData: string, indent: string, wave: Wave): string {
           inData = printPoke(inData, indent + "    ", wave.pokemon[i]);
         }
       }
-      if (SheetsMode.value && wave.pokemon.length == 1) {
-        inData += "," + indent + "    \n{" + indent + "    \n}";
-      }
+
       inData += "\n" + indent + "  ]";
     }
   }
+
   inData += "\n" + indent + "}";
   return inData;
 }
@@ -1148,45 +1135,30 @@ function printPoke(inData: string, indent: string, pokemon: PokeData) {
   inData += ",\n" + indent + "  \"rarity\": \"" + pokemon.rarity + "\"";
   inData += ",\n" + indent + "  \"captured\": " + pokemon.captured;
   inData += ",\n" + indent + "  \"level\": " + pokemon.level;
-  if (SheetsMode.value) {
-    inData += ",\n" + indent + "  \"items\": \"";
+
+  if (pokemon.items.length > 0) {
+    inData += ",\n" + indent + "  \"items\": [\n";
     var isFirst = true;
     for (var i = 0; i < pokemon.items.length; i++) {
       if (pokemon.items[i] != undefined) {
         if (isFirst) {
           isFirst = false;
         } else {
-          inData += "CHAR(10)";
+          inData += ",";
         }
-        inData += printItemNoNewline(inData, "", pokemon.items[i]);
+        inData = printItem(inData, indent + "    ", pokemon.items[i]);
       }
     }
-    inData += "\"";
+    if (!isFirst) {
+      inData += "\n";
+    }
+    inData += indent + "  ]";
   } else {
-    if (pokemon.items.length > 0) {
-      inData += ",\n" + indent + "  \"items\": [\n";
-      var isFirst = true;
-      for (var i = 0; i < pokemon.items.length; i++) {
-        if (pokemon.items[i] != undefined) {
-          if (isFirst) {
-            isFirst = false;
-          } else {
-            inData += ",";
-          }
-          inData = printItem(inData, indent + "    ", pokemon.items[i]);
-        }
-      }
-      if (!isFirst) {
-        inData += "\n";
-      }
-      inData += indent + "  ]";
-    } else {
-      inData += ",\n" + indent + "  \"items\": []";
-    }
+    inData += ",\n" + indent + "  \"items\": []";
   }
+
   inData += ",\n" + indent + "  \"ivs\": ";
   inData = printIV(inData, indent + "  ", pokemon.iv_raw);
-  //inData += ",\n" + indent + "  \"rarity\": " + pokemon.rarity
   inData += "\n" + indent + "}";
   return inData;
 }
@@ -2516,7 +2488,7 @@ function GenerateBattle(nolog: boolean = false) {
       encounterList.push(text);
       if (logRNG) console.log(text);
       if (battle.waveIndex == 50) {
-        // separate print so its easier to find for discord pin
+        // separate print so its easier to find for discord screenshot
         console.log(text);
         console.log(enemy.getMoveset().map(m => MoveId[m?.moveId ?? 0]));
       }
