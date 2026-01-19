@@ -2,10 +2,8 @@
 import type { PlayerPokemon, EnemyPokemon, Pokemon } from "./field/pokemon";
 import { getNatureDecrease, getNatureIncrease, getNatureName } from "./data/nature";
 import type { PokemonHeldItemModifier } from "./modifier/modifier";
-import { EnemyAttackStatusEffectChanceModifier, overrideHeldItems, overrideModifiers } from "./modifier/modifier";
-import type { TitlePhase } from "./phases/title-phase";
+import { overrideHeldItems, overrideModifiers } from "./modifier/modifier";
 import { getStatusEffectCatchRateMultiplier } from "./data/status-effect";
-import { loggedInUser } from "./account";
 import { biomeLinks } from "./data/balance/biomes";
 import { Nature } from "./enums/nature";
 import { StatusEffect } from "./enums/status-effect";
@@ -16,16 +14,10 @@ import { SpeciesId } from "#enums/species-id";
 import { GameModes } from "#enums/game-modes";
 import { getPokemonSpecies } from "./utils/pokemon-utils";
 import { AbilityId } from "#enums/ability-id";
-import { decrypt } from "./utils/data";
 import { BooleanHolder, getBiomeName, NumberHolder, randSeedInt } from "#utils/common";
 import { PokemonData } from "#system/pokemon-data";
 import { getEnumKeys, getEnumValues } from "#utils/enums";
 import { Trainer } from "#field/trainer";
-import { OptionSelectItem } from "#ui/abstract-option-select-ui-handler";
-import { TrainerData } from "#system/trainer-data";
-import { ArenaData } from "#system/arena-data";
-import { ChallengeData } from "#system/challenge-data";
-import { ModifierData as PersistentModifierData } from "#system/modifier-data";
 import { TrainerType } from "#enums/trainer-type";
 import { PokemonMove } from "#moves/pokemon-move";
 import { MoveCategory } from "#enums/move-category";
@@ -50,7 +42,6 @@ import { WeatherType } from "#enums/weather-type";
 import { TimeOfDay } from "#enums/time-of-day";
 import { EnemyCommandPhase } from "#phases/enemy-command-phase";
 import { BattlerIndex } from "#enums/battler-index";
-import { SessionSaveData } from "#types/save-data";
 import { TrainerVariant } from "#enums/trainer-variant";
 
 /*
