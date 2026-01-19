@@ -412,11 +412,7 @@ export class EncounterPhase extends BattlePhase {
 
   doEncounterCommon(showEncounterMessage = true) {
     const enemyField = globalScene.getEnemyField();
-
-    //LoggerTools.resetWave(globalScene.currentBattle.waveIndex)
-    if (globalScene.lazyReloads) {
-      LoggerTools.flagResetIfExists();
-    }
+    
     LoggerTools.logTeam(globalScene.currentBattle.waveIndex);
     if (globalScene.getEnemyParty()[0]?.hasTrainer()) {
       LoggerTools.logTrainer(globalScene.currentBattle.waveIndex);
@@ -431,12 +427,6 @@ export class EncounterPhase extends BattlePhase {
     }
     
     LoggerTools.resetWaveActions(undefined, true);
-
-    //globalScene.doShinyCheck()
-
-    if (LoggerTools.autoCheckpoints.includes(globalScene.currentBattle.waveIndex)) {
-      //globalScene.gameData.saveGameToAuto(globalScene)
-    }
 
     if (globalScene.currentBattle.battleType === BattleType.WILD) {
       for (const enemyPokemon of enemyField) {

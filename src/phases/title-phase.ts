@@ -199,9 +199,9 @@ export class TitlePhase extends Phase {
         },
       }, 
       { // Pathing tool option
-        label: "Manage Logs (Old Menu)",
+        label: "Delete Logs",
         handler: () => {
-          return this.logRenameMenu();
+          return this.deleteLogsMenu();
         }
       }, 
       {
@@ -437,48 +437,10 @@ export class TitlePhase extends Phase {
     super.end();
     return true;
   }
-
-  logMenu(): boolean {
+  
+  deleteLogsMenu(): boolean {
     const options: OptionSelectItem[] = [];
     LoggerTools.getLogs();
-    for (let i = 0; i < LoggerTools.logs.length; i++) {
-      if (localStorage.getItem(LoggerTools.logs[i][1]) != null) {
-        options.push(LoggerTools.generateOption(i, this.getSaves()) as OptionSelectItem);
-      }
-    }
-    options.push({
-      label: "Delete all",
-      handler: () => {
-        for (let i = 0; i < LoggerTools.logs.length; i++) {
-          if (localStorage.getItem(LoggerTools.logs[i][1]) != null) {
-            localStorage.removeItem(LoggerTools.logs[i][1]);
-          }
-        }
-        this.callEnd();
-        return true;
-      }
-    }, {
-      label: i18next.t("menu:cancel"),
-      handler: () => {
-        this.callEnd();
-        return true;
-      }
-    });
-    globalScene.ui.showText("Export or clear game logs.", null, () => globalScene.ui.setOverlayMode(UiMode.OPTION_SELECT, { options: options }));
-    return true;
-  }
-
-  logRenameMenu(): boolean {
-    const options: OptionSelectItem[] = [];
-    LoggerTools.getLogs();
-    globalScene.newArena(BiomeId.FACTORY);
-    for (let i = 0; i < LoggerTools.logs.length; i++) {
-      if (localStorage.getItem(LoggerTools.logs[i][1]) != null) {
-        options.push(LoggerTools.generateEditOption(i, this.getSaves(), this) as OptionSelectItem);
-      } else {
-        //options.push(LoggerTools.generateAddOption(i, globalScene, this))
-      }
-    }
     options.push({
       label: "Delete all",
       handler: () => {
@@ -499,27 +461,5 @@ export class TitlePhase extends Phase {
     });
     globalScene.ui.showText("Export, rename, or delete logs.", null, () => globalScene.ui.setOverlayMode(UiMode.OPTION_SELECT, { options: options }));
     return true;
-  }
-
-  getSaves(log?: boolean, dailyOnly?: boolean): SessionSaveData[] | undefined {
-    const saves: Array<Array<any>> = [];
-    for (let i = 0; i < 5; i++) {
-      const s = LoggerTools.parseSlotData(i);
-      if (s != undefined) {
-        if (!dailyOnly || s.gameMode == GameModes.DAILY) {
-          saves.push([ i, s, s.timestamp ]);
-        }
-      }
-    }
-    saves.sort((a, b): integer => {
-      return b[2] - a[2];
-    });
-    if (log) {
-      console.log(saves);
-    }
-    if (saves == undefined) {
-      return undefined;
-    }
-    return saves.map(f => f[1]);
   }
 }

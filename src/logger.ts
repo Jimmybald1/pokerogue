@@ -69,6 +69,9 @@ SECTIONS
 11 Item            Stores data about held items.
 12 Ingame Menu     Functions for the "Manage Logs" menu ingame.
 13 Logging Events  Functions for adding data to the logger.
+14 Utils from Phases.ts
+15 Scouting
+16 Shop Scouting
 */
 
 //#endregion
@@ -77,37 +80,24 @@ SECTIONS
 // #region 01 Variables
 
 // constants
-/** The number of enemy actions to log. */
-export const EnemyEventLogCount = 3;
 /** The current DRPD version. */
 export const DRPD_Version = "1.1.0b";
-/** (Unused / reference only) All the log versions that this mod can keep updated.
- * @see updateLog
-*/
-export const acceptedVersions = [
-  "1.0.0",
-  "1.0.0a",
-  "1.1.0",
-  "1.1.0a",
-  "1.1.0b",
-];
 
 /** Toggles console messages about predictions. */
 const logDamagePrediction: boolean = false;
 export const logRNG: boolean = false;
 export const logCatchRNG: boolean = false;
-export let pathingToolUI: boolean = true;
+
+// Value holders
+
+/** Used for logging to track which mon is about to join your party */
 export let incomingMon: string | undefined;
 export function setIncomingMon(mon: string | undefined) {
   incomingMon = mon;
 }
 
-// Value holders
 /** Holds the encounter rarities for the Pokemon in this wave. */
 export const rarities = [];
-
-// Holds the encounter HA rolls for the Pokemon in this wave.
-export const haChances: Number[][] = [];
 
 /** Used to store rarity tier between files when calculating and storing a Pokemon's encounter rarity.
  *
@@ -120,14 +110,17 @@ export const rarityslot = [0, ""];
  *
  * Its contents are printed to the current wave's actions list, separated by pipes `|`, when the turn begins playing out. */
 export const Actions: string[] = [];
+
 /** Used for enemy attack prediction. Stored here so that it's universally available. */
 export const enemyPlan: string[] = [];
 
-// Booleans
+/** Tracks whether the item transfer was all or individual */
 export const isTransferAll: BooleanHolder = new BooleanHolder(false);
 
+/** Tracks whether the current command should be logged */
 export const logCommand: BooleanHolder = new BooleanHolder(true);
-  
+
+/** Clean names for encounter rarity logging */
 export const tiernames: string[] = [
   "Common",
   "Uncommon",
@@ -139,17 +132,19 @@ export const tiernames: string[] = [
   "Super Rare",
   "Ultra Rare",
 ];
+
 // #endregion
 
 
 //#region 02 Downloading
+
 /**
  * Saves a log to your device.
  * @param i The index of the log you want to save.
  */
 export function downloadLogByID(i: number) {
   console.log(i);
-  const d = JSON.parse(localStorage.getItem(logs[i][1])!) as DRPD;
+  const d = importDocument(localStorage.getItem(logs[i][1])!);
   const blob = new Blob([printDRPD("", "", d)], { type: "text/json" });
   const link = document.createElement("a");
   link.href = window.URL.createObjectURL(blob);
@@ -165,37 +160,45 @@ export function downloadLogByID(i: number) {
  * @param i The index of the log you want to save.
  */
 export function downloadLogByIDToCSV(i: number) {
-  const d = JSON.parse(localStorage.getItem(logs[i][1])!) as DRPD;
-  const waves = d.waves;
+  const data = importDocument(localStorage.getItem(logs[i][1])!);
+  const waves = data.waves;
   const encounterList: string[] = [];
 
-  if (d.starters![0] === null) {
+  if (data.starters![0] === null) {
     console.error("Not a valid run.")
     return;
   }
 
-  encounterList.push(convertPokemonToCSV("a", waves[0].biome, [], d.starters![0], false));
-  encounterList.push(convertPokemonToCSV("b", waves[0].biome, [], d.starters![1], false));
-  encounterList.push(convertPokemonToCSV("c", waves[0].biome, [], d.starters![2], false));
+  encounterList.push(convertPokemonToCSV("a", waves[0].biome, [], data.starters![0], false));
+  encounterList.push(convertPokemonToCSV("b", waves[0].biome, [], data.starters![1], false));
+  encounterList.push(convertPokemonToCSV("c", waves[0].biome, [], data.starters![2], false));
 
   for (var i = 1; i < waves.length; i++) {
     const wave = waves[i];
+    if (wave === null) {
+      continue;
+    }
+
     console.log(wave);
-    if (wave != null && wave.trainer == null) {
-      const pokemon1 = wave.pokemon![0];
-      if (pokemon1 == null) {
+    if (wave.trainer) {
+      encounterList.push(convertTrainerToCSV(wave.id.toString(), wave.biome, wave.actions, wave.trainer!));
+      continue;
+    }
+
+    const pokemon1 = wave.pokemon![0];
+    if (pokemon1 == null) {
+      continue;
+    }
+
+    encounterList.push(convertPokemonToCSV(wave.id.toString(), wave.biome, wave.actions, pokemon1, false));
+
+    if (wave.double) {
+      const pokemon2 = wave.pokemon![1];
+      if (pokemon2 == null) {
         continue;
       }
-      encounterList.push(convertPokemonToCSV(wave.id.toString(), wave.biome, wave.actions, pokemon1, false));
-      if (wave.double) {
-        const pokemon2 = wave.pokemon![1];
-        if (pokemon2 == null) {
-          continue;
-        }
-        encounterList.push(convertPokemonToCSV(wave.id.toString(), wave.biome, wave.actions, pokemon2, true));
-      }
-    } else if (wave != null) {
-      encounterList.push(convertTrainerToCSV(wave.id.toString(), wave.biome, wave.actions, wave.trainer!));
+
+      encounterList.push(convertPokemonToCSV(wave.id.toString(), wave.biome, wave.actions, pokemon2, true));
     }
   }
   
@@ -203,8 +206,8 @@ export function downloadLogByIDToCSV(i: number) {
   const blob = new Blob([encounters], { type: "text/csv" });
   const link = document.createElement("a");
   link.href = window.URL.createObjectURL(blob);
-  const date: string = (d as DRPD).date;
-  const filename: string = date[5] + date[6] + "_" + date[8] + date[9] + "_" + date[0] + date[1] + date[2] + date[3] + "_" + (d as DRPD).label + ".csv";
+  const date = data.date;
+  const filename = date[5] + date[6] + "_" + date[8] + date[9] + "_" + date[0] + date[1] + date[2] + date[3] + "_" + data.label + ".csv";
   link.download = `${filename}`;
   link.click();
   link.remove();
@@ -236,29 +239,12 @@ function convertTrainerToCSV(id: string, biome: string, actions: string[], train
  */
 export let logs: string[][] = [];
 
-/** @deprecated */
-export const logKeys: string[] = [
-  "i", // Instructions/steps
-  "e", // Encounters
-  "d", // Debug
-];
-
 /**
  * Uses the save's RNG seed to create a log ID. Used to assign each save its own log.
  * @returns The ID of the current save's log.
  */
 export function getLogID() {
   return "drpd_log:" + globalScene.seed;
-}
-
-/**
- * Gets a log's item list storage, for detecting reloads via a change in the loot rewards.
- *
- * Not used yet.
- * @returns The ID of the current save's log.
- */
-export function getItemsID() {
-  return "drpd_items:" + globalScene.seed;
 }
 
 /**
@@ -282,6 +268,11 @@ export function getLogs() {
   logs = logs.sort((a, b) => a[6] > b[6] ? -1 : 1);
 }
 
+// #endregion
+
+
+// #region 04 Utilities
+
 /**
  * Returns a string for the name of the current game mode.
  * @returns The name of the game mode, for use in naming a game log.
@@ -304,11 +295,6 @@ export function getMode() {
   }
 }
 
-// #endregion
-
-
-// #region 04 Utilities
-
 /**
  * Pulls the current run's DRPD from LocalStorage using the run's RNG seed.
  *
@@ -321,7 +307,8 @@ export function getDRPD(): DRPD {
     D.seed = globalScene.seed;
     localStorage.setItem(getLogID(), JSON.stringify(D));
   }
-  let drpd: DRPD = JSON.parse(localStorage.getItem(getLogID())!) as DRPD;
+
+  let drpd = importDocument(localStorage.getItem(getLogID())!);
   drpd = updateLog(drpd);
   return drpd;
 }
@@ -330,23 +317,6 @@ export function save(drpd: DRPD) {
   console.log(drpd);
   localStorage.setItem(getLogID(), JSON.stringify(drpd));
 }
-
-/**
- * Testing purposes only. Currently unused.
- */
-export const RNGState: number[] = [];
-
-/**
- * The waves that autosaves are created at.
- */
-export const autoCheckpoints: number[] = [
-  1,
-  11,
-  21,
-  31,
-  41,
-  50
-];
 
 /**
  * Used to get the filesize of a string.
@@ -383,75 +353,6 @@ export function getSize(str: string) {
   }
   return d.toString() + filesizes[unit];
 }
-
-/**
- * Formats a Pokemon in the player's party.
- *
- * If multiple Pokemon of the same species exist in the party, it will specify which slot they are in.
- * @param index The slot index.
- * @returns [INDEX] NAME (example: `[1] Walking Wake` is a Walking Wake in the first party slot)
- */
-export function playerPokeName(index: number | Pokemon | PlayerPokemon) {
-  const species: string[] = [];
-  const dupeSpecies: string[] = [];
-  for (let i = 0; i < globalScene.getPlayerParty().length; i++) {
-    if (!species.includes(globalScene.getPlayerParty()[i].name)) {
-      species.push(globalScene.getPlayerParty()[i].name);
-    } else if (!dupeSpecies.includes(globalScene.getPlayerParty()[i].name)) {
-      dupeSpecies.push(globalScene.getPlayerParty()[i].name);
-    }
-  }
-  if (typeof index === "number") {
-    //console.log(globalScene.getParty()[index], species, dupeSpecies)
-    if (dupeSpecies.includes(globalScene.getPlayerParty()[index].name)) {
-      return globalScene.getPlayerParty()[index].name + " (Slot " + (index + 1) + ")";
-    }
-    return globalScene.getPlayerParty()[index].name;
-  }
-  if (!index.isPlayer()) {
-    return "[Not a player Pokemon??]";
-  }
-  //console.log(index.name, species, dupeSpecies)
-  if (dupeSpecies.includes(index.name)) {
-    return index.name + " (Slot " + (globalScene.getPlayerParty().indexOf(index as PlayerPokemon) + 1) + ")";
-  }
-  return index.name;
-}
-
-/**
- * Formats a Pokemon in the opposing party.
- *
- * If multiple Pokemon of the same species exist in the party, it will specify which slot they are in.
- * @param index The slot index.
- * @returns [INDEX] NAME (example: `[2] Zigzagoon` is a Zigzagoon in the right slot (for a double battle) or in the second party slot (for a single battle against a Trainer))
- */
-export function enemyPokeName(index: number | Pokemon | EnemyPokemon) {
-  const species: string[] = [];
-  const dupeSpecies: string[] = [];
-  for (let i = 0; i < globalScene.getEnemyParty().length; i++) {
-    if (!species.includes(globalScene.getEnemyParty()[i].name)) {
-      species.push(globalScene.getEnemyParty()[i].name);
-    } else if (!dupeSpecies.includes(globalScene.getEnemyParty()[i].name)) {
-      dupeSpecies.push(globalScene.getEnemyParty()[i].name);
-    }
-  }
-  if (typeof index === "number") {
-    //console.log(globalScene.getEnemyParty()[index], species, dupeSpecies)
-    if (dupeSpecies.includes(globalScene.getEnemyParty()[index].name)) {
-      return globalScene.getEnemyParty()[index].name + " (Slot " + (index + 1) + ")";
-    }
-    return globalScene.getEnemyParty()[index].name;
-  }
-  if (index.isPlayer()) {
-    return "[Not an enemy Pokemon??]";
-  }
-  //console.log(index.name, species, dupeSpecies)
-  if (dupeSpecies.includes(index.name)) {
-    return index.name + " (Slot " + (globalScene.getEnemyParty().indexOf(index as EnemyPokemon) + 1) + ")";
-  }
-  return index.name;
-}
-// LoggerTools.logActions(globalScene, globalScene.currentBattle.waveIndex, "")
 
 // #endregion
 
@@ -888,6 +789,7 @@ export function getWave(drpd: DRPD, floor: number): Wave {
       if (globalScene.gameMode.modeId == GameModes.DAILY) {
         console.log(";-;");
       }
+
       drpd.waves.push({
         id: floor,
         reload: false,
@@ -904,90 +806,8 @@ export function getWave(drpd: DRPD, floor: number): Wave {
       });
       return drpd.waves[drpd.waves.length - 1];
     }
-    /*
-    console.error("Out of wave slots??")
-    globalScene.ui.showText("Out of wave slots!\nClearing duplicates...", null, () => {
-      for (var i = 0; i < drpd.waves.length - 1; i++) {
-        if (drpd.waves[i] != undefined && drpd.waves[i+1] != undefined) {
-          if (drpd.waves[i].id == drpd.waves[i+1].id) {
-            drpd.waves[i+1] = undefined
-            drpd.waves.sort((a, b) => {
-              if (a == undefined) return 1;  // empty values move to the bottom
-              if (b == undefined) return -1; // empty values move to the bottom
-              return a.id - b.id
-            })
-          }
-        }
-      }
-      if (drpd.waves[drpd.waves.length - 1] != undefined) {
-        if (globalScene.gameMode.modeId == GameModes.DAILY) {
-          globalScene.ui.showText("No space!\nPress F12 for info")
-          console.error("There should have been 50 slots, but somehow the program ran out of space.")
-          console.error("Go yell at @redstonewolf8557 to fix this")
-        } else {
-          drpd.waves.push(null)
-          console.log("Created new wave for floor " + floor + " at newly inserted index " + insertPos)
-          drpd.waves[drpd.waves.length - 1] = {
-            id: floor,
-            reload: false,
-            //type: floor % 10 == 0 ? "boss" : (floor % 10 == 5 ? "trainer" : "wild"),
-            type: floor % 10 == 0 ? "boss" : "wild",
-            double: globalScene.currentBattle.double,
-            actions: [],
-            shop: "",
-            biome: getBiomeName(globalScene.arena.biomeType),
-            clearActionsFlag: false,
-            initialActions: [],
-            modifiers: [],
-            //pokemon: []
-          }
-          wv = drpd.waves[drpd.waves.length - 1]
-        }
-      } else {
-        for (var i = 0; i < drpd.waves.length; i++) {
-          if (drpd.waves[i] != undefined && drpd.waves[i] != null) {
-            if (drpd.waves[i].id == floor) {
-              wv = drpd.waves[i]
-              console.log("Found wave for floor " + floor + " at index " + i)
-              if (wv.pokemon == undefined) wv.pokemon = []
-            }
-          } else if (insertPos == undefined) {
-            insertPos = i
-          }
-        }
-        if (wv == undefined && insertPos != undefined) {
-          console.log("Created new wave for floor " + floor + " at index " + insertPos)
-          drpd.waves[insertPos] = {
-            id: floor,
-            reload: false,
-            //type: floor % 10 == 0 ? "boss" : (floor % 10 == 5 ? "trainer" : "wild"),
-            type: floor % 10 == 0 ? "boss" : "wild",
-            double: globalScene.currentBattle.double,
-            actions: [],
-            shop: "",
-            clearActionsFlag: false,
-            biome: getBiomeName(globalScene.arena.biomeType),
-            initialActions: [],
-            modifiers: [],
-            //pokemon: []
-          }
-          wv = drpd.waves[insertPos]
-        }
-        drpd.waves.sort((a, b) => {
-          if (a == undefined) return 1;  // empty values move to the bottom
-          if (b == undefined) return -1; // empty values move to the bottom
-          return a.id - b.id
-        })
-        if (wv == undefined) {
-          globalScene.ui.showText("Failed to make space\nPress F12 for info")
-          console.error("There should be space to store a new wave, but the program failed to find space anyways")
-          console.error("Go yell at @redstonewolf8557 to fix this")
-          return undefined;
-        }
-      }
-    })
-    */
   }
+
   if (wv == undefined) {
     globalScene.ui.showText("Failed to retrieve wave\nPress F12 for info", 10000);
     console.error("Failed to retrieve wave??");
@@ -1010,8 +830,10 @@ export function getWave(drpd: DRPD, floor: number): Wave {
       modifiers: []
     };
   }
+
   return wv;
 }
+
 // #endregion
 
 
@@ -1405,19 +1227,6 @@ function printItem(inData: string, indent: string, item: ItemData) {
   return inData;
 }
 
-/**
- * Prints an item as a string, for saving a DRPD to your device.
- * @param inData The data to add on to.
- * @param indent The indent string (just a bunch of spaces).
- * @param wave The `ItemData` to export.
- * @returns `inData`, with all the Item's data appended to it.
- *
- * @see `downloadLogByIDToSheet`
- */
-function printItemNoNewline(inData: string, indent: string, item: ItemData) {
-  inData = "{\\\"id\\\": \\\"" + item.id + "\\\", \\\"name\\\": \\\"" + item.name + "\\\", \\\"quantity\\\": " + item.quantity + "}";
-  return inData;
-}
 // #endregion
 
 
@@ -1459,154 +1268,9 @@ export function setFileInfo(title: string, authors: string[], label: string) {
  * @param saves Your session data. Used to label logs if they match one of your save slots.
  * @returns A UI option.
  */
-export function generateOption(i: number, saves: any): OptionSelectItem {
-  const filename: string = (JSON.parse(localStorage.getItem(logs[i][1])!) as DRPD).title!;
-  const op: OptionSelectItem = {
-    label: `Export ${filename} (${getSize(printDRPD("", "", JSON.parse(localStorage.getItem(logs[i][1])!) as DRPD))})`,
-    handler: () => {
-      downloadLogByID(i);
-      return false;
-    }
-  };
-  for (let j = 0; j < saves.length; j++) {
-    console.log(saves[j].seed, logs[i][2], saves[j].seed == logs[i][2]);
-    if (saves[j].seed == logs[i][2]) {
-      op.label = "[Slot " + (saves[j].slot + 1) + "]" + op.label.substring(6);
-    }
-  }
-  if (logs[i][4] != "") {
-    op.label = " " + op.label;
-    op.item = logs[i][4];
-  }
-  return op;
-}
-
-/**
- * Generates a UI option to save a log to your device.
- * @param i The slot number. Corresponds to an index in `logs`.
- * @param saves Your session data. Used to label logs if they match one of your save slots.
- * @returns A UI option.
- */
-export function generateEditOption(i: number, saves: any, phase: TitlePhase): OptionSelectItem {
-  const filename: string = (JSON.parse(localStorage.getItem(logs[i][1])!) as DRPD).title || "unlabeled";
-  const op: OptionSelectItem = {
-    label: `Export ${filename} (${getSize(printDRPD("", "", JSON.parse(localStorage.getItem(logs[i][1])!) as DRPD))})`,
-    handler: () => {
-      rarityslot[1] = logs[i][1];
-      //globalScene.phaseQueue[0].end()
-      globalScene.ui.setMode(UiMode.NAME_LOG, {
-        autofillfields: [
-          (JSON.parse(localStorage.getItem(logs[i][1])!) as DRPD).title,
-          (JSON.parse(localStorage.getItem(logs[i][1])!) as DRPD).authors.join(", "),
-          (JSON.parse(localStorage.getItem(logs[i][1])!) as DRPD).label,
-        ],
-        buttonActions: [
-          () => {
-            console.log("Rename");
-            globalScene.ui.playSelect();
-            phase.callEnd();
-          },
-          () => {
-            console.log("Export");
-            globalScene.ui.playSelect();
-            downloadLogByID(i);
-            phase.callEnd();
-          },
-          () => {
-            console.log("Export to CSV");
-            globalScene.ui.playSelect();
-            downloadLogByIDToCSV(i);
-            phase.callEnd();
-          },
-          () => {
-            console.log("Delete");
-            globalScene.ui.playSelect();
-            localStorage.removeItem(logs[i][1]);
-            phase.callEnd();
-          }
-        ]
-      });
-      return false;
-    }
-  };
-  for (let j = 0; j < saves.length; j++) {
-    //console.log(saves[j].seed, logs[i][2], saves[j].seed == logs[i][2])
-    if (saves[j].seed == logs[i][2]) {
-      op.label = "[Slot " + (saves[j].slot + 1) + "]" + op.label.substring(6);
-    }
-  }
-  if (logs[i][4] != "") {
-    op.label = " " + op.label;
-    op.item = logs[i][4];
-  }
-  return op;
-}
-
-/**
- * Generates a UI option to save a log to your device.
- * @param i The slot number. Corresponds to an index in `logs`.
- * @param saves Your session data. Used to label logs if they match one of your save slots.
- * @returns A UI option.
- */
-export function generateEditHandler(logId: string, callback: Function) {
-  let i;
-  for (let j = 0; j < logs.length; j++) {
-    if (logs[j][2] == logId) {
-      i = j;
-    }
-  }
-  if (i == undefined) {
-    return;
-  } // Failed to find a log
-  return (): boolean => {
-    rarityslot[1] = logs[i][1];
-    //globalScene.phaseQueue[0].end()
-    globalScene.ui.setMode(UiMode.NAME_LOG, {
-      autofillfields: [
-        (JSON.parse(localStorage.getItem(logs[i][1])!) as DRPD).title,
-        (JSON.parse(localStorage.getItem(logs[i][1])!) as DRPD).authors.join(", "),
-        (JSON.parse(localStorage.getItem(logs[i][1])!) as DRPD).label,
-      ],
-      buttonActions: [
-        () => {
-          console.log("Rename");
-          globalScene.ui.playSelect();
-          callback();
-        },
-        () => {
-          console.log("Export");
-          globalScene.ui.playSelect();
-          downloadLogByID(i);
-          callback();
-        },
-        () => {
-          console.log("Export to CSV");
-          globalScene.ui.playSelect();
-          downloadLogByIDToCSV(i);
-          callback();
-        },
-        () => {
-          console.log("Delete");
-          globalScene.ui.playSelect();
-          localStorage.removeItem(logs[i][1]);
-          callback();
-        }
-      ]
-    });
-    return false;
-  };
-}
-
-/**
- * Generates a UI option to save a log to your device.
- * @param i The slot number. Corresponds to an index in `logs`.
- * @param saves Your session data. Used to label logs if they match one of your save slots.
- * @returns A UI option.
- */
 export function generateEditHandlerForLog(i: number, callback: Function) {
   return (): boolean => {
     rarityslot[1] = logs[i][1];
-    //globalScene.phaseQueue[0].end()
     globalScene.ui.setMode(UiMode.NAME_LOG, {
       autofillfields: [
         (JSON.parse(localStorage.getItem(logs[i][1])!) as DRPD).title,
@@ -1702,31 +1366,6 @@ export function appendAction(floor: number = globalScene.currentBattle.waveIndex
 }
 
 /**
- * Logs the actions that the player took.
- *
- * This includes attacks you perform, items you transfer during the shop, Poke Balls you throw, running from battl, (or attempting to), and switching (including pre-switches).
- * @param floor The wave index to write to.
- * @param action The text you want to add to the actions list.
- *
- * @see resetWaveActions
- */
-export function getActionCount(floor: number) {
-  const drpd = getDRPD();
-  console.log("Checking action count");
-  console.log(drpd);
-  const wv: Wave = getWave(drpd, floor);
-  if (wv.double == undefined) {
-    wv.double = false;
-  }
-  if (wv.clearActionsFlag) {
-    console.log("Triggered clearActionsFlag");
-    wv.clearActionsFlag = false;
-    wv.actions = [];
-  }
-  return (wv.actions.length);
-}
-
-/**
  * Logs that a Pokémon was captured.
  * @param floor The wave index to write to. Defaults to the current floor.
  * @param target The Pokémon that you captured.
@@ -1762,25 +1401,6 @@ export function logPlayerTeam() {
 }
 
 /**
- * Checks the minimum luck that will break this floor's shop, and updates the appropriate values.
- */
-export function logLuck() {
-  //return;
-  const drpd = getDRPD();
-  if (globalScene.waveShinyMinToBreak > 0) {
-    console.log("Logging luck stats");
-    drpd.maxluck = Math.min(drpd.maxluck!, globalScene.waveShinyMinToBreak - 1);
-    for (let i = globalScene.waveShinyMinToBreak; i <= 14; i++) {
-      drpd.minSafeLuckFloor![i] = Math.max(drpd.minSafeLuckFloor![i], globalScene.currentBattle.waveIndex);
-    }
-    console.log("--> ", drpd);
-    localStorage.setItem(getLogID(), JSON.stringify(drpd));
-  } else {
-    console.log("Skipped logging luck stats: Luck has no effect on this floor");
-  }
-}
-
-/**
  * Logs a wild Pokémon to a wave's data.
  * @param floor The wave index to write to. Defaults to the current floor.
  * @param slot The slot to write to. In a single battle, 0 = the Pokémon that is out first. In a double battle, 0 = Left and 1 = Right.
@@ -1790,29 +1410,31 @@ export function logLuck() {
 export function logPokemon(floor: number = globalScene.currentBattle.waveIndex, slot: number, pokemon: EnemyPokemon, encounterRarity?: string) {
   const drpd = getDRPD();
   console.log(`Logging opposing team member: ${pokemon.name}`);
+
   const wv: Wave = getWave(drpd, floor);
   const pk: PokeData = exportPokemon(pokemon, encounterRarity);
   pk.source = pokemon;
   if (wv.pokemon == undefined) {
     wv.pokemon = [];
   }
+
   if (wv.pokemon[slot] != undefined) {
     if (JSON.stringify(wv.pokemon[slot]) != JSON.stringify(pk)) {
       console.log("A different Pokemon already exists in this slot! Flagging as a reload");
       wv.reload = true;
     }
   }
+
   if (pk.rarity == undefined) {
     pk.rarity = "[Unknown]";
   }
+
   if (globalScene.currentBattle.enemyParty.length == 1 && wv.pokemon.length >= 2) {
     wv.pokemon = [];
   }
+
   wv.pokemon[slot] = pk;
   wv.double = globalScene.currentBattle.double;
-  //while (wv.actions.length > 0)
-  //wv.actions.pop()
-  //wv.actions = []
   wv.clearActionsFlag = false;
   wv.shop = "";
   drpd.seed = globalScene.seed;
@@ -1853,44 +1475,6 @@ export function logTrainer(floor: number = globalScene.currentBattle.waveIndex) 
 }
 
 /**
- * Flags a wave as a reset.
- * @param floor The wave index to write to.
- */
-export function flagReset(floor: number = globalScene.currentBattle.waveIndex) {
-  const drpd = getDRPD();
-  console.log("Flag Reset", drpd);
-  const wv = getWave(drpd, floor);
-  wv.reload = true;
-  console.log("--> ", drpd);
-  localStorage.setItem(getLogID(), JSON.stringify(drpd));
-}
-
-/**
- * Flags a wave as a reset, unless this is your first time playing the wave.
- * @param floor The wave index to write to. Defaults to the current floor.
- */
-export function flagResetIfExists(floor: number = globalScene.currentBattle.waveIndex) {
-  const drpd = getDRPD();
-  let waveExists = false;
-  for (let i = 0; i < drpd.waves.length; i++) {
-    if (drpd.waves[i] != undefined) {
-      if (drpd.waves[i].id == floor) {
-        waveExists = true;
-      }
-    }
-  }
-  if (!waveExists) {
-    console.log("Skipped wave reset because this is not a reload", drpd);
-    return;
-  }
-  console.log("Flag reset as wave was already played before", drpd);
-  const wv = getWave(drpd, floor);
-  wv.reload = true;
-  console.log("--> ", drpd);
-  localStorage.setItem(getLogID(), JSON.stringify(drpd));
-}
-
-/**
  * Clears the action list for a wave.
  * @param floor The wave index to write to. Defaults to the current floor.
  * @param softflag Rather than deleting everything right away, the actions will be cleared the next time we attempt to log an action.
@@ -1909,10 +1493,12 @@ export function resetWaveActions(floor: number = globalScene.currentBattle.waveI
   console.log("--> ", drpd);
   localStorage.setItem(getLogID(), JSON.stringify(drpd));
 }
+
 //#endregion
 
 
 // #region 14 Utils from Phases.ts
+
 /**
  * Finds the best Poké Ball to catch a Pokemon with, and the % chance of capturing it.
  * @param pokemon The Pokémon to get the catch rate for.
@@ -1963,51 +1549,58 @@ export enum BallNames {
   Master = "Master Ball",
 };
 
-export interface CatchRates {
-  ballType: BallNames
-  ballChance: number,
-  critChance: number,
+class CatchRates {
+  public ballType: BallNames;
+  public ballChance: number;
+  public critChance: number;
+
+  constructor (
+    ballType: BallNames,
+    ballChance: number,
+    critChance: number,
+  ) {
+    this.ballType = ballType;
+    this.ballChance = ballChance;
+    this.critChance = critChance;
+    if (logCatchRNG) console.log("Rates", this);
+  }
 }
 
 function catchCalc(pokemon: EnemyPokemon) {
   const rates: CatchRates[] = [];
   if (globalScene.pokeballCounts[0] > 0) {
-    const r = {
-      ballType: BallNames.Poke,
-      ballChance: generateBallChance(pokemon, 1),
-      critChance: generateCritChance(pokemon, 1),
-    };
-    if (logCatchRNG) console.log("Rates", r);
+    const r = new CatchRates(
+      BallNames.Poke,
+      generateBallChance(pokemon, 1),
+      generateCritChance(pokemon, 1),
+    );
     rates.push(r);
   }
 
   if (globalScene.pokeballCounts[1] > 0) {
-    const r = {
-      ballType: BallNames.Great,
-      ballChance: generateBallChance(pokemon, 1.5),
-      critChance: generateCritChance(pokemon, 1.5),
-    };
-    if (logCatchRNG) console.log("Rates", r);
+    const r = new CatchRates(
+      BallNames.Poke,
+      generateBallChance(pokemon, 1.5),
+      generateCritChance(pokemon, 1.5),
+    );
     rates.push(r);
   }
 
   if (globalScene.pokeballCounts[2] > 0) {
-    const r = {
-      ballType: BallNames.Ultra,
-      ballChance: generateBallChance(pokemon, 2),
-      critChance: generateCritChance(pokemon, 2),
-    };
-    if (logCatchRNG) console.log("Rates", r);
+    const r = new CatchRates(
+      BallNames.Poke,
+      generateBallChance(pokemon, 2),
+      generateCritChance(pokemon, 2),
+    );
     rates.push(r);
   }
 
   if (globalScene.pokeballCounts[3] > 0) {
-    const r = {
-      ballType: BallNames.Rogue,
-      ballChance: generateBallChance(pokemon, 3),
-      critChance: generateCritChance(pokemon, 3),
-    };
-    if (logCatchRNG) console.log("Rates", r);
+    const r = new CatchRates(
+      BallNames.Poke,
+      generateBallChance(pokemon, 3),
+      generateCritChance(pokemon, 3),
+    );
     rates.push(r);
   }
 
@@ -2028,73 +1621,6 @@ function generateCritChance(pk: EnemyPokemon, pokeballMultiplier: number) {
   const catchRate = pk.species.catchRate;
   const statusMultiplier = pk.status ? getStatusEffectCatchRateMultiplier(pk.status.effect) : 1;
   return getCriticalCaptureChance(Math.round((((_3m - _2h) * catchRate * pokeballMultiplier) / _3m) * statusMultiplier));
-}
-
-export function parseSlotData(slotId: number): SessionSaveData | undefined {
-  const S = localStorage.getItem(`sessionData${slotId ? slotId : ""}_${loggedInUser?.username}`);
-  if (S == null) {
-    // No data in this slot
-    return undefined;
-  }
-  const dataStr = decrypt(S, true);
-  const Save = JSON.parse(dataStr, (k: string, v: any) => {
-    /*const versions = [ globalScene.game.config.gameVersion, sessionData.gameVersion || '0.0.0' ];
-
-    if (versions[0] !== versions[1]) {
-      const [ versionNumbers, oldVersionNumbers ] = versions.map(ver => ver.split('.').map(v => parseInt(v)));
-    }*/
-
-    if (k === "party" || k === "enemyParty") {
-      const ret: PokemonData[] = [];
-      if (v === null) {
-        v = [];
-      }
-      for (const pd of v) {
-        ret.push(new PokemonData(pd));
-      }
-      return ret;
-    }
-
-    if (k === "trainer") {
-      return v ? new TrainerData(v) : null;
-    }
-
-    if (k === "modifiers" || k === "enemyModifiers") {
-      const player = k === "modifiers";
-      const ret: PersistentModifierData[] = [];
-      if (v === null) {
-        v = [];
-      }
-      for (const md of v) {
-        if (md?.className === "ExpBalanceModifier") { // Temporarily limit EXP Balance until it gets reworked
-          md.stackCount = Math.min(md.stackCount, 4);
-        }
-        if (md instanceof EnemyAttackStatusEffectChanceModifier && md.effect === StatusEffect.FREEZE || md.effect === StatusEffect.SLEEP) {
-          continue;
-        }
-        ret.push(new PersistentModifierData(md, player));
-      }
-      return ret;
-    }
-
-    if (k === "arena") {
-      return new ArenaData(v);
-    }
-
-    if (k === "challenges") {
-      const ret: ChallengeData[] = [];
-      if (v === null) {
-        v = [];
-      }
-      for (const c of v) {
-        ret.push(new ChallengeData(c));
-      }
-      return ret;
-    }
-
-    return v;
-  }) as SessionSaveData;
-  return Save;
 }
 
 // Activate enemy command phase for move and catch prediction
@@ -2118,7 +1644,16 @@ export function predictEnemy(): void {
   });
 }
 
-// Pathing tool function
+/**
+ * Toggles UI used by Pathing Tool.
+ * Useful for taking a screenshot
+ */
+export let pathingToolUI: boolean = true;
+
+/**
+ * Toggles UI used by Pathing Tool.
+ * Useful for taking screenshots.
+ */
 export function togglePathingToolUI(): void {
   pathingToolUI = !pathingToolUI;
   if (pathingToolUI) {
@@ -2129,17 +1664,20 @@ export function togglePathingToolUI(): void {
 }
 
 /**
- * PathingTool function
  * Calculates the damage ranges that are possible if this move would be selected.
  */
 export function predictDamage(user: Pokemon, target: Pokemon, move: PokemonMove, willTera: boolean, damageDisplay?: string) {
   const moveObj = move.getMove();
   if (moveObj.category == MoveCategory.STATUS) {
-    return ""; // Don't give a damage estimate for status moves
+    return ""; // Don't give a damage estimate for status moves.
   }
 
-  if (!target || target.getMoveEffectiveness(user, moveObj, false, true) == undefined) {
-    return ""; // Target is immune
+  if (!target) {
+    return ""; // Target doesn't exist.
+  }
+
+  if (target.getMoveEffectiveness(user, moveObj, false, true) == undefined) {
+    return ""; // Target is immune.
   }
 
   if (logDamagePrediction) {
@@ -2174,9 +1712,7 @@ export function predictDamage(user: Pokemon, target: Pokemon, move: PokemonMove,
   ).damage;
   user.isTerastallized = isTera; // Revert to whatever the terastallize state was before
 
-  if (logDamagePrediction) {
-    console.log(`Damage min: ${dmgLow} | Damage max: ${dmgHigh}`);
-  }
+  if (logDamagePrediction) console.log(`Damage min: ${dmgLow} | Damage max: ${dmgHigh}`);
 
   let minHits = 1;
   let maxHits = -1; // If nothing changes this value, it is set to minHits
@@ -2218,17 +1754,13 @@ export function predictDamage(user: Pokemon, target: Pokemon, move: PokemonMove,
     }
   }
 
-  if (logDamagePrediction) {
-    console.log(`MinHits: ${minHits} | MaxHits: ${maxHits}`);
-  }
+  if (logDamagePrediction) console.log(`MinHits: ${minHits} | MaxHits: ${maxHits}`);
 
   // Actual damage dealt
   let dmgLowF = Math.floor(dmgLow);
   let dmgHighF = Math.floor(dmgHigh);
 
-  if (logDamagePrediction) {
-    console.log(`HP min: ${dmgLowF} | HP max: ${dmgHighF}`);
-  }
+  if (logDamagePrediction) console.log(`HP min: ${dmgLowF} | HP max: ${dmgHighF}`);
 
   let maxEHP = target.getMaxHp();
 
@@ -2244,9 +1776,7 @@ export function predictDamage(user: Pokemon, target: Pokemon, move: PokemonMove,
   let qSuffix = "";
   if (target.isBoss()) {
     const segmentRequirements = (target as EnemyPokemon).calculateBossShieldRequirements();
-    if (logDamagePrediction) {
-      console.log(`Segments: ${segmentRequirements}`);
-    }
+    if (logDamagePrediction) console.log(`Segments: ${segmentRequirements}`);
 
     maxEHP = segmentRequirements[segmentRequirements.length - 1];
 
@@ -2264,9 +1794,7 @@ export function predictDamage(user: Pokemon, target: Pokemon, move: PokemonMove,
       qSuffix = ` (${segmentClearedLow})`;
     }
 
-    if (logDamagePrediction) {
-      console.log(`Segments min: ${segmentClearedLow} | Segments max: ${segmentClearedHigh}`);
-    }
+    if (logDamagePrediction) console.log(`Segments min: ${segmentClearedLow} | Segments max: ${segmentClearedHigh}`);
 
     if (segmentClearedLow == segmentRequirements.length) {
       // Same segment, Guaranteed kill
@@ -2302,28 +1830,17 @@ export function predictDamage(user: Pokemon, target: Pokemon, move: PokemonMove,
     // Re-Floor based on the new numbers
     dmgLowF = Math.floor(dmgLow);
     dmgHighF = Math.floor(dmgHigh);
-    if (logDamagePrediction) {
-      console.log(`Boss damage min: ${dmgLow} | Boss damage max: ${dmgHigh}`);
-    }
+    if (logDamagePrediction) console.log(`Boss damage min: ${dmgLow} | Boss damage max: ${dmgHigh}`);
   }
 
   // %HP removed
   const dmgLowP = Math.round((dmgLowF) / maxEHP * 100);
   const dmgHighP = Math.round((dmgHighF) / maxEHP * 100);
 
-  if (logDamagePrediction) {
-    console.log(`HP% min: ${dmgLowP} | HP% max: ${dmgHighP}`);
-  }
-
-  if (logDamagePrediction) {
-    console.log(`Enemy HP: ${target.hp} | Enemy HP%: ${target.getHpRatio() * 100}`);
-  }
-  if (logDamagePrediction) {
-    console.log(`Max EHP: ${maxEHP}`);
-  }
-  if (logDamagePrediction && koText !== undefined) {
-    console.log(`KO%: ${koText}`);
-  }
+  if (logDamagePrediction) console.log(`HP% min: ${dmgLowP} | HP% max: ${dmgHighP}`);
+  if (logDamagePrediction) console.log(`Enemy HP: ${target.hp} | Enemy HP%: ${target.getHpRatio() * 100}`);
+  if (logDamagePrediction) console.log(`Max EHP: ${maxEHP}`);
+  if (logDamagePrediction && koText !== undefined) console.log(`KO%: ${koText}`);
 
   if (!damageDisplay) {
     damageDisplay = globalScene.damageDisplay;
@@ -2332,9 +1849,11 @@ export function predictDamage(user: Pokemon, target: Pokemon, move: PokemonMove,
   if (damageDisplay === "Percent") {
     return (dmgLowP == dmgHighP ? dmgLowP + "%" + qSuffix : dmgLowP + "%-" + dmgHighP + "%" + qSuffix) + koText;
   }
+
   if (damageDisplay === "Value") {
     return (dmgLowF == dmgHighF ? dmgLowF + qSuffix : dmgLowF + "-" + dmgHighF + qSuffix) + koText;
   }
+
   return "";
 }
 
@@ -2413,7 +1932,6 @@ function ScoutingWithoutUI(charms: number) {
   var output = JSON.parse(localStorage.getItem("scouting")!) as string[][];
   console.log("All scouting data:", output);
   output = [];
-  // globalScene.ui.showText("DONE! Copy the data from the console and then you can refresh this page.", null);
 }
 
 function StoreEncounters(lurecharm: string) {
@@ -2517,6 +2035,7 @@ function GenerateBattle(nolog: boolean = false) {
     encounterList.push(`Wave: ${globalScene.currentBattle.waveIndex} Biome: ${BiomeId[globalScene.arena.biomeType]} TimeOfDay: ${TimeOfDay[timeOfDay]} Weather: ${WeatherType[weather]}`);
   }
 
+  // Clean up memory and sprites, this will throw errors at the end of the scouting
   globalScene.resetSeed();
   globalScene.phaseManager.clearPhaseQueue();
   globalScene.ui.freeUIData();
@@ -2564,6 +2083,10 @@ function GenerateBiomes(biomeId: BiomeId, waveIndex: integer) {
   }
 }
 
+
+// Holds the encounter HA rolls for the Pokemon in this wave.
+export const haChances: Number[][] = [];
+
 // Try out all ability charms without advancing the seed
 export function TestAllAbilityCharms(baseChance: number, abilityHidden: AbilityId) {
   if (abilityHidden) {
@@ -2610,7 +2133,7 @@ export function InitShopScouting(method) {
 
 let iterations: string[] = [];
 const charmList: string[] = [];
-function ShopScouting(method) {
+function ShopScouting(method: number) {
   // Remove any lures or charms
   globalScene.RemoveModifiers();
   console.log(`Starting shop scouting ${new Date().toLocaleTimeString()}`);
