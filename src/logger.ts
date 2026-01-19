@@ -545,8 +545,7 @@ function updateLog(drpd: DRPD): DRPD {
 export interface Wave {
   /** The wave number. Used to label the wave, detect and delete duplicates, and automatically sort `DRPD.waves[]`. */
   id: number,
-  /** Set to `true` if a reload is required to play this wave properly.Setting this value is the PITA I have ever dealt with. */
-  reload: boolean,
+
   /**
    * The specific type of wave.
    *
@@ -557,41 +556,38 @@ export interface Wave {
    * `boss`: This is a boss floor (floors 10, 20, 30, etc). Overrides the two values above.
    */
   type: "wild" | "trainer" | "boss",
+
   /** Set to `true` if this is a double battle. */
   double: boolean,
+
   /** The list of actions that the player took during this wave. */
   actions: string[],
+
   /** The item that the player took in the shop. A blank string (`""`) if there is no shop (wave 10, 20, 30, etc.) or the player fled from battle. */
   shop: string,
+
   /** The biome that this battle takes place in. */
   biome: string,
+
   /** If true, the next time an action is logged, all previous actions will be deleted.
    * @see Wave.actions
    * @see logActions
    * @see resetWaveActions
    */
   clearActionsFlag: boolean,
+
   /** The trainer that you fight in this floor, if any.
    * @see LogTrainerData
    * @see Wave.type
    */
   trainer?: LogTrainerData,
+
   /** The Pokémon that you have to battle against.
    * Not included if this is a trainer battle.
    * @see PokeData
    * @see Wave.type
    */
   pokemon?: PokeData[],
-  /**
-   * Contains the first 3 turns or so of the enemy's actions.
-   * Used to check for refreshes.
-   */
-  initialActions: string[],
-  /**
-   * Contains the names of the first set of modifier rewards.
-   * Used to check for refreshes.
-   */
-  modifiers: string[]
 }
 
 /**
@@ -601,15 +597,12 @@ export interface Wave {
 export function exportWave(): Wave {
   const ret: Wave = {
     id: globalScene.currentBattle.waveIndex,
-    reload: false,
     type: globalScene.getEnemyField()[0].hasTrainer() ? "trainer" : globalScene.getEnemyField()[0].isBoss() ? "boss" : "wild",
     double: globalScene.currentBattle.double,
     actions: [],
     shop: "",
     clearActionsFlag: false,
     biome: getBiomeName(globalScene.arena.biomeType),
-    initialActions: [],
-    modifiers: []
   };
   if (ret.double == undefined) {
     ret.double = false;
@@ -650,7 +643,6 @@ export function exportWave(): Wave {
 function printWave(inData: string, indent: string, wave: Wave): string {
   inData += indent + "{";
   inData += "\n" + indent + "  \"id\": " + wave.id + "";
-  inData += ",\n" + indent + "  \"reload\": " + wave.reload + "";
   inData += ",\n" + indent + "  \"type\": \"" + wave.type + "\"";
   inData += ",\n" + indent + "  \"double\": " + wave.double + "";
 
@@ -732,24 +724,21 @@ export function getWave(drpd: DRPD, floor: number): Wave {
       insertPos = i;
     }
   }
+
   if (wv == undefined && insertPos != undefined) {
     console.log("Created new wave for floor " + floor + " at index " + insertPos);
     drpd.waves[insertPos] = {
       id: floor,
-      reload: false,
-      //type: floor % 10 == 0 ? "boss" : (floor % 10 == 5 ? "trainer" : "wild"),
       type: floor % 10 == 0 ? "boss" : "wild",
       double: globalScene.currentBattle.double,
       actions: [],
       shop: "",
       clearActionsFlag: false,
       biome: getBiomeName(globalScene.arena.biomeType),
-      initialActions: [],
-      modifiers: [],
-      //pokemon: []
     };
     wv = drpd.waves[insertPos];
   }
+
   drpd.waves.sort((a, b) => {
     if (a == undefined) {
       return 1;
@@ -759,6 +748,7 @@ export function getWave(drpd: DRPD, floor: number): Wave {
     } // empty values move to the bottom
     return a.id - b.id;
   });
+
   for (var i = 0; i < drpd.waves.length - 1; i++) {
     if (drpd.waves[i] != undefined && drpd.waves[i + 1] != undefined) {
       if (drpd.waves[i].id == drpd.waves[i + 1].id) {
@@ -775,6 +765,7 @@ export function getWave(drpd: DRPD, floor: number): Wave {
       }
     }
   }
+
   if (wv == undefined) {
     if (globalScene.gameMode.modeId != GameModes.DAILY || true) {
       if (globalScene.gameMode.modeId == GameModes.DAILY) {
@@ -783,17 +774,12 @@ export function getWave(drpd: DRPD, floor: number): Wave {
 
       drpd.waves.push({
         id: floor,
-        reload: false,
-        //type: floor % 10 == 0 ? "boss" : (floor % 10 == 5 ? "trainer" : "wild"),
         type: floor % 10 == 0 ? "boss" : "wild",
         double: globalScene.currentBattle.double,
         actions: [],
         shop: "",
         biome: getBiomeName(globalScene.arena.biomeType),
         clearActionsFlag: false,
-        initialActions: [],
-        modifiers: [],
-        //pokemon: []
       });
       return drpd.waves[drpd.waves.length - 1];
     }
@@ -806,7 +792,6 @@ export function getWave(drpd: DRPD, floor: number): Wave {
     console.error("Go yell at @redstonewolf8557 to fix this");
     return {
       id: -1,
-      reload: true,
       type: "wild",
       double: false,
       actions: [
@@ -817,8 +802,6 @@ export function getWave(drpd: DRPD, floor: number): Wave {
       shop: "",
       biome: "",
       clearActionsFlag: false,
-      initialActions: [],
-      modifiers: []
     };
   }
 
@@ -1407,13 +1390,6 @@ export function logPokemon(floor: number = globalScene.currentBattle.waveIndex, 
   pk.source = pokemon;
   if (wv.pokemon == undefined) {
     wv.pokemon = [];
-  }
-
-  if (wv.pokemon[slot] != undefined) {
-    if (JSON.stringify(wv.pokemon[slot]) != JSON.stringify(pk)) {
-      console.log("A different Pokemon already exists in this slot! Flagging as a reload");
-      wv.reload = true;
-    }
   }
 
   if (pk.rarity == undefined) {
