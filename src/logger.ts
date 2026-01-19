@@ -2,7 +2,7 @@
 import type { PlayerPokemon, EnemyPokemon, Pokemon } from "./field/pokemon";
 import { getNatureDecrease, getNatureIncrease, getNatureName } from "./data/nature";
 import type { PokemonHeldItemModifier } from "./modifier/modifier";
-import { BypassSpeedChanceModifier, EnemyAttackStatusEffectChanceModifier, overrideHeldItems, overrideModifiers } from "./modifier/modifier";
+import { EnemyAttackStatusEffectChanceModifier, overrideHeldItems, overrideModifiers } from "./modifier/modifier";
 import type { TitlePhase } from "./phases/title-phase";
 import { getStatusEffectCatchRateMultiplier } from "./data/status-effect";
 import { loggedInUser } from "./account";
@@ -2035,7 +2035,10 @@ export function findBest(pokemon: EnemyPokemon) {
   // Find lowest tier captures
   let output = "---";
   rates.forEach(cr => {
-    if (critCap[0] < cr.critChance) {
+    if (
+      critCap[0] < cr.critChance
+      && rolls[0] < cr.ballChance
+    ) {
       output = cr.ballType + " Crits";
       if (logCatchRNG) console.log(output);
       return;
