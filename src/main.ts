@@ -89,10 +89,13 @@ async function startGame(gameManifest?: Record<string, string>): Promise<void> {
 }
 
 let manifest: Record<string, string> | undefined;
+
 try {
-  const loadFonts = Promise.all([document.fonts.load("16px emerald"), document.fonts.load("10px pkmnems")]);
-  const [jsonResponse] = await Promise.all([fetch("/manifest.json").then(r => r.json()), loadFonts]);
-  manifest = jsonResponse.manifest;
+  if (!isBeta && !isDev) {
+    const loadFonts = Promise.all([document.fonts.load("16px emerald"), document.fonts.load("10px pkmnems")]);
+    const [jsonResponse] = await Promise.all([fetch("/manifest.json").then(r => r.json()), loadFonts]);
+    manifest = jsonResponse.manifest;
+  }
 } catch (err) {
   // Manifest not found (likely local build or path error on live)
   // TODO: Do we want actual error handling here?
