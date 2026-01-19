@@ -171,9 +171,9 @@ export class LoadingScene extends SceneBase {
     //this.loadImage(`town_panel`, "ui/windows");
     //    this.loadImage(`volcano_panel`, "ui/windows");
     //    this.loadImage(`wasteland_panel`, "ui/windows");
-    for (let i = 0; i < allpanels.length; i++) {
-      this.loadImageNoLegacy(`${allpanels[i]}_panel`, "ui/windows");
-    }
+    // for (let i = 0; i < allpanels.length; i++) {
+    //   this.loadImageNoLegacy(`${allpanels[i]}_panel`, "ui/windows");
+    // }
     this.loadAtlas("namebox", "ui");
     this.loadImage("pbinfo_player", "ui");
     this.loadImage("pbinfo_player_stats", "ui");
