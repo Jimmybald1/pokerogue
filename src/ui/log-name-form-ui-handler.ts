@@ -33,7 +33,7 @@ export default class LogNameFormUiHandler extends FormModalUiHandler {
   }
 
   getButtonLabels(config?: ModalConfig): string[] {
-    return [ "Rename", "Export", "CSV", "ExSheet", "Delete" ];
+    return [ "Rename", "Export", "CSV", "Delete" ];
   }
 
   getReadableErrorMessage(error: string): string {
@@ -57,9 +57,6 @@ export default class LogNameFormUiHandler extends FormModalUiHandler {
 
   setup(): void {
     super.setup();
-
-    //const label = addTextObject(globalScene, 10, 87, "Clicking Export or ExSheets does NOT save any text you entered\nPress \"Rename\", then reopen this menu and click Export", TextStyle.TOOLTIP_CONTENT, { fontSize: "42px" });
-    //this.modalContainer.add(label);
 
     this.inputs[0].maxLength = 99;
     this.inputs[1].maxLength = 200;
@@ -86,9 +83,6 @@ export default class LogNameFormUiHandler extends FormModalUiHandler {
           globalScene.ui.setMode(UiMode.NAME_LOG, Object.assign(config, { errorMessage: error?.trim() }));
           globalScene.ui.playError();
         };
-        if (!this.inputs[0].text) {
-          //return onFail(i18next.t("menu:emptyUsername"));
-        }
         console.log(`Calling LoggerTools.setFileInfo(${this.inputs[0].text}, ${this.inputs[1].text.split(",")})`);
         LoggerTools.setFileInfo(this.inputs[0].text, this.inputs[1].text.split(","), this.inputs[2].text);
         console.log("Calling originalLoginAction()");

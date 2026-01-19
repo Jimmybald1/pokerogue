@@ -213,24 +213,6 @@ function convertTrainerToCSV(wave: any, trainer: any): string {
   return `${wave.id}t,${wave.biome},${trainer.type},${trainer.name},${trainer.variant},,,,,,,,,,,,${wave.actions.join(";")}`;
 }
 
-/**
- * Saves a log to your device in an alternate format.
- * @param i The index of the log you want to save.
- */
-export function downloadLogByIDToSheet(i: number) {
-  console.log(i);
-  const d = JSON.parse(localStorage.getItem(logs[i][1])!);
-  SheetsMode.value = true;
-  const blob = new Blob([printDRPD("", "", d as DRPD)], { type: "text/json" });
-  SheetsMode.value = false;
-  const link = document.createElement("a");
-  link.href = window.URL.createObjectURL(blob);
-  const date: string = (d as DRPD).date;
-  const filename: string = date[5] + date[6] + "_" + date[8] + date[9] + "_" + date[0] + date[1] + date[2] + date[3] + "_" + (d as DRPD).label + "_sheetexport" + ".json";
-  link.download = `${filename}`;
-  link.click();
-  link.remove();
-}
 //#endregion
 
 
@@ -1560,12 +1542,6 @@ export function generateEditOption(i: number, saves: any, phase: TitlePhase): Op
             phase.callEnd();
           },
           () => {
-            console.log("Export to Sheets");
-            globalScene.ui.playSelect();
-            downloadLogByIDToSheet(i);
-            phase.callEnd();
-          },
-          () => {
             console.log("Delete");
             globalScene.ui.playSelect();
             localStorage.removeItem(logs[i][1]);
@@ -1633,12 +1609,6 @@ export function generateEditHandler(logId: string, callback: Function) {
           callback();
         },
         () => {
-          console.log("Export to Sheets");
-          globalScene.ui.playSelect();
-          downloadLogByIDToSheet(i);
-          callback();
-        },
-        () => {
           console.log("Delete");
           globalScene.ui.playSelect();
           localStorage.removeItem(logs[i][1]);
@@ -1682,12 +1652,6 @@ export function generateEditHandlerForLog(i: number, callback: Function) {
           console.log("Export to CSV");
           globalScene.ui.playSelect();
           downloadLogByIDToCSV(i);
-          callback();
-        },
-        () => {
-          console.log("Export to Sheets");
-          globalScene.ui.playSelect();
-          downloadLogByIDToSheet(i);
           callback();
         },
         () => {
