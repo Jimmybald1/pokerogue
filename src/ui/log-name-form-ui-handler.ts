@@ -76,7 +76,7 @@ export default class LogNameFormUiHandler extends FormModalUiHandler {
       this.inputs[0].setText(args[0].autofillfields[0]);
       this.inputs[1].setText(args[0].autofillfields[1]);
       this.inputs[2].setText(args[0].autofillfields[2]);
-      this.submitAction = (_) => {
+      this.submitAction = () => {
         console.log("submitAction");
         // Prevent overlapping overrides on action modification
         this.submitAction = originalLoginAction;

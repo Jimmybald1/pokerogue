@@ -247,9 +247,7 @@ export function downloadLogByIDToSheet(i: number) {
  *
  * @see getLogs
  */
-export const logs: string[][] = [
-  ["drpd.json", "drpd", "DRPD", "", "wide_lens", ""],
-];
+export let logs: string[][] = [];
 
 /** @deprecated */
 export const logKeys: string[] = [
@@ -286,57 +284,15 @@ export function getLogs() {
     logs.pop();
   }
   for (let i = 0; i < localStorage.length; i++) {
-    if (localStorage.key(i)!.substring(0, 9) == "drpd_log:") {
-      logs.push(["drpd.json", localStorage.key(i)!, localStorage.key(i)!.substring(9), "", "", ""]);
-      for (let j = 0; j < 5; j++) {
-        const D = parseSlotData(j);
-        if (D != undefined) {
-          if (logs[logs.length - 1][2] == D.seed) {
-            logs[logs.length - 1][3] = j.toString();
-          }
-        }
-      }
+    const key = localStorage.key(i)!;
+    if (key.substring(0, 9) == "drpd_log:") {
+      const data = JSON.parse(localStorage.getItem(key)!);
+      const date = data.date;
+      logs.push(["drpd.json", key, key.substring(9), "", "", "", date]);
     }
   }
-  /*
-  logs.forEach((log, idx) => {
-    var dat = JSON.parse(localStorage.getItem(logs[idx][1])) as DRPD;
-    logs[idx][4] = dat.version + "-" + dat.date
-  })
-  logs.sort((a, b) => {
-    var data1 = a[4].split("-")
-    var data2 = b[4].split("-")
-    var S = 0
-    // Sort by game version
-    if (S == 0) {
-      S = acceptedVersions.indexOf(data1[0]) - acceptedVersions.indexOf(b[0])
-      if (acceptedVersions.indexOf(data1[0]) == -1) {
-        S = -1
-        if (acceptedVersions.indexOf(data2[0]) == -1) {
-          S = 0
-        }
-      } else if (acceptedVersions.indexOf(data2[0]) == -1) {
-        S = 1
-      }
-    }
-    // Sort by year
-    if (S == 0) {
-      S = (Number(data1[1]) - Number(data2[1]))
-    }
-    // Sort by month
-    if (S == 0) {
-      S = (Number(data1[2]) - Number(data2[2]))
-    }
-    // Sort by day
-    if (S == 0) {
-      S = (Number(data1[3]) - Number(data2[3]))
-    }
-    return S;
-  })
-  logs.forEach((log, idx) => {
-    logs[idx][4] = ""
-  })
-  */
+
+  logs = logs.sort((a, b) => a[6] > b[6] ? -1 : 1);
 }
 
 /**

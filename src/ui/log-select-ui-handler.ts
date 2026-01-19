@@ -11,12 +11,8 @@ import { getPokemonSpecies } from "#app/utils/pokemon-utils";
 import { addTextObject } from "./text";
 import { TextStyle } from "#enums/text-style";
 import { getEnumValues } from "#utils/enums";
-import { PokemonData } from "#system/pokemon-data";
 import { BattleScene } from "#app/battle-scene";
 import { MessageUiHandler } from "#ui/message-ui-handler";
-
-const sessionSlotCount = 5;
-const gap = 20;
 
 export type LogSelectCallback = (key?: string) => void;
 
@@ -36,8 +32,6 @@ export default class LogSelectUiHandler extends MessageUiHandler {
   private cursorObj?: Phaser.GameObjects.NineSlice;
 
   private sessionSlotsContainerInitialY: number;
-
-  private extrasLabel: Phaser.GameObjects.Text;
 
   constructor() {
     super(UiMode.LOG_HANDLER);
@@ -71,10 +65,6 @@ export default class LogSelectUiHandler extends MessageUiHandler {
     this.message.setOrigin(0, 0);
     this.saveSlotSelectMessageBoxContainer.add(this.message);
 
-    this.extrasLabel = addTextObject(40, 56 * 5 + 5, "Other Files", TextStyle.WINDOW);
-    this.extrasLabel.setAlign("center");
-    this.sessionSlotsContainer.add(this.extrasLabel);
-
     this.sessionSlots = [];
   }
 
@@ -87,8 +77,6 @@ export default class LogSelectUiHandler extends MessageUiHandler {
 
     this.selectCallback = args[0] as LogSelectCallback;
     this.quitCallback = args[1] as LogSelectCallback;
-
-    console.log(this.selectCallback);
 
     this.saveSlotSelectContainer.setVisible(true);
     this.populateSessionSlots();
@@ -148,35 +136,11 @@ export default class LogSelectUiHandler extends MessageUiHandler {
   }
 
   populateSessionSlots() {
-    const ui = this.getUi();
     let ypos = 0;
     LoggerTools.getLogs();
-    for (let s = 0; s < sessionSlotCount; s++) {
-      let found = false;
-      for (var i = 0; i < LoggerTools.logs.length; i++) {
-        if (LoggerTools.logs[i][3] == s.toString()) {
-          found = true;
-          const sessionSlot = new SessionSlot(s, ypos);
-          ypos++;
-          sessionSlot.load(LoggerTools.logs[i][1]);
-          sessionSlot.logIndex = i;
-          globalScene.add.existing(sessionSlot);
-          this.sessionSlotsContainer.add(sessionSlot);
-          this.sessionSlots.push(sessionSlot);
-        }
-      }
-      if (!found) {
-        const sessionSlot = new SessionSlot(s, ypos);
-        ypos++;
-        sessionSlot.load(undefined);
-        globalScene.add.existing(sessionSlot);
-        this.sessionSlotsContainer.add(sessionSlot);
-        this.sessionSlots.push(sessionSlot);
-      }
-    }
     for (var i = 0; i < LoggerTools.logs.length; i++) {
       if (LoggerTools.logs[i][3] == "") {
-        const sessionSlot = new SessionSlot(undefined, ypos);
+        const sessionSlot = new SessionSlot(ypos);
         ypos++;
         sessionSlot.load(LoggerTools.logs[i][1]);
         sessionSlot.logIndex = i;
@@ -187,7 +151,7 @@ export default class LogSelectUiHandler extends MessageUiHandler {
     }
   }
 
-  showText(text: string, delay?: integer, callback?: Function, callbackDelay?: integer, prompt?: boolean, promptDelay?: integer) {
+  showText(text: string, delay?: integer, callback?: (() => void) | null, callbackDelay?: integer, prompt?: boolean, promptDelay?: integer) {
     super.showText(text, delay, callback, callbackDelay, prompt, promptDelay);
 
     if (text?.indexOf("\n") === -1) {
@@ -209,7 +173,7 @@ export default class LogSelectUiHandler extends MessageUiHandler {
       this.cursorObj.setOrigin(0, 0);
       this.sessionSlotsContainer.add(this.cursorObj);
     }
-    this.cursorObj.setPosition(4, 4 + (cursor + this.scrollCursor) * 56 + ((cursor + this.scrollCursor) > 4 ? gap : 0));
+    this.cursorObj.setPosition(4, 4 + (cursor + this.scrollCursor) * 56);
 
     return changed;
   }
@@ -222,7 +186,7 @@ export default class LogSelectUiHandler extends MessageUiHandler {
       this.setCursor(this.cursor);
       globalScene.tweens.add({
         targets: this.sessionSlotsContainer,
-        y: this.sessionSlotsContainerInitialY - 56 * scrollCursor - ((this.cursor + this.scrollCursor) > 4 ? gap : 0),
+        y: this.sessionSlotsContainerInitialY - 56 * scrollCursor,
         duration: fixedInt(325),
         ease: "Sine.easeInOut"
       });
@@ -253,17 +217,15 @@ export default class LogSelectUiHandler extends MessageUiHandler {
 }
 
 class SessionSlot extends Phaser.GameObjects.Container {
-  public slotId?: integer;
   public hasData: boolean;
   public wv: integer;
   public key: string;
   private loadingLabel: Phaser.GameObjects.Text;
   public logIndex: integer;
+  public timeStamp: string;
 
-  constructor(slotId: integer | undefined = undefined, ypos: integer) {
-    super(globalScene, 0, ypos * 56 + (ypos > 4 ? gap : 0));
-
-    this.slotId = slotId!;
+  constructor(ypos: integer) {
+    super(globalScene, 0, ypos * 56);
 
     this.setup();
   }
@@ -279,17 +241,11 @@ class SessionSlot extends Phaser.GameObjects.Container {
 
   async setupWithData(data: LoggerTools.DRPD) {
     this.remove(this.loadingLabel, true);
-    let lbl = "???";
-    lbl = data.title!;
-    let matchesFile = 0;
-    if (this.slotId != undefined) {
-      lbl = `[${this.slotId + 1}] ${lbl}`;
-      matchesFile = this.slotId + 1;
-    }
 
-    const gameModeLabel = addTextObject(8, 5, lbl, TextStyle.WINDOW);
+    const gameModeLabel = addTextObject(8, 5, data.title!, TextStyle.WINDOW);
     this.add(gameModeLabel);
 
+    this.timeStamp = data.date;
     const timestampLabel = addTextObject(8, 19, data.date, TextStyle.WINDOW);
     this.add(timestampLabel);
 
@@ -345,44 +301,6 @@ class SessionSlot extends Phaser.GameObjects.Container {
 
         pokemonIconsContainer.add(iconContainer);
       });
-    } else if (this.slotId != undefined) {
-      const gamedata = LoggerTools.parseSlotData(this.slotId)!;
-      //console.log(gamedata)
-      gamedata.party.forEach((pk: PokemonData, i: integer) => {
-        if (pk == undefined) {
-          return;
-        }
-        const p = LoggerTools.exportPokemonFromData(pk);
-        const iconContainer = globalScene.add.container(26 * i, 0);
-        iconContainer.setScale(0.75);
-
-        //if (getEnumValues(Species)[p.id] == undefined)
-        //return;
-
-        //if (getPokemonSpecies(getEnumValues(Species)[p.id]) == undefined)
-        //return;
-
-        const sp = getPokemonSpecies(pk.species);
-        if (allSpecies[getEnumValues(SpeciesId).indexOf(p.id)] == undefined) {
-          // Do nothing
-          const icon = globalScene.addPkIcon(sp, pk.formIndex, 0, 0, 0, 0, undefined, pk.shiny, pk.variant);
-          iconContainer.add(icon);
-        } else {
-          //console.log(p.id, getEnumValues(Species)[p.id])
-          const icon = globalScene.addPkIcon(sp, pk.formIndex, 0, 0, 0, 0, undefined, pk.shiny, pk.variant);
-          //const icon = globalScene.addPkIcon(getPokemonSpecies(getEnumValues(Species)[allSpecies[getEnumValues(Species).indexOf(p.id)].speciesId]), 0, 0, 0, 0, 0);
-          iconContainer.add(icon);
-        }
-
-        const text = addTextObject(32, 20, "", TextStyle.PARTY, { fontSize: "54px", color: "#f8f8f8" });
-        text.setShadow(0, 0, undefined);
-        text.setStroke("#424242", 14);
-        text.setOrigin(1, 0);
-
-        iconContainer.add(text);
-
-        pokemonIconsContainer.add(iconContainer);
-      });
     } else {
       const timestampLabel = addTextObject(144, 10, "No Starter data", TextStyle.WINDOW);
       this.add(timestampLabel);
@@ -390,28 +308,21 @@ class SessionSlot extends Phaser.GameObjects.Container {
 
     this.add(pokemonIconsContainer);
 
-    //const modifiersModule = await import("../modifier/modifier");
-
     const modifierIconsContainer = globalScene.add.container(148, 30);
     modifierIconsContainer.setScale(0.5);
-    const visibleModifierIndex = 0;
-
     this.add(modifierIconsContainer);
   }
 
-  load(l?: string, slot?: integer): Promise<boolean> {
+  load(key?: string): Promise<boolean> {
     return new Promise<boolean>(resolve => {
-      if (l == undefined) {
+      if (key == undefined) {
         this.hasData = false;
         this.loadingLabel.setText("No data for this run");
         resolve(false);
         return;
       }
-      this.key = l;
-      if (slot) {
-        this.slotId = slot;
-      }
-      this.setupWithData(JSON.parse(localStorage.getItem(l)!));
+      this.key = key;
+      this.setupWithData(JSON.parse(localStorage.getItem(key)!));
       resolve(true);
     });
   }
