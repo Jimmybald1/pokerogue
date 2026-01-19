@@ -149,12 +149,12 @@ export const tiernames: string[] = [
  */
 export function downloadLogByID(i: number) {
   console.log(i);
-  const d = JSON.parse(localStorage.getItem(logs[i][1])!);
-  const blob = new Blob([printDRPD("", "", d as DRPD)], { type: "text/json" });
+  const d = JSON.parse(localStorage.getItem(logs[i][1])!) as DRPD;
+  const blob = new Blob([printDRPD("", "", d)], { type: "text/json" });
   const link = document.createElement("a");
   link.href = window.URL.createObjectURL(blob);
-  const date: string = (d as DRPD).date;
-  const filename: string = date[5] + date[6] + "_" + date[8] + date[9] + "_" + date[0] + date[1] + date[2] + date[3] + "_" + (d as DRPD).label + ".json";
+  const date: string = d.date;
+  const filename: string = date[5] + date[6] + "_" + date[8] + date[9] + "_" + date[0] + date[1] + date[2] + date[3] + "_" + d.label + ".json";
   link.download = `${filename}`;
   link.click();
   link.remove();
@@ -165,34 +165,40 @@ export function downloadLogByID(i: number) {
  * @param i The index of the log you want to save.
  */
 export function downloadLogByIDToCSV(i: number) {
-  console.log(i);
-  const d = JSON.parse(localStorage.getItem(logs[i][1])!);
-  const waves = d["waves"];
+  const d = JSON.parse(localStorage.getItem(logs[i][1])!) as DRPD;
+  const waves = d.waves;
   const encounterList: string[] = [];
-  encounterList.push(convertPokemonToCSV({ "id": "a", "biome": waves[0].biome, "actions": [] }, d.starters[0], false));
-  encounterList.push(convertPokemonToCSV({ "id": "b", "biome": waves[0].biome, "actions": [] }, d.starters[1], false));
-  encounterList.push(convertPokemonToCSV({ "id": "c", "biome": waves[0].biome, "actions": [] }, d.starters[2], false));
+
+  if (d.starters![0] === null) {
+    console.error("Not a valid run.")
+    return;
+  }
+
+  encounterList.push(convertPokemonToCSV("a", waves[0].biome, [], d.starters![0], false));
+  encounterList.push(convertPokemonToCSV("b", waves[0].biome, [], d.starters![1], false));
+  encounterList.push(convertPokemonToCSV("c", waves[0].biome, [], d.starters![2], false));
 
   for (var i = 1; i < waves.length; i++) {
     const wave = waves[i];
     console.log(wave);
     if (wave != null && wave.trainer == null) {
-      const pokemon1 = wave.pokemon[0];
+      const pokemon1 = wave.pokemon![0];
       if (pokemon1 == null) {
         continue;
       }
-      encounterList.push(convertPokemonToCSV(wave, pokemon1, false));
+      encounterList.push(convertPokemonToCSV(wave.id.toString(), wave.biome, wave.actions, pokemon1, false));
       if (wave.double) {
-        const pokemon2 = wave.pokemon[1];
+        const pokemon2 = wave.pokemon![1];
         if (pokemon2 == null) {
           continue;
         }
-        encounterList.push(convertPokemonToCSV(wave, pokemon2, true));
+        encounterList.push(convertPokemonToCSV(wave.id.toString(), wave.biome, wave.actions, pokemon2, true));
       }
     } else if (wave != null) {
-      encounterList.push(convertTrainerToCSV(wave, wave.trainer));
+      encounterList.push(convertTrainerToCSV(wave.id.toString(), wave.biome, wave.actions, wave.trainer!));
     }
   }
+  
   const encounters = encounterList.join("\n");
   const blob = new Blob([encounters], { type: "text/csv" });
   const link = document.createElement("a");
@@ -204,12 +210,12 @@ export function downloadLogByIDToCSV(i: number) {
   link.remove();
 }
 
-function convertPokemonToCSV(wave: any, pokemon: any, second: boolean): string {
-  return `${wave.id}${second ? "d" : ""},${wave.biome},${pokemon.id > 1025 ? SpeciesId[pokemon.formName] : SpeciesId[pokemon.id + 1]},${pokemon.id + 1},${pokemon.formName},${Object.values(pokemon.iv_raw).join(",")},${pokemon.ability},${pokemon.passiveAbility},${pokemon.nature.name},${pokemon.gender},${pokemon.captured},${second ? "" : wave.actions.join(";")}`;
+function convertPokemonToCSV(id: string, biome: string, actions: string[], pokemon: PokeData, second: boolean): string {
+  return `${id}${second ? "d" : ""},${biome},${pokemon.id > 1025 ? SpeciesId[pokemon.formName] : SpeciesId[pokemon.id + 1]},${pokemon.id + 1},${pokemon.formName},${Object.values(pokemon.iv_raw).join(",")},${pokemon.ability},${pokemon.passiveAbility},${pokemon.nature.name},${pokemon.gender},${pokemon.captured},${second ? "" : actions.join(";")}`;
 }
 
-function convertTrainerToCSV(wave: any, trainer: any): string {
-  return `${wave.id}t,${wave.biome},${trainer.type},${trainer.name},${trainer.variant},,,,,,,,,,,,${wave.actions.join(";")}`;
+function convertTrainerToCSV(id: string, biome: string, actions: string[], trainer: LogTrainerData): string {
+  return `${id}t,${biome},${trainer.type},${trainer.name},${trainer.variant},,,,,,,,,,,,${actions.join(";")}`;
 }
 
 //#endregion
@@ -317,7 +323,6 @@ export function getDRPD(): DRPD {
   }
   let drpd: DRPD = JSON.parse(localStorage.getItem(getLogID())!) as DRPD;
   drpd = updateLog(drpd);
-  //globalScene.arenaFlyout.updateFieldText()
   return drpd;
 }
 
