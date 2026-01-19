@@ -4,6 +4,7 @@ import { PokerogueAdminApi } from "#api/pokerogue-admin-api";
 import { PokerogueDailyApi } from "#api/pokerogue-daily-api";
 import { PokerogueSavedataApi } from "#api/pokerogue-savedata-api";
 import type { TitleStatsResponse } from "#types/api";
+import { isBeta, isDev } from "#constants/app-constants";
 
 /**
  * A wrapper for PokéRogue API requests.
@@ -30,6 +31,13 @@ export class PokerogueApi extends ApiBase {
    * Request game title-stats.
    */
   public async getGameTitleStats() {
+    if (isBeta || isDev) {
+      return {
+        playerCount: 0,
+        battleCount: 0,
+      }
+    }
+
     try {
       const response = await this.doGet("/game/titlestats");
       return (await response.json()) as TitleStatsResponse;
