@@ -433,7 +433,7 @@ export class MenuUiHandler extends MessageUiHandler {
         label: "Stats",
         handler: () => {
           ui.revertMode();
-          ui.setOverlayMode(Mode.GAME_STATS);
+          ui.setOverlayMode(UiMode.GAME_STATS);
           return true;
         }
       },
@@ -441,7 +441,7 @@ export class MenuUiHandler extends MessageUiHandler {
         label: "Achievements",
         handler: () => {
           ui.revertMode();
-          ui.setOverlayMode(Mode.ACHIEVEMENTS);
+          ui.setOverlayMode(UiMode.ACHIEVEMENTS);
           return true;
         }
       },
