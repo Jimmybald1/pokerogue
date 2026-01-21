@@ -124,6 +124,15 @@ export const tiernames: string[] = [
   "Ultra Rare",
 ];
 
+/** 
+ * Gets the date from the session data when imported/loaded 
+ * Used to make sure you're scouting the correct date
+*/
+export let sessionDate: string = "";
+export function setSessionDate(date: string) {
+  sessionDate = date;
+}
+
 // #endregion
 
 
@@ -1845,7 +1854,10 @@ function ScoutingWithoutUI(charms: number) {
   const startingBiome = globalScene.arena.biomeType;
 
   const starters: string[] = [];
-  const party = globalScene.getPlayerParty();
+  const party = globalScene.getPlayerParty();  
+  console.error("Session Imported Date", sessionDate);
+  console.error("Starters:", party[0].name, party[1].name, party[2].name);
+
   party.forEach(p => {
     starters.push(`Pokemon: ${getPokemonNameWithAffix(p)} ` +
       `Form: ${p.getSpeciesForm().getSpriteAtlasPath(false, p.formIndex)} FormIndex: ${p.formIndex} Species ID: ${p.species.speciesId} Stats: ${p.stats} IVs: ${p.ivs} Ability: ${p.getAbility().name} ` +
@@ -2109,6 +2121,8 @@ function ShopScouting(method: number) {
   const comp = comps[method];
 
   const party = globalScene.getPlayerParty();
+  console.error("Session Imported Date", sessionDate);
+  console.error("Starters:", party[0].name, party[1].name, party[2].name);
 
   const globals = GetGlobalItemSetups();
   const mushroom = GetMushroomSetups(party, comp);

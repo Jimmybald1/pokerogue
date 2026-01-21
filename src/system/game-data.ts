@@ -81,6 +81,7 @@ import { getPokemonSpecies } from "#utils/pokemon-utils";
 import { toCamelCase } from "#utils/strings";
 import { AES, enc } from "crypto-js";
 import i18next from "i18next";
+import * as LoggerTools from "../logger";
 
 function getDataTypeKey(dataType: GameDataType, slotId = 0): string {
   switch (dataType) {
@@ -938,6 +939,8 @@ export class GameData {
 
         globalScene.sessionPlayTime = fromSession.playTime || 0;
         globalScene.lastSavePlayTime = 0;
+
+        LoggerTools.setSessionDate(new Date(fromSession.timestamp).toLocaleString());
 
         const loadPokemonAssets: Promise<void>[] = [];
 
