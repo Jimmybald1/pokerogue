@@ -70,7 +70,7 @@ export function randSeedGauss(stdev: number, mean = 0, reason?: string): number 
     if (reason) {
       console.log(reason, result, stdev, mean);
     } else if (doUnlabeledRNGLogging) {
-      console.error("unlabeled randSeedInt", result, stdev, mean);
+      console.error("unlabeled randSeedGauss", result, stdev, mean);
     }
   }
   return result;
@@ -157,7 +157,7 @@ export function randSeedFloat(reason?: string): number {
     if (reason) {
       console.log(reason, V);
     } else if (doUnlabeledRNGLogging) {
-      console.error("unlabeled randSeedInt", V);
+      console.error("unlabeled randSeedFloat", V);
     }
   }
   return V;

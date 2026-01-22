@@ -33,8 +33,8 @@ export function getDailyRunStarters(seed: string): StarterTuple {
       // TODO: explain this math
       const startingLevel = globalScene.gameMode.getStartingLevel();
       const starterCosts: number[] = [];
-      starterCosts.push(Math.min(Math.round(3.5 + Math.abs(randSeedGauss(1))), 8));
-      starterCosts.push(randSeedInt(9 - starterCosts[0], 1, "Random starter cost"));
+      starterCosts.push(Math.min(Math.round(3.5 + Math.abs(randSeedGauss(1, undefined, "Random first starter cost"))), 8));
+      starterCosts.push(randSeedInt(9 - starterCosts[0], 1, "Random second starter cost"));
       starterCosts.push(10 - (starterCosts[0] + starterCosts[1]));
 
       for (const cost of starterCosts) {
