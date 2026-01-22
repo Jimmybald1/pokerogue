@@ -32,10 +32,7 @@ export class PokerogueApi extends ApiBase {
    */
   public async getGameTitleStats() {
     if (isBeta || isDev) {
-      return {
-        playerCount: 0,
-        battleCount: 0,
-      }
+      return undefined;
     }
 
     try {
