@@ -36,13 +36,13 @@ export type ModifierSelectCallback = (rowCursor: number, cursor: number) => bool
 export class SelectModifierPhase extends BattlePhase {
   public readonly phaseName = "SelectModifierPhase";
   private rerollCount: number;
-  private modifierTiers?: ModifierTier[];
-  private customModifierSettings?: CustomModifierSettings;
+  private modifierTiers?: ModifierTier[] | undefined;
+  private customModifierSettings?: CustomModifierSettings | undefined;
   private isCopy: boolean;
 
   private typeOptions: ModifierTypeOption[];
 
-  private modifierPredictions?: ModifierTypeOption[][] = [];
+  private modifierPredictions?: ModifierTypeOption[][] | undefined = [];
   private predictionCost: integer = 0;
   private costTiers: integer[] = [];
 
@@ -447,11 +447,11 @@ export class SelectModifierPhase extends BattlePhase {
       (slotIndex: number, option: PartyOption) => {
         if (slotIndex < 6) {
           globalScene.ui.setMode(UiMode.MODIFIER_SELECT, this.isPlayer()).then(() => {
-            const modifier = !isMoveModifier
-              ? !isRememberMoveModifier
-                ? modifierType.newModifier(party[slotIndex])
-                : modifierType.newModifier(party[slotIndex], option as number)
-              : modifierType.newModifier(party[slotIndex], option - PartyOption.MOVE_1);
+            const modifier = isMoveModifier
+              ? modifierType.newModifier(party[slotIndex], option - PartyOption.MOVE_1)
+              : isRememberMoveModifier
+                ? modifierType.newModifier(party[slotIndex], option as number)
+                : modifierType.newModifier(party[slotIndex]);
 
             if (isPpRestoreModifier) {
               LoggerTools.logShop(globalScene.currentBattle.waveIndex, this.getRerollText() + modifierType.name + " > " + party[slotIndex].name + " > " + party[slotIndex].moveset[option - PartyOption.MOVE_1]!.getName());

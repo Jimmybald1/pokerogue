@@ -124,7 +124,7 @@ export class EncounterPhase extends BattlePhase {
           if (
             globalScene.findModifier(m => m instanceof BoostBugSpawnModifier)
             && !globalScene.gameMode.isBoss(battle.waveIndex)
-            && globalScene.arena.biomeType !== BiomeId.END
+            && globalScene.arena.biomeId !== BiomeId.END
             && randSeedInt(10, undefined, "Random bug net chance") === 0
           ) {
             enemySpecies = getGoldenBugNetSpecies(level);
@@ -140,7 +140,7 @@ export class EncounterPhase extends BattlePhase {
           }
           globalScene
             .getPlayerParty()
-            .slice(0, !battle.double ? 1 : 2)
+            .slice(0, battle.double ? 2 : 1)
             .reverse()
             .forEach(playerPokemon => {
               applyAbAttrs("SyncEncounterNatureAbAttr", { pokemon: playerPokemon, target: battle.enemyParty[e] });
@@ -232,8 +232,9 @@ export class EncounterPhase extends BattlePhase {
       // Load Mystery Encounter Exclamation bubble and sfx
       loadEnemyAssets.push(
         new Promise<void>(resolve => {
-          globalScene.loadSe("GEN8- Exclaim", "battle_anims", "GEN8- Exclaim.wav");
-          globalScene.loadImage("encounter_exclaim", "mystery-encounters");
+          globalScene
+            .loadSe("GEN8- Exclaim", "battle_anims", "GEN8- Exclaim.wav")
+            .loadImage("encounter_exclaim", "mystery-encounters");
           globalScene.load.once(Phaser.Loader.Events.COMPLETE, () => resolve());
           if (!globalScene.load.isLoading()) {
             globalScene.load.start();
@@ -325,11 +326,7 @@ export class EncounterPhase extends BattlePhase {
     });
   }
 
-  doEncounter() {
-    globalScene.playBgm(undefined, true);
-    globalScene.updateModifiers(false);
-    globalScene.setFieldScale(1);
-
+  private incrementMysteryEncounterChance(): void {
     const { battleType, waveIndex } = globalScene.currentBattle;
     if (
       globalScene.isMysteryEncounterValidForWave(battleType, waveIndex)
@@ -339,6 +336,12 @@ export class EncounterPhase extends BattlePhase {
       // Only do this AFTER session has been saved to avoid duplicating increments
       globalScene.mysteryEncounterSaveData.encounterSpawnChance += WEIGHT_INCREMENT_ON_SPAWN_MISS;
     }
+  }
+
+  doEncounter() {
+    globalScene.playBgm(undefined, true);
+    globalScene.updateModifiers(false);
+    globalScene.setFieldScale(1);
 
     for (const pokemon of globalScene.getPlayerParty()) {
       // Currently, a new wave is not considered a new battle if there is no arena reset
@@ -411,6 +414,8 @@ export class EncounterPhase extends BattlePhase {
   }
 
   doEncounterCommon(showEncounterMessage = true) {
+    this.incrementMysteryEncounterChance();
+
     const enemyField = globalScene.getEnemyField();
     
     LoggerTools.logTeam(globalScene.currentBattle.waveIndex);
@@ -622,7 +627,7 @@ export class EncounterPhase extends BattlePhase {
       }
     }
     
-    handleTutorial(Tutorial.Access_Menu).then(() => {
+    handleTutorial(Tutorial.ACCESS_MENU).then(() => {
       // Auto-show the flyout
       if (globalScene.currentBattle.battleType !== BattleType.TRAINER) {
         globalScene.arenaFlyout.display2();
@@ -693,6 +698,7 @@ export class EncounterPhase extends BattlePhase {
   trySetWeatherIfNewBiome(): void {
     if (!this.loaded) {
       globalScene.arena.trySetWeather(getRandomWeatherType(globalScene.arena));
+      globalScene.arena.tryOverrideTerrain();
     }
   }
 }

@@ -18,7 +18,7 @@ export class SelectBiomePhase extends BattlePhase {
     globalScene.resetSeed();
 
     const gameMode = globalScene.gameMode;
-    const currentBiome = globalScene.arena.biomeType;
+    const currentBiome = globalScene.arena.biomeId;
     const currentWaveIndex = globalScene.currentBattle.waveIndex;
     const nextWaveIndex = currentWaveIndex + 1;
 
@@ -55,7 +55,7 @@ export class SelectBiomePhase extends BattlePhase {
     } else if (Array.isArray(biomeLinks[currentBiome])) {
       const biomes: BiomeId[] = (biomeLinks[currentBiome] as (BiomeId | [BiomeId, number])[])
         .filter(b => !Array.isArray(b) || !randSeedInt(b[1], undefined, "Choosing next biome"))
-        .map(b => (!Array.isArray(b) ? b : b[0]));
+        .map(b => (Array.isArray(b) ? b[0] : b));
 
       if (biomes.length > 1 && globalScene.findModifier(m => m instanceof MapModifier)) {
         const biomeSelectItems = biomes.map(b => {

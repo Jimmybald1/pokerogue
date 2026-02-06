@@ -133,6 +133,18 @@ export function setSessionDate(date: string) {
   sessionDate = date;
 }
 
+export let rngCounter: number = 0;
+export function setRngCounter(num: number) {
+  rngCounter = num;
+  if (logRNG) console.log("RNG Counter:", rngCounter);
+}
+
+export let battleRngCounter: number = 0;
+export function setBattleRngCounter(num: number) {
+  battleRngCounter = num;
+  if (logRNG) console.log("Battle RNG Counter:", battleRngCounter);
+}
+
 // #endregion
 
 
@@ -309,7 +321,6 @@ export function getDRPD(): DRPD {
   }
 
   let drpd = importDocument(localStorage.getItem(getLogID())!);
-  drpd = updateLog(drpd);
   return drpd;
 }
 
@@ -481,68 +492,6 @@ export function printDRPD(inData: string, indent: string, drpd: DRPD): string {
   return inData;
 }
 
-/**
- * Updates a DRPD, checkings its version and making any necessary changes to it in order to keep it up to date.
- *
- * @param drpd The DRPD document to update. Its version will be read automatically.
- * @see DRPD
- */
-function updateLog(drpd: DRPD): DRPD {
-  if (drpd.date[2] == "-") {
-    const date_month = drpd.date.substring(0, 2);
-    const date_day = drpd.date.substring(3, 5);
-    const date_year = drpd.date.substring(6, 10);
-    console.log(`Corrected date from ${drpd.date} to ${date_year}-${date_month}-${date_day}`);
-    drpd.date = `${date_year}-${date_month}-${date_day}`;
-  }
-  if (drpd.version == "1.0.0") {
-    drpd.version = "1.0.0a";
-    console.log("Updated to 1.0.0a - changed item IDs to strings");
-    for (var i = 0; i < drpd.waves.length; i++) {
-      if (drpd.waves[i] != undefined) {
-        if (drpd.waves[i].pokemon) {
-          for (var j = 0; j < drpd.waves[i].pokemon!.length; j++) {
-            for (var k = 0; k < drpd.waves[i].pokemon![j].items.length; k++) {
-              drpd.waves[i].pokemon![j].items[k].id = drpd.waves[i].pokemon![j].items[k].id.toString();
-            }
-          }
-        }
-      }
-    }
-    for (var j = 0; j < drpd.starters!.length; j++) {
-      for (var k = 0; k < drpd.starters![j].items.length; k++) {
-        drpd.starters![j].items[k].id = drpd.starters![j].items[k].id.toString();
-      }
-    }
-  } // 1.0.0 → 1.0.0a
-  if (drpd.version == "1.0.0a") {
-    drpd.version = "1.1.0";
-    const RState = Phaser.Math.RND.state();
-    drpd.uuid = Phaser.Math.RND.uuid();
-    Phaser.Math.RND.state(RState);
-    drpd.label = "route";
-  } // 1.0.0a → 1.1.0
-  if (drpd.version == "1.1.0") {
-    drpd.version = "1.1.0a";
-    drpd.maxluck = 14;
-    drpd.minSafeLuckFloor = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
-  } // 1.1.0 → 1.1.0a
-  if (drpd.version == "1.1.0a") {
-    drpd.version = "1.1.0b";
-    for (var i = 0; i < drpd.waves.length; i++) {
-      if (drpd.waves[i] && drpd.waves[i].pokemon) {
-        for (var j = 0; j < drpd.waves[i].pokemon!.length; j++) {
-          if (drpd.waves[i].pokemon![j].ivs) {
-            drpd.waves[i].pokemon![j].iv_raw = drpd.waves[i].pokemon![j].ivs!;
-            drpd.waves[i].pokemon![j].ivs = undefined;
-            drpd.waves[i].pokemon![j].iv = formatIVs(drpd.waves[i].pokemon![j].ivs!);
-          }
-        }
-      }
-    }
-  } // 1.1.0a → 1.1.0b
-  return drpd;
-}
 // #endregion
 
 
@@ -611,7 +560,7 @@ export function exportWave(): Wave {
     actions: [],
     shop: "",
     clearActionsFlag: false,
-    biome: getBiomeName(globalScene.arena.biomeType),
+    biome: getBiomeName(globalScene.arena.biomeId),
   };
   if (ret.double == undefined) {
     ret.double = false;
@@ -743,7 +692,7 @@ export function getWave(drpd: DRPD, floor: number): Wave {
       actions: [],
       shop: "",
       clearActionsFlag: false,
-      biome: getBiomeName(globalScene.arena.biomeType),
+      biome: getBiomeName(globalScene.arena.biomeId),
     };
     wv = drpd.waves[insertPos];
   }
@@ -787,7 +736,7 @@ export function getWave(drpd: DRPD, floor: number): Wave {
         double: globalScene.currentBattle.double,
         actions: [],
         shop: "",
-        biome: getBiomeName(globalScene.arena.biomeType),
+        biome: getBiomeName(globalScene.arena.biomeId),
         clearActionsFlag: false,
       });
       return drpd.waves[drpd.waves.length - 1];
@@ -1224,7 +1173,6 @@ export function setFileInfo(title: string, authors: string[], label: string) {
   console.log("Setting file " + rarityslot[1] + " to " + title + " / [" + authors.join(", ") + "]");
   const fileID = rarityslot[1] as string;
   let drpd = JSON.parse(localStorage.getItem(fileID)!) as DRPD;
-  drpd = updateLog(drpd);
   for (var i = 0; i < authors.length; i++) {
     while (authors[i][0] == " ") {
       authors[i] = authors[i].substring(1);
@@ -1696,14 +1644,14 @@ export function predictDamage(user: Pokemon, target: Pokemon, move: PokemonMove,
   for (var i = 0; i < mh.length; i++) {
     const mh2 = mh[i] as MultiHitAttr;
     switch (mh2.getMultiHitType()) {
-      case MultiHitType._2:
+      case MultiHitType.TWO:
         minHits = 2;
-      case MultiHitType._2_TO_5:
+      case MultiHitType.TWO_TO_FIVE:
         minHits = 2;
         maxHits = 5;
-      case MultiHitType._3:
+      case MultiHitType.THREE:
         minHits = 3;
-      case MultiHitType._10:
+      case MultiHitType.TEN:
         minHits = 1;
         maxHits = 10;
       case MultiHitType.BEAT_UP:
@@ -1851,7 +1799,7 @@ export function InitScouting(charms: number) {
 
 let encounterList: string[] = [];
 function ScoutingWithoutUI(charms: number) {
-  const startingBiome = globalScene.arena.biomeType;
+  const startingBiome = globalScene.arena.biomeId;
 
   const starters: string[] = [];
   const party = globalScene.getPlayerParty();  
@@ -1934,7 +1882,7 @@ function GenerateBattle(nolog: boolean = false) {
   }
 
   if (!nolog && battle?.trainer != null) {
-    encounterList.push(`Wave: ${globalScene.currentBattle.waveIndex} Biome: ${BiomeId[globalScene.arena.biomeType]} Trainer: ${battle.trainer.config.name}`);
+    encounterList.push(`Wave: ${globalScene.currentBattle.waveIndex} Biome: ${BiomeId[globalScene.arena.biomeId]} Trainer: ${battle.trainer.config.name}`);
   }
 
   battle.enemyLevels?.forEach((level, e) => {
@@ -1982,7 +1930,7 @@ function GenerateBattle(nolog: boolean = false) {
       }
 
       // Store encounters in a list, basically CSV (uses regex in sheets), but readable as well
-      const text = `Wave: ${globalScene.currentBattle.waveIndex} Biome: ${BiomeId[globalScene.arena.biomeType]} Pokemon: ${getPokemonNameWithAffix(enemy)} ` +
+      const text = `Wave: ${globalScene.currentBattle.waveIndex} Biome: ${BiomeId[globalScene.arena.biomeId]} Pokemon: ${getPokemonNameWithAffix(enemy)} ` +
         `Form: ${atlaspath} FormIndex: ${enemy.formIndex} Species ID: ${enemy.species.speciesId} Stats: ${enemy.stats} IVs: ${enemy.ivs} Ability: ${enemy.getAbility().name} ` +
         `Passive Ability: ${enemy.getPassiveAbility().name} Nature: ${Nature[enemy.nature]} Gender: ${Gender[enemy.gender]} Rarity: ${rarities[e]} AbilityIndex: ${enemy.abilityIndex} ` +
         `ID: ${enemy.id} Type: ${enemy.getTypes().map(t => PokemonType[t]).join(",")} Moves: ${enemy.getMoveset().map(m => MoveId[m?.moveId ?? 0]).join(",")} HARolls: ${haChances[e].join(",")} ` +
@@ -2011,7 +1959,7 @@ function GenerateBattle(nolog: boolean = false) {
     }
 
     const weather = getRandomWeatherType(globalScene.arena);
-    encounterList.push(`Wave: ${globalScene.currentBattle.waveIndex} Biome: ${BiomeId[globalScene.arena.biomeType]} TimeOfDay: ${TimeOfDay[timeOfDay]} Weather: ${WeatherType[weather]}`);
+    encounterList.push(`Wave: ${globalScene.currentBattle.waveIndex} Biome: ${BiomeId[globalScene.arena.biomeId]} TimeOfDay: ${TimeOfDay[timeOfDay]} Weather: ${WeatherType[weather]}`);
   }
 
   // Clean up memory and sprites, this will throw errors at the end of the scouting

@@ -6,7 +6,7 @@ import { BattleType } from "#enums/battle-type";
 import { BattlerIndex } from "#enums/battler-index";
 import { BiomeId } from "#enums/biome-id";
 import type { Command } from "#enums/command";
-import type { MoveId } from "#enums/move-id";
+import { MoveId } from "#enums/move-id";
 import { MysteryEncounterMode } from "#enums/mystery-encounter-mode";
 import type { MysteryEncounterType } from "#enums/mystery-encounter-type";
 import type { PokeballType } from "#enums/pokeball";
@@ -39,7 +39,7 @@ import * as LoggerTools from "./logger";
 
 export interface TurnCommand {
   command: Command;
-  cursor?: number;
+  cursor?: number | undefined;
   move?: TurnMove;
   targets?: BattlerIndex[];
   skip?: boolean;
@@ -74,7 +74,10 @@ export class Battle {
   public battleScore = 0;
   public postBattleLoot: PokemonHeldItemModifier[] = [];
   public escapeAttempts = 0;
-  public lastMove: MoveId;
+  /**
+   * A tracker of the last {@linkcode MoveId} successfully used this battle.
+   */
+  public lastMove: MoveId = MoveId.NONE;
   public battleSeed: string = randomString(16, true);
   private battleSeedState: string | null = null;
   public moneyScattered = 0;
@@ -91,17 +94,15 @@ export class Battle {
   public playerFaintsHistory: FaintLogEntry[] = [];
   public enemyFaintsHistory: FaintLogEntry[] = [];
 
-  public mysteryEncounterType?: MysteryEncounterType;
+  public mysteryEncounterType?: MysteryEncounterType | undefined;
   /** If the current battle is a Mystery Encounter, this will always be defined */
-  public mysteryEncounter?: MysteryEncounter;
+  public mysteryEncounter?: MysteryEncounter | undefined;
 
   /**
    * Tracker for whether the last run attempt failed.
    * @defaultValue `false`
    */
   public failedRunAway = false;
-
-  private rngCounter = 0;
 
   constructor(gameMode: GameMode, waveIndex: number, battleType: BattleType, trainer?: Trainer, double = false) {
     this.gameMode = gameMode;
@@ -272,7 +273,7 @@ export class Battle {
         pokemon.species.legendary
         || pokemon.species.subLegendary
         || pokemon.species.mythical
-        || (pokemon.species.category.startsWith("Paradox") && globalScene.arena.biomeType !== BiomeId.END)
+        || (pokemon.species.category.startsWith("Paradox") && globalScene.arena.biomeId !== BiomeId.END)
       ) {
         if (globalScene.musicPreference === MusicPreference.GENFIVE) {
           switch (pokemon.species.speciesId) {
@@ -470,8 +471,9 @@ export class Battle {
       return min;
     }
 
-    const tempRngCounter = globalScene.rngCounter;
-    const tempSeedOverride = globalScene.rngSeedOverride;
+    const tempBattleRngCounter = LoggerTools.battleRngCounter;
+    const tempRngCounter = LoggerTools.rngCounter;
+
     const state = Phaser.Math.RND.state();
     if (this.battleSeedState) {
       Phaser.Math.RND.state(this.battleSeedState);
@@ -481,18 +483,19 @@ export class Battle {
     
     for (var i = 0; i < offset; i++) {
       // Perform useless rolls to offset RNG counter
-      if (LoggerTools.logCatchRNG) console.log("[Simulated] Battle RNG Counter:", this.rngCounter + i);
+      if (LoggerTools.logCatchRNG) console.log("[Simulated] Battle RNG Counter:", LoggerTools.battleRngCounter + i);
       randSeedInt(5, undefined, "[RNG offset]");
     }
     
     for (var i = 0; i < count; i++) {
-      if (LoggerTools.logCatchRNG) console.log("[Simulated] Battle RNG Counter:", this.rngCounter + offset + i);
+      if (LoggerTools.logCatchRNG) console.log("[Simulated] Battle RNG Counter:", LoggerTools.battleRngCounter + offset + i);
       out.push(randSeedInt(range, min, `[${i + 1}/${count}] ${reason}`));
     }
     
     Phaser.Math.RND.state(state);
-    globalScene.rngCounter = tempRngCounter;
-    globalScene.rngSeedOverride = tempSeedOverride;
+    
+    LoggerTools.setBattleRngCounter(tempBattleRngCounter);
+    LoggerTools.setRngCounter(tempRngCounter);
   }
 
   /**
@@ -506,7 +509,6 @@ export class Battle {
       return min;
     }
     
-    const tempRngCounter = globalScene.rngCounter;
     const tempSeedOverride = globalScene.rngSeedOverride;
     const state = Phaser.Math.RND.state();
     if (this.battleSeedState) {
@@ -515,14 +517,15 @@ export class Battle {
       Phaser.Math.RND.sow([shiftCharCodes(this.battleSeed, this.turn << 6)]);
     }
 
-    if (LoggerTools.logRNG) console.log("Battle RNG Counter:", this.rngCounter);
-    globalScene.rngCounter = this.rngCounter++;
     globalScene.rngSeedOverride = this.battleSeed;
     const ret = randSeedInt(range, min, reason);
     this.battleSeedState = Phaser.Math.RND.state();
     Phaser.Math.RND.state(state);
-    globalScene.rngCounter = tempRngCounter;
     globalScene.rngSeedOverride = tempSeedOverride;
+
+    LoggerTools.setBattleRngCounter(LoggerTools.battleRngCounter + 1);
+    LoggerTools.setRngCounter(LoggerTools.rngCounter + 1);
+
     return ret;
   }  
   
@@ -540,10 +543,11 @@ export class Battle {
       return;
     }
 
-    const tempBattleRngCounter = this.rngCounter;
+    const tempBattleRngCounter = LoggerTools.battleRngCounter;
+    const tempRngCounter = LoggerTools.rngCounter;
+
     const tempBattleSeedState = this.battleSeedState;
     const tempEnemySwitchCounter = this.enemySwitchCounter;
-    const tempRngCounter = globalScene.rngCounter;
     const tempRngOffset = globalScene.rngOffset;
     const tempSeedOverride = globalScene.rngSeedOverride;
     const state = Phaser.Math.RND.state();
@@ -557,12 +561,13 @@ export class Battle {
     func();
 
     Phaser.Math.RND.state(state);
-    this.rngCounter = tempBattleRngCounter;
     this.battleSeedState = tempBattleSeedState;
     this.enemySwitchCounter = tempEnemySwitchCounter;
-    globalScene.rngCounter = tempRngCounter;
     globalScene.rngOffset = tempRngOffset;
     globalScene.rngSeedOverride = tempSeedOverride;
+
+    LoggerTools.setBattleRngCounter(tempBattleRngCounter);
+    LoggerTools.setRngCounter(tempRngCounter);
   }
 
   /**
