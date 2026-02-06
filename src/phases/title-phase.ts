@@ -205,12 +205,12 @@ export class TitlePhase extends Phase {
           globalScene.ui.setOverlayMode(UiMode.LOG_HANDLER,
             (k: string) => {
               if (k === undefined) {
-                return this.showOptions();
+                return this.showOptions(-1);
               }
               console.log(k);
-              this.showOptions();
+              this.showOptions(-1);
             }, () => {
-              this.showOptions();
+              this.showOptions(-1);
             });
           return true;
         },
