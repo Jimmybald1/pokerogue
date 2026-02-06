@@ -344,7 +344,7 @@ export class ArenaFlyout extends Phaser.GameObjects.Container {
     this.flyoutTextHeaderPlayer.text = "";
     this.flyoutTextHeaderEnemy.text = "";
     this.flyoutTextHeader.text = "IVs";
-    this.flyoutTextHeader.text = getBiomeName(globalScene.arena.biomeType) + " - " + globalScene.currentBattle.waveIndex;
+    this.flyoutTextHeader.text = getBiomeName(globalScene.arena.biomeId) + " - " + globalScene.currentBattle.waveIndex;
     for (let i = 0; i < poke.length; i++) {
       if (i == 1 || true) {
         let formtext = "";

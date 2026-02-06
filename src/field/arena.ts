@@ -334,7 +334,7 @@ export class Arena {
     const isTrainerBoss =
       this.trainerPool[BiomePoolTier.BOSS].length > 0
       && (globalScene.gameMode.isTrainerBoss(waveIndex, this.biomeId, globalScene.offsetGym) || isBoss);
-    console.log(isBoss, this.trainerPool);
+    if (LoggerTools.logRNG) console.log(isBoss, this.trainerPool);
     const tierValue = randSeedInt(isTrainerBoss ? 64 : 512);
     let tier = isTrainerBoss
       ? tierValue >= 20
@@ -353,13 +353,13 @@ export class Arena {
             : tierValue >= 1
               ? BiomePoolTier.SUPER_RARE
               : BiomePoolTier.ULTRA_RARE;
-    console.log(BiomePoolTier[tier]);
+    if (LoggerTools.logRNG) console.log(BiomePoolTier[tier]);
     while (tier && this.trainerPool[tier].length === 0) {
-      console.log(`Downgraded trainer rarity tier from ${BiomePoolTier[tier]} to ${BiomePoolTier[tier - 1]}`);
+      if (LoggerTools.logRNG) console.log(`Downgraded trainer rarity tier from ${BiomePoolTier[tier]} to ${BiomePoolTier[tier - 1]}`);
       tier--;
     }
     const tierPool = this.trainerPool[tier] || [];
-    return tierPool.length === 0 ? TrainerType.BREEDER : tierPool[randSeedInt(tierPool.length)];
+    return tierPool.length === 0 ? TrainerType.BREEDER : tierPool[randSeedInt(tierPool.length, undefined, "Selecting trainer type")];
   }
 
   /**
@@ -521,7 +521,7 @@ export class Arena {
 
     const newSpeciesId = ret.getWildSpeciesForLevel(level, true, isBoss ?? isBossSpecies, globalScene.gameMode);
     if (newSpeciesId !== ret.speciesId) {
-      console.log("Replaced", SpeciesId[ret.speciesId], "with", SpeciesId[newSpeciesId]);
+      if (LoggerTools.logRNG) console.log("Replaced", SpeciesId[ret.speciesId], "with", SpeciesId[newSpeciesId]);
       ret = getPokemonSpecies(newSpeciesId);
     }
     return ret;
