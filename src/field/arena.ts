@@ -335,7 +335,7 @@ export class Arena {
       this.trainerPool[BiomePoolTier.BOSS].length > 0
       && (globalScene.gameMode.isTrainerBoss(waveIndex, this.biomeId, globalScene.offsetGym) || isBoss);
     if (LoggerTools.logRNG) console.log(isBoss, this.trainerPool);
-    const tierValue = randSeedInt(isTrainerBoss ? 64 : 512);
+    const tierValue = randSeedInt(isTrainerBoss ? 64 : 512, undefined, "Selecting random trainer");
     let tier = isTrainerBoss
       ? tierValue >= 20
         ? BiomePoolTier.BOSS
