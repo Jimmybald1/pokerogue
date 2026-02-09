@@ -1929,8 +1929,12 @@ function GenerateBattle(nolog: boolean = false) {
         atlaspath += `-${Gender[enemy.gender].toLowerCase()}`;
       }
 
+      let biome = BiomeId[globalScene.arena.biomeId];
+      if (battle.waveIndex == 50) {
+        biome = BiomeId[BiomeId.END];
+      }
       // Store encounters in a list, basically CSV (uses regex in sheets), but readable as well
-      const text = `Wave: ${globalScene.currentBattle.waveIndex} Biome: ${BiomeId[globalScene.arena.biomeId]} Pokemon: ${getPokemonNameWithAffix(enemy)} ` +
+      const text = `Wave: ${globalScene.currentBattle.waveIndex} Biome: ${biome} Pokemon: ${getPokemonNameWithAffix(enemy)} ` +
         `Form: ${atlaspath} FormIndex: ${enemy.formIndex} Species ID: ${enemy.species.speciesId} Stats: ${enemy.stats} IVs: ${enemy.ivs} Ability: ${enemy.getAbility().name} ` +
         `Passive Ability: ${enemy.getPassiveAbility().name} Nature: ${Nature[enemy.nature]} Gender: ${Gender[enemy.gender]} Rarity: ${rarities[e]} AbilityIndex: ${enemy.abilityIndex} ` +
         `ID: ${enemy.id} Type: ${enemy.getTypes().map(t => PokemonType[t]).join(",")} Moves: ${enemy.getMoveset().map(m => MoveId[m?.moveId ?? 0]).join(",")} HARolls: ${haChances[e].join(",")} ` +
