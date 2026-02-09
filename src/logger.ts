@@ -1933,6 +1933,7 @@ function GenerateBattle(nolog: boolean = false) {
       if (battle.waveIndex == 50) {
         biome = BiomeId[BiomeId.END];
       }
+      
       // Store encounters in a list, basically CSV (uses regex in sheets), but readable as well
       const text = `Wave: ${globalScene.currentBattle.waveIndex} Biome: ${biome} Pokemon: ${getPokemonNameWithAffix(enemy)} ` +
         `Form: ${atlaspath} FormIndex: ${enemy.formIndex} Species ID: ${enemy.species.speciesId} Stats: ${enemy.stats} IVs: ${enemy.ivs} Ability: ${enemy.getAbility().name} ` +
