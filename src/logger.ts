@@ -1503,7 +1503,7 @@ function catchCalc(pokemon: EnemyPokemon) {
 
   if (globalScene.pokeballCounts[1] > 0) {
     const r = new CatchRates(
-      BallNames.Poke,
+      BallNames.Great,
       generateBallChance(pokemon, 1.5),
       generateCritChance(pokemon, 1.5),
     );
@@ -1512,7 +1512,7 @@ function catchCalc(pokemon: EnemyPokemon) {
 
   if (globalScene.pokeballCounts[2] > 0) {
     const r = new CatchRates(
-      BallNames.Poke,
+      BallNames.Ultra,
       generateBallChance(pokemon, 2),
       generateCritChance(pokemon, 2),
     );
@@ -1521,7 +1521,7 @@ function catchCalc(pokemon: EnemyPokemon) {
 
   if (globalScene.pokeballCounts[3] > 0) {
     const r = new CatchRates(
-      BallNames.Poke,
+      BallNames.Rogue,
       generateBallChance(pokemon, 3),
       generateCritChance(pokemon, 3),
     );
