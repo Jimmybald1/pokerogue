@@ -1795,6 +1795,7 @@ export function InitScouting(charms: number) {
     console.error(err);
     globalScene.ui.showText("something went wrong, see console error", null);
   });
+  throw new Error("Don't continue with regular phases");
 }
 
 let encounterList: string[] = [];
@@ -2015,7 +2016,6 @@ function GenerateBiomes(biomeId: BiomeId, waveIndex: integer) {
   }
 }
 
-
 // Holds the encounter HA rolls for the Pokemon in this wave.
 export const haChances: Number[][] = [];
 
@@ -2063,7 +2063,6 @@ export function InitShopScouting(method) {
   });
 }
 
-let iterations: string[] = [];
 const charmList: string[] = [];
 function ShopScouting(method: number) {
   // Remove any lures or charms
@@ -2083,8 +2082,6 @@ function ShopScouting(method: number) {
   const ethers = GetEtherSetups();
   const revives = GetReviveSetups(party);
   const potions = GetPotionSetups(party);
-
-  iterations = [];
 
   // ClearParty(party);
   // overrides.MOVESET_OVERRIDE = [Moves.TACKLE, Moves.SPLASH, Moves.SPLASH, Moves.SPLASH];
