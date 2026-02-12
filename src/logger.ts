@@ -134,15 +134,17 @@ export function setSessionDate(date: string) {
 }
 
 export let rngCounter: number = 0;
-export function setRngCounter(num: number) {
+export function setRngCounter(num: number, simulated: boolean = false) {
   rngCounter = num;
-  if (logRNG) console.log("RNG Counter:", rngCounter);
+  if (simulated && logRNG) console.log("[Simulated] RNG Counter:", rngCounter);
+  if (!simulated && logRNG) console.log("RNG Counter:", rngCounter);
 }
 
 export let battleRngCounter: number = 0;
-export function setBattleRngCounter(num: number) {
+export function setBattleRngCounter(num: number, simulated: boolean = false) {
   battleRngCounter = num;
-  if (logRNG) console.log("Battle RNG Counter:", battleRngCounter);
+  if (simulated && logRNG) console.log("[Simulated] Battle RNG Counter:", battleRngCounter);
+  if (!simulated && logRNG) console.log("Battle RNG Counter:", battleRngCounter);
 }
 
 // #endregion

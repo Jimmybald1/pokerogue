@@ -167,6 +167,7 @@ export class Battle {
     this.turnCommands = Object.fromEntries(getEnumValues(BattlerIndex).map(bt => [bt, null]));
     this.preTurnCommands = Object.fromEntries(getEnumValues(BattlerIndex).map(bt => [bt, null]));
     this.battleSeedState = null;
+    LoggerTools.setBattleRngCounter(0);
   }
 
   addParticipant(playerPokemon: PlayerPokemon): void {
@@ -472,7 +473,6 @@ export class Battle {
     }
 
     const tempBattleRngCounter = LoggerTools.battleRngCounter;
-    const tempRngCounter = LoggerTools.rngCounter;
 
     const state = Phaser.Math.RND.state();
     if (this.battleSeedState) {
@@ -483,19 +483,18 @@ export class Battle {
     
     for (var i = 0; i < offset; i++) {
       // Perform useless rolls to offset RNG counter
-      if (LoggerTools.logCatchRNG) console.log("[Simulated] Battle RNG Counter:", LoggerTools.battleRngCounter + i);
+      LoggerTools.setBattleRngCounter(LoggerTools.battleRngCounter + 1, true);
       randSeedInt(5, undefined, "[RNG offset]");
     }
     
     for (var i = 0; i < count; i++) {
-      if (LoggerTools.logCatchRNG) console.log("[Simulated] Battle RNG Counter:", LoggerTools.battleRngCounter + offset + i);
+      LoggerTools.setBattleRngCounter(LoggerTools.battleRngCounter + 1, true);
       out.push(randSeedInt(range, min, `[${i + 1}/${count}] ${reason}`));
     }
     
     Phaser.Math.RND.state(state);
     
     LoggerTools.setBattleRngCounter(tempBattleRngCounter);
-    LoggerTools.setRngCounter(tempRngCounter);
   }
 
   /**
@@ -518,13 +517,11 @@ export class Battle {
     }
 
     globalScene.rngSeedOverride = this.battleSeed;
+    LoggerTools.setBattleRngCounter(LoggerTools.battleRngCounter + 1);
     const ret = randSeedInt(range, min, reason);
     this.battleSeedState = Phaser.Math.RND.state();
     Phaser.Math.RND.state(state);
     globalScene.rngSeedOverride = tempSeedOverride;
-
-    LoggerTools.setBattleRngCounter(LoggerTools.battleRngCounter + 1);
-    LoggerTools.setRngCounter(LoggerTools.rngCounter + 1);
 
     return ret;
   }  
