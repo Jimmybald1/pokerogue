@@ -2023,7 +2023,13 @@ export const haChances: Number[][] = [];
 
 // Try out all ability charms without advancing the seed
 export function TestAllAbilityCharms(baseChance: number, abilityHidden: AbilityId) {
-  if (abilityHidden) {
+if (abilityHidden
+    && globalScene.getEnemyParty().length === 0 
+    && globalScene.gameMode.dailyConfig?.forcedWaves?.some(fw => fw.hiddenAbility && fw.waveIndex === globalScene.currentBattle?.waveIndex)
+  ) {
+    haChances.push([0, 0, 0, 0, 0]);
+  }
+  else   if (abilityHidden) {
     const haRolls: Number[] = []
     globalScene.executeWithoutSeedAdvancement(() => {
       haRolls.push(randSeedInt(baseChance, undefined, "Hidden Ability chance 0 charms"));
