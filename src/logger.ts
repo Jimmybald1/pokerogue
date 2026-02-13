@@ -1813,7 +1813,7 @@ function ScoutingWithoutUI(charms: number) {
     starters.push(`Pokemon: ${getPokemonNameWithAffix(p)} ` +
       `Form: ${p.getSpeciesForm().getSpriteAtlasPath(false, p.formIndex)} FormIndex: ${p.formIndex} Species ID: ${p.species.speciesId} Stats: ${p.stats} IVs: ${p.ivs} Ability: ${p.getAbility().name} ` +
       `Passive Ability: ${p.getPassiveAbility().name} Nature: ${Nature[p.nature]} Gender: ${Gender[p.gender]} Rarity: undefined AbilityIndex: ${p.abilityIndex} ` +
-      `ID: ${p.id} Type: ${p.getTypes().map(t => PokemonType[t]).join(",")} Moves: ${p.getMoveset().map(m => MoveId[m?.moveId ?? 0]).join(",")}`);
+      `ID: ${p.id} Type: ${p.getTypes().map(t => PokemonType[t]).join(",")} Moves: ${p.getMoveset().map(m => MoveId[m?.moveId ?? 0]).join(",")} ShinyVariant: ${p.variant}`);
   });
 
   ClearParty(party);
@@ -2023,13 +2023,13 @@ export const haChances: Number[][] = [];
 
 // Try out all ability charms without advancing the seed
 export function TestAllAbilityCharms(baseChance: number, abilityHidden: AbilityId) {
-if (abilityHidden
+  if (abilityHidden
     && globalScene.getEnemyParty().length === 0 
     && globalScene.gameMode.dailyConfig?.forcedWaves?.some(fw => fw.hiddenAbility && fw.waveIndex === globalScene.currentBattle?.waveIndex)
   ) {
     haChances.push([0, 0, 0, 0, 0]);
   }
-  else   if (abilityHidden) {
+  else if (abilityHidden) {
     const haRolls: Number[] = []
     globalScene.executeWithoutSeedAdvancement(() => {
       haRolls.push(randSeedInt(baseChance, undefined, "Hidden Ability chance 0 charms"));
