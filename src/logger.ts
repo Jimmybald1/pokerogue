@@ -43,6 +43,7 @@ import { TimeOfDay } from "#enums/time-of-day";
 import { EnemyCommandPhase } from "#phases/enemy-command-phase";
 import { BattlerIndex } from "#enums/battler-index";
 import { TrainerVariant } from "#enums/trainer-variant";
+import { Variant } from "#sprites/variant";
 
 /*
 SECTIONS
@@ -1932,9 +1933,11 @@ function GenerateBattle(nolog: boolean = false) {
         atlaspath += `-${Gender[enemy.gender].toLowerCase()}`;
       }
 
+      let forcedVariant: Variant | undefined = undefined;
       let biome = BiomeId[globalScene.arena.biomeId];
       if (battle.waveIndex == 50) {
         biome = BiomeId[BiomeId.END];
+        forcedVariant = globalScene.gameMode.dailyConfig?.boss?.variant
       }
       
       // Store encounters in a list, basically CSV (uses regex in sheets), but readable as well
@@ -1942,7 +1945,7 @@ function GenerateBattle(nolog: boolean = false) {
         `Form: ${atlaspath} FormIndex: ${enemy.formIndex} Species ID: ${enemy.species.speciesId} Stats: ${enemy.stats} IVs: ${enemy.ivs} Ability: ${enemy.getAbility().name} ` +
         `Passive Ability: ${enemy.getPassiveAbility().name} Nature: ${Nature[enemy.nature]} Gender: ${Gender[enemy.gender]} Rarity: ${rarities[e]} AbilityIndex: ${enemy.abilityIndex} ` +
         `ID: ${enemy.id} Type: ${enemy.getTypes().map(t => PokemonType[t]).join(",")} Moves: ${enemy.getMoveset().map(m => MoveId[m?.moveId ?? 0]).join(",")} HARolls: ${haChances[e].join(",")} ` +
-        `Hidden Ability: ${allAbilities[enemy.getSpeciesForm().abilityHidden].name} ShinyVariant: ${variant}`;
+        `Hidden Ability: ${allAbilities[enemy.getSpeciesForm().abilityHidden].name} ShinyVariant: ${variant} ForcedVariant: ${forcedVariant}`;
       encounterList.push(text);
       if (logRNG) console.log(text);
       if (battle.waveIndex == 50) {
