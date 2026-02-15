@@ -2188,6 +2188,11 @@ function CreateLog(pot = 0, suppot = 0, hyppot = 0, maxpot = 0, revive = 0, eth 
   return items.join(" + ");
 }
 
+// ABILITY_CHARM
+// IV_SCANNER
+// LOCK_CAPSULE
+// MEGA_BRACELET
+// DYNAMAX_BAND
 function GenerateShop(party: PlayerPokemon[], comptext: string, start: integer, end: integer) {
   for (var w = start; w < end; w++) {
     if (w % 10 == 0) {
