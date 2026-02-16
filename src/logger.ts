@@ -1808,7 +1808,7 @@ function ScoutingWithoutUI(charms: number) {
   const starters: string[] = [];
   const party = globalScene.getPlayerParty();  
   console.error("Session Imported Date", sessionDate);
-  console.error("Starters:", party[0].name, party[1].name, party[2].name);
+  console.error("Starters:", party[0]?.name, party[1]?.name, party[2]?.name, party[3]?.name, party[4]?.name, party[5]?.name);
 
   party.forEach(p => {
     starters.push(`Pokemon: ${getPokemonNameWithAffix(p)} ` +
@@ -2085,7 +2085,7 @@ function ShopScouting(method: number) {
 
   const party = globalScene.getPlayerParty();
   console.error("Session Imported Date", sessionDate);
-  console.error("Starters:", party[0].name, party[1].name, party[2].name);
+  console.error("Starters:", party[0]?.name, party[1]?.name, party[2]?.name, party[3]?.name, party[4]?.name, party[5]?.name);
 
   const globals = GetGlobalItemSetups();
   const mushroom = GetMushroomSetups(party, comp);
