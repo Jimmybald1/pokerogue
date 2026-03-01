@@ -2189,6 +2189,7 @@ function CreateLog(pot = 0, suppot = 0, hyppot = 0, maxpot = 0, revive = 0, eth 
 }
 
 // ABILITY_CHARM
+// SHINY_CHARM
 // IV_SCANNER
 // LOCK_CAPSULE
 // MEGA_BRACELET
