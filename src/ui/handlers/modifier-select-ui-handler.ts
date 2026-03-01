@@ -47,10 +47,6 @@ export class ModifierSelectUiHandler extends AwaitableUiHandler {
   private transferButtonWidth: number;
   private checkButtonWidth: number;
 
-  public args: any[] = [];
-  public refreshIndex: integer = 0;
-  public optionP: ModifierTypeOption[][];
-
   public options: ModifierOption[];
   public shopOptionsRows: ModifierOption[][];
 
@@ -163,7 +159,6 @@ export class ModifierSelectUiHandler extends AwaitableUiHandler {
   }
 
   show(args: any[]): boolean {
-    this.args = args;
     globalScene.disableMenu = false;
 
     if (this.active) {
@@ -398,12 +393,6 @@ export class ModifierSelectUiHandler extends AwaitableUiHandler {
     // #endregion: animation
 
     return true;
-  }
-
-  refresh() {
-    this.clear();
-    this.args[1] = this.optionP[this.refreshIndex];
-    this.show(this.args);
   }
 
   processInput(button: Button): boolean {
