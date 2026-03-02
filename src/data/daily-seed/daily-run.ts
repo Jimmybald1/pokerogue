@@ -42,8 +42,8 @@ export function getDailyRunStarters(): StarterTuple {
       // TODO: explain this math
       const startingLevel = globalScene.gameMode.getStartingLevel();
       const starterCosts: number[] = [];
-      starterCosts.push(Math.min(Math.round(3.5 + Math.abs(randSeedGauss(1))), 8));
-      starterCosts.push(randSeedInt(9 - starterCosts[0], 1));
+      starterCosts.push(Math.min(Math.round(3.5 + Math.abs(randSeedGauss(1, undefined, "Daily Starter Cost 1"))), 8));
+      starterCosts.push(randSeedInt(9 - starterCosts[0], 1, "Daily Starter Cost 2"));
       starterCosts.push(10 - (starterCosts[0] + starterCosts[1]));
 
       for (const cost of starterCosts) {
@@ -54,7 +54,7 @@ export function getDailyRunStarters(): StarterTuple {
               speciesStarterCosts[s] === cost
               && !starters.some(st => s === st.speciesId || pokemonStarters[st.speciesId] === s),
           );
-        const randPkmSpecies = getPokemonSpecies(randSeedItem(costSpecies));
+        const randPkmSpecies = getPokemonSpecies(randSeedItem(costSpecies, "Select random species"));
         const starterSpecies = getPokemonSpecies(
           randPkmSpecies.getTrainerSpeciesForLevel(
             startingLevel,

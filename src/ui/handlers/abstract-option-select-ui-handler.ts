@@ -21,7 +21,7 @@ export interface OptionSelectConfig {
 
 export interface OptionSelectItem {
   label: string;
-  handler: (s?: any) => boolean;
+  handler: () => boolean;
   onHover?: () => void;
   skip?: boolean;
   keepOpen?: boolean;
@@ -29,7 +29,6 @@ export interface OptionSelectItem {
   style?: TextStyle;
   item?: string;
   itemArgs?: any[];
-  specialData?: any;
 }
 
 const scrollUpLabel = "↑";
