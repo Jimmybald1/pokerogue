@@ -2603,6 +2603,12 @@ function GetLureSetups() {
     },
     () => {
       globalScene.RemoveLures();
+      globalScene.InsertLure();
+      globalScene.InsertMaxLure();
+      return "Lure + Max Lure";
+    },
+    () => {
+      globalScene.RemoveLures();
       globalScene.InsertSuperLure();
       globalScene.InsertMaxLure();
       return "Super Lure + Max Lure";
