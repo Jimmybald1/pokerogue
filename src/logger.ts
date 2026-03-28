@@ -4,7 +4,6 @@ import { getNatureDecrease, getNatureIncrease, getNatureName } from "./data/natu
 import type { PokemonHeldItemModifier } from "./modifier/modifier";
 import { overrideHeldItems, overrideModifiers } from "./modifier/modifier";
 import { getStatusEffectCatchRateMultiplier } from "./data/status-effect";
-import { biomeLinks } from "./data/balance/biomes";
 import { Nature } from "./enums/nature";
 import { StatusEffect } from "./enums/status-effect";
 import { getCriticalCaptureChance } from "./data/pokeball";
@@ -25,7 +24,7 @@ import { applyMoveAttrs } from "#moves/apply-attrs";
 import { MultiHitAttr } from "#types/move-types";
 import { MultiHitType } from "#enums/multi-hit-type";
 import { getPlayerModifierTypeOptions, ModifierTypeOption, PokemonMultiHitModifierType, regenerateModifierPoolThresholds } from "#modifiers/modifier-type";
-import { allAbilities, allSpecies } from "#data/data-lists";
+import { allAbilities, allBiomes, allSpecies } from "#data/data-lists";
 import { MoveId } from "#enums/move-id";
 import { ModifierPoolType } from "#enums/modifier-pool-type";
 import { getPokemonNameWithAffix } from "./messages";
@@ -37,7 +36,6 @@ import { BattleSpec } from "#enums/battle-spec";
 import { applyAbAttrs } from "#abilities/apply-ab-attrs";
 import { Battle } from "./battle";
 import { BiomeId } from "#enums/biome-id";
-import { getRandomWeatherType } from "#data/weather";
 import { WeatherType } from "#enums/weather-type";
 import { TimeOfDay } from "#enums/time-of-day";
 import { EnemyCommandPhase } from "#phases/enemy-command-phase";
@@ -1886,7 +1884,7 @@ function GenerateBattle(nolog: boolean = false) {
   }
 
   if (!nolog && battle?.trainer != null) {
-    encounterList.push(`Wave: ${globalScene.currentBattle.waveIndex} Biome: ${BiomeId[globalScene.arena.biomeId]} Trainer: ${battle.trainer.config.name}`);
+    encounterList.push(`Wave: ${globalScene.currentBattle.waveIndex} Biome: ${Object.keys(BiomeId)[Object.values(BiomeId).indexOf(globalScene.arena.biomeId)]} Trainer: ${battle.trainer.config.name}`);
   }
 
   battle.enemyLevels?.forEach((level, e) => {
@@ -1934,9 +1932,9 @@ function GenerateBattle(nolog: boolean = false) {
       }
 
       let forcedVariant: Variant | undefined = undefined;
-      let biome = BiomeId[globalScene.arena.biomeId];
+      let biome = Object.keys(BiomeId)[Object.values(BiomeId).indexOf(globalScene.arena.biomeId)];
       if (battle.waveIndex == 50) {
-        biome = BiomeId[BiomeId.END];
+        biome = Object.keys(BiomeId)[Object.values(BiomeId).indexOf(BiomeId.END)];
         forcedVariant = globalScene.gameMode.dailyConfig?.boss?.variant
       }
       
@@ -1968,9 +1966,10 @@ function GenerateBattle(nolog: boolean = false) {
     for (const enemy of globalScene.getEnemyField()) {
       overrideHeldItems(enemy, false);
     }
-
-    const weather = getRandomWeatherType(globalScene.arena);
-    encounterList.push(`Wave: ${globalScene.currentBattle.waveIndex} Biome: ${BiomeId[globalScene.arena.biomeId]} TimeOfDay: ${TimeOfDay[timeOfDay]} Weather: ${WeatherType[weather]}`);
+    
+    globalScene.arena.setBiomeWeather()
+    const weather = globalScene.arena.weather?.weatherType ?? WeatherType.NONE;
+    encounterList.push(`Wave: ${globalScene.currentBattle.waveIndex} Biome: ${Object.keys(BiomeId)[Object.values(BiomeId).indexOf(globalScene.arena.biomeId)]} TimeOfDay: ${TimeOfDay[timeOfDay]} Weather: ${WeatherType[weather]}`);
   }
 
   // Clean up memory and sprites, this will throw errors at the end of the scouting
@@ -2001,11 +2000,17 @@ function GenerateBiomes(biomeId: BiomeId, waveIndex: integer) {
     return;
   }
 
-  const biomeChoices: BiomeId[] = (!Array.isArray(biomeLinks[biomeId])
-    ? [biomeLinks[biomeId] as BiomeId]
-    : biomeLinks[biomeId] as (BiomeId | [BiomeId, integer])[])
-    .filter(b => !Array.isArray(b) || !randSeedInt(b[1], undefined, "Choosing next biome"))
-    .map(b => (!Array.isArray(b) ? b : b[0]));
+  const { biomeLinks } = allBiomes.get(biomeId);
+  let biomeChoices: BiomeId[] = [];
+  if (biomeLinks.length > 1) {
+    biomeChoices = biomeLinks
+      .filter(b => !Array.isArray(b) || !randSeedInt(b[1], undefined, "Choosing next biome"))
+      .map(b => (Array.isArray(b) ? b[0] : b));
+  }
+
+  if (biomeLinks.length === 1) {
+    biomeChoices = [biomeLinks[0] as BiomeId]
+  }
 
   // Recursively generate next biomes
   for (const b of biomeChoices) {
