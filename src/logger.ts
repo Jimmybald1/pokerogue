@@ -366,6 +366,11 @@ export function getSize(str: string) {
   return d.toString() + filesizes[unit];
 }
 
+export function getBiomeEnumName(biomeId: BiomeId) {
+  let biomeName = Object.keys(BiomeId)[Object.values(BiomeId).indexOf(biomeId)]
+  return biomeName;
+}
+
 // #endregion
 
 
@@ -1872,87 +1877,71 @@ function StoreEncounters(lurecharm: string) {
   output = [];
 }
 
+let wave1Enemy: EnemyPokemon | undefined = undefined;
 function GenerateBattle(nolog: boolean = false) {
   const timeOfDay = globalScene.arena.getTimeOfDay();
-  const battle = globalScene.newBattle() as Battle;
-  while (rarities.length > 0) {
-    rarities.pop();
-  }
-  rarityslot[0] = 0;
-  while (haChances.length > 0) {
-    haChances.pop();
-  }
 
-  if (!nolog && battle?.trainer != null) {
-    encounterList.push(`Wave: ${globalScene.currentBattle.waveIndex} Biome: ${Object.keys(BiomeId)[Object.values(BiomeId).indexOf(globalScene.arena.biomeId)]} Trainer: ${battle.trainer.config.name}`);
+  // Only generate new battle if its not the first wave from session
+  // But do make sure to update wave index to 1
+  let battle = globalScene.currentBattle;
+  if (globalScene.currentBattle.waveIndex === 0) {
+    globalScene.currentBattle.waveIndex++;
+    wave1Enemy = wave1Enemy ? wave1Enemy : battle.enemyParty[0];
+    wave1Enemy.shiny = true;
+    const variant = wave1Enemy.generateShinyVariant();
+    wave1Enemy.shiny = false;
+    SaveEncounter(battle, wave1Enemy, variant, 0)
   }
+  else {
+    battle = globalScene.newBattle() as Battle;
 
-  battle.enemyLevels?.forEach((level, e) => {
-    if (battle.battleType === BattleType.TRAINER) {
-      battle.enemyParty[e] = battle.trainer?.genPartyMember(e)!;
-    } else {
-      rarityslot[0] = e;
-      const enemySpecies = globalScene.randomSpecies(battle.waveIndex, level, true);
-      battle.enemyParty[e] = globalScene.addEnemyPokemon(
-        enemySpecies,
-        level,
-        TrainerSlot.NONE,
-        !!globalScene.getEncounterBossSegments(battle.waveIndex, level, enemySpecies),
-      );
-      if (globalScene.currentBattle.battleSpec === BattleSpec.FINAL_BOSS) {
-        battle.enemyParty[e].ivs = new Array(6).fill(31);
-      }
-      globalScene
-        .getPlayerParty()
-        .slice(0, !battle.double ? 1 : 2)
-        .reverse()
-        .forEach(playerPokemon => {
-          applyAbAttrs("SyncEncounterNatureAbAttr", { pokemon: playerPokemon, target: battle.enemyParty[e] });
-        });
+    while (rarities.length > 0) {
+      rarities.pop();
+    }
+    rarityslot[0] = 0;
+    while (haChances.length > 0) {
+      haChances.pop();
     }
 
-    if (!nolog) {
-      const enemy = battle.enemyParty[e];
-      
-      enemy.shiny = true;
-      const variant = enemy.generateShinyVariant();
-      enemy.shiny = false;
-
-      let atlaspath = enemy.getSpeciesForm().getSpriteAtlasPath(false, enemy.formIndex);
-      // Regional pokemon have the same name, instead get their atlas path.
-      if (enemy.species.speciesId > 1025) {
-        // Using nicknames here because i want the getPokemonNameWithAffix so i have Wild/Foe information
-        // Nicknames are stored in base 64? so convert btoa here
-        enemy.nickname = btoa(SpeciesId[enemy.species.speciesId]);
-      }
-
-      // Male/Female sprites for Frillish, Jellicent, Pyroar, Meowstic, Indeedee, Basculegion, Oinkologne...
-      if (enemy.gender === Gender.FEMALE && ["592", "593", "668", "678", "876", "902", "916"].includes(atlaspath)) {
-        atlaspath += `-${Gender[enemy.gender].toLowerCase()}`;
-      }
-
-      let forcedVariant: Variant | undefined = undefined;
-      let biome = Object.keys(BiomeId)[Object.values(BiomeId).indexOf(globalScene.arena.biomeId)];
-      if (battle.waveIndex == 50) {
-        biome = Object.keys(BiomeId)[Object.values(BiomeId).indexOf(BiomeId.END)];
-        forcedVariant = globalScene.gameMode.dailyConfig?.boss?.variant
-      }
-      
-      // Store encounters in a list, basically CSV (uses regex in sheets), but readable as well
-      const text = `Wave: ${globalScene.currentBattle.waveIndex} Biome: ${biome} Pokemon: ${getPokemonNameWithAffix(enemy)} ` +
-        `Form: ${atlaspath} FormIndex: ${enemy.formIndex} Species ID: ${enemy.species.speciesId} Stats: ${enemy.stats} IVs: ${enemy.ivs} Ability: ${enemy.getAbility().name} ` +
-        `Passive Ability: ${enemy.getPassiveAbility().name} Nature: ${Nature[enemy.nature]} Gender: ${Gender[enemy.gender]} Rarity: ${rarities[e]} AbilityIndex: ${enemy.abilityIndex} ` +
-        `ID: ${enemy.id} Type: ${enemy.getTypes().map(t => PokemonType[t]).join(",")} Moves: ${enemy.getMoveset().map(m => MoveId[m?.moveId ?? 0]).join(",")} HARolls: ${haChances[e].join(",")} ` +
-        `Hidden Ability: ${allAbilities[enemy.getSpeciesForm().abilityHidden].name} ShinyVariant: ${variant} ForcedVariant: ${forcedVariant}`;
-      encounterList.push(text);
-      if (logRNG) console.log(text);
-      if (battle.waveIndex == 50) {
-        // separate print so its easier to find for discord screenshot
-        console.log(text);
-        console.log(enemy.getMoveset().map(m => MoveId[m?.moveId ?? 0]));
-      }
+    if (!nolog && battle?.trainer != null) {
+      encounterList.push(`Wave: ${globalScene.currentBattle.waveIndex} Biome: ${getBiomeEnumName(globalScene.arena.biomeId)} Trainer: ${battle.trainer.config.name}`);
     }
-  });
+
+    battle.enemyLevels?.forEach((level, e) => {
+      if (battle.battleType === BattleType.TRAINER) {
+        battle.enemyParty[e] = battle.trainer?.genPartyMember(e)!;
+      } else {
+        rarityslot[0] = e;
+        const enemySpecies = globalScene.randomSpecies(battle.waveIndex, level, true);
+        battle.enemyParty[e] = globalScene.addEnemyPokemon(
+          enemySpecies,
+          level,
+          TrainerSlot.NONE,
+          !!globalScene.getEncounterBossSegments(battle.waveIndex, level, enemySpecies),
+        );
+        if (globalScene.currentBattle.battleSpec === BattleSpec.FINAL_BOSS) {
+          battle.enemyParty[e].ivs = new Array(6).fill(31);
+        }
+        globalScene
+          .getPlayerParty()
+          .slice(0, !battle.double ? 1 : 2)
+          .reverse()
+          .forEach(playerPokemon => {
+            applyAbAttrs("SyncEncounterNatureAbAttr", { pokemon: playerPokemon, target: battle.enemyParty[e] });
+          });
+      }
+
+      if (!nolog) {
+        const enemy = battle.enemyParty[e];
+        
+        enemy.shiny = true;
+        const variant = enemy.generateShinyVariant();
+        enemy.shiny = false;
+
+        SaveEncounter(battle, enemy, variant, e)
+      }
+    });
+  }
 
   // Do rest of rng steps + get weather only on wave x1
   if (!nolog && globalScene.currentBattle.waveIndex % 10 === 1) {
@@ -1969,7 +1958,7 @@ function GenerateBattle(nolog: boolean = false) {
     
     globalScene.arena.setBiomeWeather()
     const weather = globalScene.arena.weather?.weatherType ?? WeatherType.NONE;
-    encounterList.push(`Wave: ${globalScene.currentBattle.waveIndex} Biome: ${Object.keys(BiomeId)[Object.values(BiomeId).indexOf(globalScene.arena.biomeId)]} TimeOfDay: ${TimeOfDay[timeOfDay]} Weather: ${WeatherType[weather]}`);
+    encounterList.push(`Wave: ${globalScene.currentBattle.waveIndex} Biome: ${getBiomeEnumName(globalScene.arena.biomeId)} TimeOfDay: ${TimeOfDay[timeOfDay]} Weather: ${WeatherType[weather]}`);
   }
 
   // Clean up memory and sprites, this will throw errors at the end of the scouting
@@ -1982,6 +1971,42 @@ function GenerateBattle(nolog: boolean = false) {
   globalScene.game.domContainer.innerHTML = "";
   for (const p of globalScene.getEnemyParty()) {
     p.destroy();
+  }
+}
+
+function SaveEncounter(battle: Battle, enemy: EnemyPokemon, variant: Variant, index: number) {
+  let atlaspath = enemy.getSpeciesForm().getSpriteAtlasPath(false, enemy.formIndex);
+  // Regional pokemon have the same name, instead get their atlas path.
+  if (enemy.species.speciesId > 1025) {
+    // Using nicknames here because i want the getPokemonNameWithAffix so i have Wild/Foe information
+    // Nicknames are stored in base 64? so convert btoa here
+    enemy.nickname = btoa(SpeciesId[enemy.species.speciesId]);
+  }
+
+  // Male/Female sprites for Frillish, Jellicent, Pyroar, Meowstic, Indeedee, Basculegion, Oinkologne...
+  if (enemy.gender === Gender.FEMALE && ["592", "593", "668", "678", "876", "902", "916"].includes(atlaspath)) {
+    atlaspath += `-${Gender[enemy.gender].toLowerCase()}`;
+  }
+
+  let forcedVariant: Variant | undefined = undefined;
+  let biome = getBiomeEnumName(globalScene.arena.biomeId);
+  if (battle.waveIndex == 50) {
+    biome = getBiomeEnumName(BiomeId.END);
+    forcedVariant = globalScene.gameMode.dailyConfig?.boss?.variant
+  }
+  
+  // Store encounters in a list, basically CSV (uses regex in sheets), but readable as well
+  const text = `Wave: ${globalScene.currentBattle.waveIndex} Biome: ${biome} Pokemon: ${getPokemonNameWithAffix(enemy)} ` +
+    `Form: ${atlaspath} FormIndex: ${enemy.formIndex} Species ID: ${enemy.species.speciesId} Stats: ${enemy.stats} IVs: ${enemy.ivs} Ability: ${enemy.getAbility().name} ` +
+    `Passive Ability: ${enemy.getPassiveAbility().name} Nature: ${Nature[enemy.nature]} Gender: ${Gender[enemy.gender]} Rarity: ${rarities[index]} AbilityIndex: ${enemy.abilityIndex} ` +
+    `ID: ${enemy.id} Type: ${enemy.getTypes().map(t => PokemonType[t]).join(",")} Moves: ${enemy.getMoveset().map(m => MoveId[m?.moveId ?? 0]).join(",")} HARolls: ${haChances[index].join(",")} ` +
+    `Hidden Ability: ${allAbilities[enemy.getSpeciesForm().abilityHidden].name} ShinyVariant: ${variant} ForcedVariant: ${forcedVariant}`;
+  encounterList.push(text);
+  if (logRNG) console.log(text);
+  if (battle.waveIndex == 50) {
+    // separate print so its easier to find for discord screenshot
+    console.log(text);
+    console.log(enemy.getMoveset().map(m => MoveId[m?.moveId ?? 0]));
   }
 }
 

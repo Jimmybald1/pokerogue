@@ -574,7 +574,7 @@ export class Arena {
     const regen = this.checkLegendBST(species, globalScene.gameMode.getWaveForDifficulty(waveIndex, true));
     // Attempt to retry 10 times if generated a LegendLike with an incompatible level
     if (regen && attempt < 10) {
-      console.log(waveIndex, BiomeId[this.biomeId], species.name, level, "Incompatible wave: regenerating...");
+      console.log(waveIndex, LoggerTools.getBiomeEnumName(this.biomeId), species.name, level, "Incompatible wave: regenerating...");
       return this.randomSpecies(waveIndex, level, ++attempt, luckValue, isBoss);
     }
 
