@@ -3,6 +3,7 @@ import { bypassLogin, isDev } from "#constants/app-constants";
 import { BiomeId } from "#enums/biome-id";
 import { MoneyFormat } from "#enums/money-format";
 import type { Variant } from "#sprites/variant";
+import { enumValueToKey } from "#utils/enums";
 import { toCamelCase } from "#utils/strings";
 import i18next from "i18next";
 
@@ -116,7 +117,7 @@ export function randInt(range: number, min = 0, reason?: string): number {
  * Generate a random integer using the global seed, or the current battle's seed if called via `Battle.randSeedInt`
  * @param range - How large of a range of random numbers to choose from. If {@linkcode range} <= 1, returns {@linkcode min}
  * @param min - The minimum integer to pick, default `0`
- * @returns A random integer between {@linkcode min} and ({@linkcode min} + {@linkcode range} - 1)
+ * @returns A random integer between {@linkcode min} and ({@linkcode min} + {@linkcode range} - 1) inclusive
  */
 export function randSeedInt(range: number, min = 0, reason?: string): number {
   if (range <= 1) {
@@ -144,12 +145,13 @@ export function randSeedIntRange(min: number, max: number, reason?: string): num
 }
 
 /**
- * Returns a random integer between min and max (non-inclusive)
+ * Returns a **completely unseeded** random integer
  * @param min The lowest number
  * @param max The highest number
+ * @returns a random integer between {@linkcode min} and {@linkcode max} inclusive
  */
 export function randIntRange(min: number, max: number, reason?: string): number {
-  return randInt(max - min, min, reason ? reason : "randIntRange");
+  return randInt(max - min + 1, min, reason ? reason : "randIntRange");
 }
 
 /**
@@ -450,6 +452,7 @@ export function hasAllLocalizedSprites(lang?: string): boolean {
   switch (lang) {
     case "es-ES":
     case "es-419":
+    case "eu":
     case "fr":
     case "da":
     case "de":
@@ -575,6 +578,6 @@ export function getBiomeName(biome: BiomeId | -1) {
     case BiomeId.END:
       return i18next.t("biome:end");
     default:
-      return i18next.t(`biome:${toCamelCase(BiomeId[biome])}`);
+      return i18next.t(`biome:${toCamelCase(enumValueToKey(BiomeId, biome))}`);
   }
 }
