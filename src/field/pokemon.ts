@@ -3832,7 +3832,7 @@ export abstract class Pokemon extends Phaser.GameObjects.Container {
     });
 
     /** 25% damage debuff on moves hitting more than one non-fainted target (regardless of immunities) */
-    const { targets, multiple } = getMoveTargets(source, move.id);
+    const { targets, multiple } = getMoveTargets(source, move.id, undefined, this, simulated);
     const numTargets = multiple ? targets.length : 1;
     const targetMultiplier = numTargets > 1 ? 0.75 : 1;
 

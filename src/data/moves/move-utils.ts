@@ -53,7 +53,7 @@ export function isSpreadMove(move: Move): boolean {
   return false;
 }
 
-export function getMoveTargets(user: Pokemon, move: MoveId, replaceTarget?: MoveTarget): MoveTargetSet {
+export function getMoveTargets(user: Pokemon, move: MoveId, replaceTarget?: MoveTarget, target?: Pokemon, simulated?: boolean): MoveTargetSet {
   const variableTarget = new NumberHolder(0);
   user.getOpponents(false).forEach(p => applyMoveAttrs("VariableTargetAttr", user, p, allMoves[move], variableTarget));
 
@@ -93,7 +93,7 @@ export function getMoveTargets(user: Pokemon, move: MoveId, replaceTarget?: Move
       multiple = moveTarget !== MoveTarget.NEAR_ENEMY;
       break;
     case MoveTarget.RANDOM_NEAR_ENEMY:
-      set = [opponents[user.randBattleSeedInt(opponents.length, undefined, "Random near enemy move target")]];
+      set = simulated && target ? [target] : [opponents[user.randBattleSeedInt(opponents.length, undefined, "Random near enemy move target")]];
       break;
     case MoveTarget.ATTACKER:
       return { targets: [-1 as BattlerIndex], multiple: false };
