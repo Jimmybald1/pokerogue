@@ -1877,7 +1877,7 @@ function StoreEncounters(lurecharm: string) {
   output = [];
 }
 
-let wave1Enemy: EnemyPokemon | undefined = undefined;
+let wave1Enemies: EnemyPokemon[] = []
 function GenerateBattle(nolog: boolean = false) {
   const timeOfDay = globalScene.arena.getTimeOfDay();
 
@@ -1886,11 +1886,13 @@ function GenerateBattle(nolog: boolean = false) {
   let battle = globalScene.currentBattle;
   if (globalScene.currentBattle.waveIndex === 0) {
     globalScene.currentBattle.waveIndex++;
-    wave1Enemy = wave1Enemy ? wave1Enemy : battle.enemyParty[0];
-    wave1Enemy.shiny = true;
-    const variant = wave1Enemy.generateShinyVariant();
-    wave1Enemy.shiny = false;
-    SaveEncounter(battle, wave1Enemy, variant, 0)
+    wave1Enemies = wave1Enemies.length === 0 ? battle.enemyParty : wave1Enemies;
+    wave1Enemies.forEach((w1e) => {
+      w1e.shiny = true;
+      const variant = w1e.generateShinyVariant();
+      w1e.shiny = false;
+      SaveEncounter(battle, w1e, variant, 0)
+    });
   }
   else {
     battle = globalScene.newBattle() as Battle;
