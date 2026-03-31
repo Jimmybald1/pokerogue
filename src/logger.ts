@@ -1887,12 +1887,14 @@ function GenerateBattle(nolog: boolean = false) {
   if (globalScene.currentBattle.waveIndex === 0) {
     globalScene.currentBattle.waveIndex++;
     wave1Enemies = wave1Enemies.length === 0 ? battle.enemyParty : wave1Enemies;
-    wave1Enemies.forEach((w1e) => {
-      w1e.shiny = true;
-      const variant = w1e.generateShinyVariant();
-      w1e.shiny = false;
-      SaveEncounter(battle, w1e, variant, 0)
-    });
+    if (wave1Enemies.length > 0) {
+      wave1Enemies.forEach((w1e) => {
+        w1e.shiny = true;
+        const variant = w1e.generateShinyVariant();
+        w1e.shiny = false;
+        SaveEncounter(battle, w1e, variant, 0)
+      });
+    }
   }
   else {
     battle = globalScene.newBattle() as Battle;
@@ -1936,11 +1938,13 @@ function GenerateBattle(nolog: boolean = false) {
       if (!nolog) {
         const enemy = battle.enemyParty[e];
         
-        enemy.shiny = true;
-        const variant = enemy.generateShinyVariant();
-        enemy.shiny = false;
+        if (enemy) {
+          enemy.shiny = true;
+          const variant = enemy.generateShinyVariant();
+          enemy.shiny = false;
 
-        SaveEncounter(battle, enemy, variant, e)
+          SaveEncounter(battle, enemy, variant, e)
+        }
       }
     });
   }
