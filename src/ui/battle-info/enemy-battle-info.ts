@@ -22,11 +22,13 @@ export class EnemyBattleInfo extends BattleInfo {
   protected hpBarSegmentDividers: GameObjects.Rectangle[] = [];
 
   // #region Type effectiveness hint objects
+
   protected effectivenessContainer: Phaser.GameObjects.Container;
   protected effectivenessWindow: Phaser.GameObjects.NineSlice;
   protected effectivenessText: Phaser.GameObjects.Text;
   protected currentEffectiveness?: string | undefined;
-  // #endregion
+
+  // #endregion Type effectiveness hint objects
 
   // #region Pathing Tool
   private teamIcons: Phaser.GameObjects.Sprite[];

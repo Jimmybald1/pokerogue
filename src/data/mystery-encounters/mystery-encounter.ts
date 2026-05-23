@@ -99,6 +99,8 @@ export class MysteryEncounter implements IMysteryEncounter {
   options: [MysteryEncounterOption, MysteryEncounterOption, ...MysteryEncounterOption[]];
   spriteConfigs: MysteryEncounterSpriteConfig[];
 
+  // #endregion Required params
+
   // #region Optional params
 
   encounterTier: MysteryEncounterTier;
@@ -170,6 +172,8 @@ export class MysteryEncounter implements IMysteryEncounter {
    */
   preventGameStatsUpdates: boolean;
 
+  // #endregion Optional params
+
   // #region Event callback functions
 
   /** Event when Encounter is first loaded, use it for data conditioning */
@@ -208,7 +212,10 @@ export class MysteryEncounter implements IMysteryEncounter {
   primaryPokemon: PlayerPokemon | undefined;
   secondaryPokemon: PlayerPokemon[] | undefined;
 
+  // #endregion Event callback functions
+
   // #region Post-construct / Auto-populated params
+
   localizationKey: string;
   /**
    * Dialogue object containing all the dialogue, messages, tooltips, etc. for an encounter
@@ -226,6 +233,8 @@ export class MysteryEncounter implements IMysteryEncounter {
    * You probably shouldn't do anything directly with this unless you have a very specific need
    */
   introVisuals: MysteryEncounterIntroVisuals | undefined;
+
+  // #endregion Post-construct / Auto-populated params
 
   // #region Flags
 
@@ -277,6 +286,8 @@ export class MysteryEncounter implements IMysteryEncounter {
    * You should only need to interact via getter/update methods
    */
   private seedOffset?: any;
+
+  // #endregion Flags
 
   constructor(encounter: IMysteryEncounter | null) {
     if (encounter != null) {

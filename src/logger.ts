@@ -32,7 +32,6 @@ import { PokemonType } from "#enums/pokemon-type";
 import { Gender } from "#data/gender";
 import { BattleType } from "#enums/battle-type";
 import { TrainerSlot } from "#enums/trainer-slot";
-import { BattleSpec } from "#enums/battle-spec";
 import { applyAbAttrs } from "#abilities/apply-ab-attrs";
 import { Battle } from "./battle";
 import { BiomeId } from "#enums/biome-id";
@@ -1923,9 +1922,6 @@ function GenerateBattle(nolog: boolean = false) {
           TrainerSlot.NONE,
           !!globalScene.getEncounterBossSegments(battle.waveIndex, level, enemySpecies),
         );
-        if (globalScene.currentBattle.battleSpec === BattleSpec.FINAL_BOSS) {
-          battle.enemyParty[e].ivs = new Array(6).fill(31);
-        }
         globalScene
           .getPlayerParty()
           .slice(0, !battle.double ? 1 : 2)

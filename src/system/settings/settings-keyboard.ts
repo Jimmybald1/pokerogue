@@ -1,4 +1,5 @@
 import { globalScene } from "#app/global-scene";
+import { isDev } from "#constants/app-constants";
 import { Button } from "#enums/buttons";
 import { UiMode } from "#enums/ui-mode";
 import type { SettingsKeyboardUiHandler } from "#ui/settings-keyboard-ui-handler";
@@ -40,6 +41,7 @@ export enum SettingKeyboard {
   ALT_BUTTON_SLOW_DOWN = "ALT_BUTTON_SLOW_DOWN",
   BUTTON_SUBMIT = "BUTTON_SUBMIT",
   ALT_BUTTON_SUBMIT = "ALT_BUTTON_SUBMIT",
+  BUTTON_DEV_CUSTOM = "BUTTON_DEV_CUSTOM",
   PATHING_TOOL_UI = "PATHING_TOOL_UI",
 }
 
@@ -81,6 +83,7 @@ export const settingKeyboardOptions = {
   [SettingKeyboard.BUTTON_SLOW_DOWN]: [`KEY ${Button.SLOW_DOWN.toString()}`, pressAction],
   [SettingKeyboard.ALT_BUTTON_SLOW_DOWN]: [`KEY ${Button.SLOW_DOWN.toString()}`, pressAction],
   [SettingKeyboard.ALT_BUTTON_SUBMIT]: [`KEY ${Button.SUBMIT.toString()}`, pressAction],
+  ...(isDev ? { [SettingKeyboard.BUTTON_DEV_CUSTOM]: [`KEY ${Button.DEV_CUSTOM.toString()}`, pressAction] } : {}),
   [SettingKeyboard.PATHING_TOOL_UI]: [ `KEY ${Button.PATHING_TOOL_UI.toString()}`, pressAction ],
 };
 
@@ -121,6 +124,7 @@ export const settingKeyboardDefaults = {
   [SettingKeyboard.BUTTON_SLOW_DOWN]: 0,
   [SettingKeyboard.ALT_BUTTON_SLOW_DOWN]: 0,
   [SettingKeyboard.ALT_BUTTON_SUBMIT]: 0,
+  ...(isDev ? { [SettingKeyboard.BUTTON_DEV_CUSTOM]: 0 } : {}),
   [SettingKeyboard.PATHING_TOOL_UI]: 0,
 };
 
@@ -170,6 +174,7 @@ export function setSettingKeyboard(setting: SettingKeyboard, value: number): boo
     case SettingKeyboard.ALT_BUTTON_SPEED_UP:
     case SettingKeyboard.ALT_BUTTON_SLOW_DOWN:
     case SettingKeyboard.ALT_BUTTON_SUBMIT:
+    case SettingKeyboard.BUTTON_DEV_CUSTOM:
     case SettingKeyboard.PATHING_TOOL_UI:
       if (value && globalScene.ui) {
         const cancelHandler = (success = false): boolean => {

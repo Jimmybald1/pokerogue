@@ -1,3 +1,4 @@
+import { isDev } from "#constants/app-constants";
 import { Button } from "#enums/buttons";
 import { SettingKeyboard } from "#system/settings-keyboard";
 import type { KeyboardConfig } from "#types/configs/inputs";
@@ -218,6 +219,7 @@ export const CFG_KEYBOARD_QWERTY: KeyboardConfig = {
     [SettingKeyboard.ALT_BUTTON_SPEED_UP]: Button.SPEED_UP,
     [SettingKeyboard.ALT_BUTTON_SLOW_DOWN]: Button.SLOW_DOWN,
     [SettingKeyboard.ALT_BUTTON_CYCLE_TERA]: Button.CYCLE_TERA,
+    ...(isDev ? { [SettingKeyboard.BUTTON_DEV_CUSTOM]: Button.DEV_CUSTOM } : {}),
     [SettingKeyboard.PATHING_TOOL_UI]: Button.PATHING_TOOL_UI,
   },
   default: {
@@ -249,7 +251,7 @@ export const CFG_KEYBOARD_QWERTY: KeyboardConfig = {
     KEY_M: SettingKeyboard.ALT_BUTTON_MENU,
     KEY_O: -1,
     KEY_P: -1,
-    KEY_Q: -1,
+    KEY_Q: isDev ? SettingKeyboard.BUTTON_DEV_CUSTOM : -1,
     KEY_S: SettingKeyboard.ALT_BUTTON_DOWN,
     KEY_T: SettingKeyboard.ALT_BUTTON_CYCLE_FORM,
     KEY_U: -1,

@@ -65,7 +65,8 @@ export class WeatherEffectPhase extends CommonAnimPhase {
         this.executeForAll((pokemon: Pokemon) => {
           const immune =
             !pokemon
-            || pokemon.getTypes(true, true).filter(t => this.weather?.isTypeDamageImmune(t)).length > 0
+            || pokemon.getTypes({ returnOriginalTypesIfStellar: true }).filter(t => this.weather?.isTypeDamageImmune(t))
+              .length > 0
             || pokemon.switchOutStatus;
           if (!immune) {
             inflictDamage(pokemon);
