@@ -24,7 +24,6 @@ import { SaveSlotUiMode } from "#ui/save-slot-select-ui-handler";
 import { isLocalServerConnected } from "#utils/common";
 import { getPokemonSpecies } from "#utils/pokemon-utils";
 import i18next from "i18next";
-import { BiomeId } from "#enums/biome-id";
 import * as LoggerTools from "../logger";
 
 const NO_SAVE_SLOT = -1;
@@ -166,40 +165,46 @@ export class TitlePhase extends Phase {
           globalScene.ui.showText("Encounter Scouting", null, () => LoggerTools.InitScouting(0));
           return true;
         }
-      }, 
+      },
       { // Pathing tool option
         label: "Shop Scouting",
         handler: () => {
           const shopOptions: OptionSelectItem[] = [];
-          shopOptions.push({
-            label: "Shop no evo",
-            handler: () => {
-              LoggerTools.InitShopScouting(0);
-              return true;
+          shopOptions.push(
+            {
+              label: "Shop no evo",
+              handler: () => {
+                LoggerTools.InitShopScouting(0);
+                return true;
+              }
+            },
+            {
+              label: "Shop 2x item evo",
+              handler: () => {
+                LoggerTools.InitShopScouting(3);
+                return true;
+              }
+            },
+            {
+              label: "Shop solo mon",
+              handler: () => {
+                LoggerTools.InitShopScouting(0, true);
+                return true;
+              }
+            },
+            {
+              label: i18next.t("menu:cancel"),
+              handler: () => {
+                globalScene.phaseManager.toTitleScreen();
+                super.end();
+                return true;
+              }
             }
-          }, {
-            label: "Shop lvl evo",
-            handler: () => {
-              LoggerTools.InitShopScouting(1);
-              return true;
-            }
-          }, {
-            label: "Shop 1x item evo",
-            handler: () => {
-              LoggerTools.InitShopScouting(2);
-              return true;
-            }
-          }, {
-            label: "Shop 2x item evo",
-            handler: () => {
-              LoggerTools.InitShopScouting(3);
-              return true;
-            }
-          });
+          );
           globalScene.ui.showText("Shop Scouting", null, () => globalScene.ui.setOverlayMode(UiMode.OPTION_SELECT, { options: shopOptions }));
           return true;
         }
-      }, 
+      },
       { // Pathing tool option
         label: "Manage Logs",
         handler: () => {
@@ -215,13 +220,13 @@ export class TitlePhase extends Phase {
             });
           return true;
         },
-      }, 
+      },
       { // Pathing tool option
         label: "Delete Logs",
         handler: () => {
           return this.deleteLogsMenu();
         }
-      }, 
+      },
       {
         label: i18next.t("menu:loadGame"),
         handler: () => {
@@ -468,7 +473,7 @@ export class TitlePhase extends Phase {
     super.end();
     return true;
   }
-  
+
   deleteLogsMenu(): boolean {
     const options: OptionSelectItem[] = [];
     LoggerTools.getLogs();

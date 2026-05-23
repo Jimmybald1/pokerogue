@@ -145,6 +145,9 @@ export function setBattleRngCounter(num: number, simulated: boolean = false) {
   if (!simulated && logRNG) console.log("Battle RNG Counter:", battleRngCounter);
 }
 
+/** Used for shop scouting as solo party */
+export let removeDNASpliceFromShop: boolean = false;
+
 // #endregion
 
 
@@ -2094,11 +2097,11 @@ export function TestAllAbilityCharms(baseChance: number, abilityHidden: AbilityI
 // #endregion
 
 // #region 16 Shop Scouting
-export function InitShopScouting(method) {
+export function InitShopScouting(method, isSolo = false) {
   globalScene.sessionSlotId = 0;
   globalScene.gameData.loadSession(globalScene.sessionSlotId).then(() => {
     console.time('Shop Scouting');
-    ShopScouting(method);
+    ShopScouting(method, isSolo);
     console.timeEnd('Shop Scouting');
   }).catch(err => {
     console.error(err);
@@ -2107,10 +2110,12 @@ export function InitShopScouting(method) {
 }
 
 const charmList: string[] = [];
-function ShopScouting(method: number) {
+function ShopScouting(method: number, isSolo) {
   // Remove any lures or charms
   globalScene.RemoveModifiers();
   console.log(`Starting shop scouting ${new Date().toLocaleTimeString()}`);
+
+  removeDNASpliceFromShop = isSolo;
 
   const comps = GetPartyCompositions();
   const comp = comps[method];
@@ -2163,11 +2168,24 @@ function ShopScouting(method: number) {
         ethers.forEach(ether => {
           const e = ether();
 
+          if (isSolo && e > 1) {
+            return;
+          }
+
           revives.forEach(revive => {
             const r = revive();
 
+            if (isSolo && r > 0) {
+              return;
+            }
+
             potions.forEach(potion => {
               const p = potion();
+
+              if (isSolo && p && (p.pot > 1 || p.suppot > 1 || p.hyppot > 1 || p.maxpot > 1)) {
+                return;
+              }
+
               if (p) {
                 const comptext = CreateLog(p.pot, p.suppot, p.hyppot, p.maxpot, r, e, text, mu.level, rogueItem);
                 GenerateShop(party, comptext, mu.start, mu.end);

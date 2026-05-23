@@ -28,6 +28,7 @@ import {
 import type { initModifierTypes } from "#modifiers/modifier-type";
 import { WeightedModifierType } from "#modifiers/modifier-type";
 import type { WeightedModifierTypeWeightFunc } from "#types/modifier-types";
+import * as LoggerTools from "../logger";
 
 /**
  * Initialize the wild modifier pool
@@ -632,7 +633,7 @@ function initMasterModifierPool() {
         !(globalScene.gameMode.isClassic && timedEventManager.areFusionsBoosted())
         && !globalScene.gameMode.isSplicedOnly
         && party.filter(p => !p.fusionSpecies).length > 1
-          ? 24
+          ? LoggerTools.removeDNASpliceFromShop ? 0 : 24
           : 0,
       24,
     ),
