@@ -2126,7 +2126,7 @@ function ShopScouting(method: number) {
   const globals = GetGlobalItemSetups();
   const mushroom = GetMushroomSetups(party, comp);
   const lures = GetLureSetups();
-  const ethers = GetEtherSetups();
+  const ethers = GetEtherSetups(party);
   const revives = GetReviveSetups(party);
   const potions = GetPotionSetups(party);
 
@@ -2165,7 +2165,7 @@ function ShopScouting(method: number) {
         console.log("Setup:", text);
 
         ethers.forEach(ether => {
-          const e = ether(party[0]);
+          const e = ether();
 
           revives.forEach(revive => {
             const r = revive();
@@ -2580,25 +2580,24 @@ function GetReviveSetups(party: PlayerPokemon[]) {
   ];
 }
 
-function GetEtherSetups() {
+function GetEtherSetups(party: PlayerPokemon[]) {
   return [
-    (pokemon: PlayerPokemon) => {
-      SetFullPP(pokemon);
+    () => {
+      SetFullPP(party[0]);
+      SetFullPP(party[1]);
+      SetFullPP(party[2]);
       return 0;
     },
-    (pokemon: PlayerPokemon) => {
-      SetFullPP(pokemon);
-      pokemon.moveset[0]?.usePp(pokemon.moveset[0].getMovePp());
+    () => {
+      party[0].moveset[0]?.usePp(party[0].moveset[0].getMovePp());
       return 1;
     },
-    (pokemon: PlayerPokemon) => {
-      SetFullPP(pokemon);
-      pokemon.moveset[1]?.usePp(pokemon.moveset[1].getMovePp());
+    () => {
+      party[1].moveset[0]?.usePp(party[1].moveset[0].getMovePp());
       return 2;
     },
-    (pokemon: PlayerPokemon) => {
-      SetFullPP(pokemon);
-      pokemon.moveset[2]?.usePp(pokemon.moveset[2].getMovePp());
+    () => {
+      party[2].moveset[0]?.usePp(party[2].moveset[0].getMovePp());
       return 3;
     },
   ];
