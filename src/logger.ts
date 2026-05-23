@@ -1877,7 +1877,7 @@ function StoreEncounters(lurecharm: string) {
   output = [];
 }
 
-let wave1Enemy: EnemyPokemon | undefined = undefined;
+let wave1Enemies: EnemyPokemon[] = []
 function GenerateBattle(nolog: boolean = false) {
   const timeOfDay = globalScene.arena.getTimeOfDay();
 
@@ -1886,11 +1886,15 @@ function GenerateBattle(nolog: boolean = false) {
   let battle = globalScene.currentBattle;
   if (globalScene.currentBattle.waveIndex === 0) {
     globalScene.currentBattle.waveIndex++;
-    wave1Enemy = wave1Enemy ? wave1Enemy : battle.enemyParty[0];
-    wave1Enemy.shiny = true;
-    const variant = wave1Enemy.generateShinyVariant();
-    wave1Enemy.shiny = false;
-    SaveEncounter(battle, wave1Enemy, variant, 0)
+    wave1Enemies = wave1Enemies.length === 0 ? battle.enemyParty : wave1Enemies;
+    if (wave1Enemies.length > 0) {
+      wave1Enemies.forEach((w1e) => {
+        w1e.shiny = true;
+        const variant = w1e.generateShinyVariant();
+        w1e.shiny = false;
+        SaveEncounter(battle, w1e, variant, 0)
+      });
+    }
   }
   else {
     battle = globalScene.newBattle() as Battle;
@@ -1934,11 +1938,13 @@ function GenerateBattle(nolog: boolean = false) {
       if (!nolog) {
         const enemy = battle.enemyParty[e];
         
-        enemy.shiny = true;
-        const variant = enemy.generateShinyVariant();
-        enemy.shiny = false;
+        if (enemy) {
+          enemy.shiny = true;
+          const variant = enemy.generateShinyVariant();
+          enemy.shiny = false;
 
-        SaveEncounter(battle, enemy, variant, e)
+          SaveEncounter(battle, enemy, variant, e)
+        }
       }
     });
   }
@@ -2120,7 +2126,7 @@ function ShopScouting(method: number) {
   const globals = GetGlobalItemSetups();
   const mushroom = GetMushroomSetups(party, comp);
   const lures = GetLureSetups();
-  const ethers = GetEtherSetups();
+  const ethers = GetEtherSetups(party);
   const revives = GetReviveSetups(party);
   const potions = GetPotionSetups(party);
 
@@ -2159,7 +2165,7 @@ function ShopScouting(method: number) {
         console.log("Setup:", text);
 
         ethers.forEach(ether => {
-          const e = ether(party[0]);
+          const e = ether();
 
           revives.forEach(revive => {
             const r = revive();
@@ -2574,25 +2580,24 @@ function GetReviveSetups(party: PlayerPokemon[]) {
   ];
 }
 
-function GetEtherSetups() {
+function GetEtherSetups(party: PlayerPokemon[]) {
   return [
-    (pokemon: PlayerPokemon) => {
-      SetFullPP(pokemon);
+    () => {
+      SetFullPP(party[0]);
+      SetFullPP(party[1]);
+      SetFullPP(party[2]);
       return 0;
     },
-    (pokemon: PlayerPokemon) => {
-      SetFullPP(pokemon);
-      pokemon.moveset[0]?.usePp(pokemon.moveset[0].getMovePp());
+    () => {
+      party[0].moveset[0]?.usePp(party[0].moveset[0].getMovePp());
       return 1;
     },
-    (pokemon: PlayerPokemon) => {
-      SetFullPP(pokemon);
-      pokemon.moveset[1]?.usePp(pokemon.moveset[1].getMovePp());
+    () => {
+      party[1].moveset[0]?.usePp(party[1].moveset[0].getMovePp());
       return 2;
     },
-    (pokemon: PlayerPokemon) => {
-      SetFullPP(pokemon);
-      pokemon.moveset[2]?.usePp(pokemon.moveset[2].getMovePp());
+    () => {
+      party[2].moveset[0]?.usePp(party[2].moveset[0].getMovePp());
       return 3;
     },
   ];
