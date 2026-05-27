@@ -24,12 +24,12 @@ export default class LogSelectUiHandler extends MessageUiHandler {
   private saveSlotSelectMessageBoxContainer: Phaser.GameObjects.Container;
   private sessionSlots: SessionSlot[];
 
-  private selectCallback?: LogSelectCallback;
+  private selectCallback?: LogSelectCallback | undefined;
   private quitCallback: LogSelectCallback;
 
   private scrollCursor: integer = 0;
 
-  private cursorObj?: Phaser.GameObjects.NineSlice;
+  private cursorObj?: Phaser.GameObjects.NineSlice | undefined;
 
   private sessionSlotsContainerInitialY: number;
 

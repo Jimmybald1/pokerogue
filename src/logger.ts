@@ -76,6 +76,7 @@ export const DRPD_Version = "1.1.0b";
 const logDamagePrediction: boolean = false;
 export const logRNG: boolean = false;
 export const logCatchRNG: boolean = false;
+export const logMoveRNG: boolean = false;
 
 // Value holders
 

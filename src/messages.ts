@@ -14,6 +14,8 @@ export function getPokemonNameWithAffix(pokemon: Pokemon | undefined, useIllusio
   if (!pokemon) {
     return "MissingNo.";
   }
+
+  // Pathing Tool
   if (globalScene.currentBattle == null) {
     return pokemon.getNameToRender();
   }

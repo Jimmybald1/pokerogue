@@ -4,7 +4,6 @@ import { PlayerGender } from "#enums/player-gender";
 import { TextStyle } from "#enums/text-style";
 import { addTextObject } from "#ui/text";
 import i18next from "i18next";
-import * as LoggerTools from "../logger";
 
 export class EndCardPhase extends Phase {
   public readonly phaseName = "EndCardPhase";

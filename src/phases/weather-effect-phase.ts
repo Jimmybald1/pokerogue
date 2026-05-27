@@ -9,7 +9,6 @@ import { WeatherType } from "#enums/weather-type";
 import type { Pokemon } from "#field/pokemon";
 import { CommonAnimPhase } from "#phases/common-anim-phase";
 import { BooleanHolder, toDmgValue } from "#utils/common";
-import * as LoggerTools from "../logger";
 
 export class WeatherEffectPhase extends CommonAnimPhase {
   public readonly phaseName = "WeatherEffectPhase";

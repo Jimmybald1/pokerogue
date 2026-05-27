@@ -190,6 +190,8 @@ export class BattleScene extends SceneBase {
   public showTeamSprites = false;
   public damageDisplay = "Percent";
   public tempWaveSeed: string;
+  public battleRNGState: string;
+  public battleBaseRNGState: string;
   // End pathing tool
 
   public inputController: InputsController;
@@ -326,9 +328,6 @@ export class BattleScene extends SceneBase {
   private modifierBar: ModifierBar;
   private enemyModifierBar: ModifierBar;
   public arenaFlyout: ArenaFlyout;
-
-  public battleRNGState: string;
-  public battleBaseRNGState: string;
 
   private fieldOverlay: Phaser.GameObjects.Rectangle;
   private shopOverlay: Phaser.GameObjects.Rectangle;
@@ -1124,42 +1123,6 @@ export class BattleScene extends SceneBase {
 
     return container;
   }
-  addPkIcon(
-    pokemon: PokemonSpecies,
-    form: integer = 0,
-    x: number,
-    y: number,
-    originX = 0.5,
-    originY = 0.5,
-    ignoreOverride = false,
-    shiny?: boolean,
-    variant?: integer,
-  ): Phaser.GameObjects.Container {
-    const container = this.add.container(x, y);
-    container.setName(`${pokemon.name}-icon`);
-
-    const icon = this.add.sprite(0, 0, pokemon.getIconAtlasKey(form, shiny, variant));
-    icon.setName(`sprite-${pokemon.name}-icon`);
-    icon.setFrame(pokemon.getIconId(true, form, shiny, variant));
-    // Temporary fix to show pokemon's default icon if variant icon doesn't exist
-    if (icon.frame.name !== pokemon.getIconId(true, form, shiny, variant)) {
-      console.log(`${pokemon.name}'s variant icon does not exist. Replacing with default.`);
-      icon.setTexture(pokemon.getIconAtlasKey(0));
-      icon.setFrame(pokemon.getIconId(true));
-    }
-    icon.setOrigin(0.5, 0);
-
-    container.add(icon);
-
-    if (originX !== 0.5) {
-      container.x -= icon.width * (originX - 0.5);
-    }
-    if (originY !== 0) {
-      container.y -= icon.height * originY;
-    }
-
-    return container;
-  }
 
   setSeed(seed: string): void {
     this.seed = seed;
@@ -1340,7 +1303,50 @@ export class BattleScene extends SceneBase {
     }
     return Math.max(doubleChance.value, 1);
   }
+  
+  /* 
+   * Pathing tool function
+   */
+  addPkIcon(
+    pokemon: PokemonSpecies,
+    form: integer = 0,
+    x: number,
+    y: number,
+    originX = 0.5,
+    originY = 0.5,
+    ignoreOverride = false,
+    shiny?: boolean,
+    variant?: integer,
+  ): Phaser.GameObjects.Container {
+    const container = this.add.container(x, y);
+    container.setName(`${pokemon.name}-icon`);
 
+    const icon = this.add.sprite(0, 0, pokemon.getIconAtlasKey(form, shiny, variant));
+    icon.setName(`sprite-${pokemon.name}-icon`);
+    icon.setFrame(pokemon.getIconId(true, form, shiny, variant));
+    // Temporary fix to show pokemon's default icon if variant icon doesn't exist
+    if (icon.frame.name !== pokemon.getIconId(true, form, shiny, variant)) {
+      console.log(`${pokemon.name}'s variant icon does not exist. Replacing with default.`);
+      icon.setTexture(pokemon.getIconAtlasKey(0));
+      icon.setFrame(pokemon.getIconId(true));
+    }
+    icon.setOrigin(0.5, 0);
+
+    container.add(icon);
+
+    if (originX !== 0.5) {
+      container.x -= icon.width * (originX - 0.5);
+    }
+    if (originY !== 0) {
+      container.y -= icon.height * originY;
+    }
+
+    return container;
+  }
+
+  /* 
+   * Pathing tool function
+   */
   InsertLure() {
     const lure = modifierTypes
       .LURE()
@@ -1349,6 +1355,9 @@ export class BattleScene extends SceneBase {
     this.addModifier(lure, true, false, false, true);
   }
 
+  /* 
+   * Pathing tool function
+   */
   InsertSuperLure() {
     const super_lure = modifierTypes
       .SUPER_LURE()
@@ -1357,6 +1366,9 @@ export class BattleScene extends SceneBase {
     this.addModifier(super_lure, true, false, false, true);
   }
 
+  /* 
+   * Pathing tool function
+   */
   InsertMaxLure() {
     const max_lure = modifierTypes
       .MAX_LURE()
@@ -1365,17 +1377,26 @@ export class BattleScene extends SceneBase {
     this.addModifier(max_lure, true, false, false, true);
   }
 
+  /* 
+   * Pathing tool function
+   */
   InsertTwoLures() {
     this.InsertLure();
     this.InsertSuperLure();
   }
 
+  /* 
+   * Pathing tool function
+   */
   InsertThreeLures() {
     this.InsertLure();
     this.InsertSuperLure();
     this.InsertMaxLure();
   }
 
+  /* 
+   * Pathing tool function
+   */
   InsertAbilityCharm(amount: integer) {
     const ability_charm = modifierTypes
       .ABILITY_CHARM()
@@ -1385,6 +1406,9 @@ export class BattleScene extends SceneBase {
     this.addModifier(ability_charm, true, false, false, true);
   }
 
+  /* 
+   * Pathing tool function
+   */
   InsertMegaBracelet() {
     const modifier = modifierTypes
       .MEGA_BRACELET()
@@ -1393,6 +1417,9 @@ export class BattleScene extends SceneBase {
     this.addModifier(modifier, true, false, false, true);
   }
 
+  /* 
+   * Pathing tool function
+   */
   InsertDynamaxBand() {
     const modifier = modifierTypes
       .DYNAMAX_BAND()
@@ -1401,6 +1428,9 @@ export class BattleScene extends SceneBase {
     this.addModifier(modifier, true, false, false, true);
   }
 
+  /* 
+   * Pathing tool function
+   */
   InsertTeraOrb() {
     const modifier = modifierTypes
       .TERA_ORB()
@@ -1409,6 +1439,9 @@ export class BattleScene extends SceneBase {
     this.addModifier(modifier, true, false, false, true);
   }
 
+  /* 
+   * Pathing tool function
+   */
   InsertLockCapsule() {
     const modifier = modifierTypes
       .LOCK_CAPSULE()
@@ -1417,6 +1450,9 @@ export class BattleScene extends SceneBase {
     this.addModifier(modifier, true, false, false, true);
   }
 
+  /* 
+   * Pathing tool function
+   */
   InsertIVScanner() {
     const modifier = modifierTypes
       .IV_SCANNER()
@@ -1425,6 +1461,9 @@ export class BattleScene extends SceneBase {
     this.addModifier(modifier, true, false, false, true);
   }
 
+  /* 
+   * Pathing tool function
+   */
   RemoveModifiers() {
     const mods = this.modifiers.filter(
       m =>

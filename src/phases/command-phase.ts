@@ -26,10 +26,6 @@ import type { TurnMove } from "#types/turn-move";
 import i18next from "i18next";
 import * as LoggerTools from "../logger";
 
-/**
- * IMPORTANT: Fix command logger!!!
- */
-
 export class CommandPhase extends FieldPhase {
   public readonly phaseName = "CommandPhase";
   protected fieldIndex: number;

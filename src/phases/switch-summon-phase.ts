@@ -15,7 +15,6 @@ import { SwitchEffectTransferModifier } from "#modifiers/modifier";
 import { SummonPhase } from "#phases/summon-phase";
 import { inSpeedOrder } from "#utils/speed-order-generator";
 import i18next from "i18next";
-import * as LoggerTools from "../logger";
 
 export class SwitchSummonPhase extends SummonPhase {
   public readonly phaseName: "SwitchSummonPhase" | "ReturnPhase" = "SwitchSummonPhase";
@@ -238,7 +237,7 @@ export class SwitchSummonPhase extends SummonPhase {
       pokemon.tempSummonData.waveTurnCount--;
     }
 
-    if ((this.switchType === SwitchType.BATON_PASS) && pokemon) {
+    if (this.switchType === SwitchType.BATON_PASS && pokemon) {
       pokemon.transferSummon(this.lastPokemon);
     } else if (this.switchType === SwitchType.SHED_TAIL && pokemon) {
       const subTag = this.lastPokemon.getTag(SubstituteTag);

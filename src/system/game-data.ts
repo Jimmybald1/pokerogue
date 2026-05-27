@@ -847,16 +847,6 @@ export class GameData {
       return this.parseSessionData(decrypt(sessionData, bypassLogin));
     }
 
-    // // Check local storage for the cached session data
-    // if (bypassLogin || localStorage.getItem(getSaveDataLocalStorageKey(slotId))) {
-    //   const sessionData = localStorage.getItem(getSaveDataLocalStorageKey(slotId));
-    //   if (!sessionData) {
-    //     console.error("No session data found!");
-    //     return;
-    //   }
-    //   return this.parseSessionData(decrypt(sessionData, bypassLogin));
-    // }
-
     // // Ask the server API for the save data and store it in localstorage
     // const response = await pokerogueApi.savedata.session.get({ slot: slotId, clientSessionId });
 

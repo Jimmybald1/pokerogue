@@ -5,7 +5,6 @@ import { UiMode } from "#enums/ui-mode";
 import type { Unlockables } from "#enums/unlockables";
 import { getUnlockableName } from "#system/unlockables";
 import i18next from "i18next";
-import * as LoggerTools from "../logger";
 
 export class UnlockPhase extends Phase {
   public readonly phaseName = "UnlockPhase";

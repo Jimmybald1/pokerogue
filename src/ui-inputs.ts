@@ -130,7 +130,7 @@ export class UiInputs {
       [Button.SPEED_UP]: () => {},
       [Button.SLOW_DOWN]: () => {},
       [Button.DEV_CUSTOM]: () => {},
-      [Button.PATHING_TOOL_UI]: () => undefined,
+      [Button.PATHING_TOOL_UI]: () => {},
     };
     return actions;
   }

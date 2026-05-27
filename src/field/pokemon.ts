@@ -197,8 +197,6 @@ import * as LoggerTools from "../logger";
 import { BattleFlyout } from "#ui/battle-flyout";
 import { GameModes } from "#enums/game-modes";
 
-const doMoveLogging: boolean = false;
-
 export abstract class Pokemon extends Phaser.GameObjects.Container {
   /**
    * This pokemon's {@link https://bulbapedia.bulbagarden.net/wiki/Personality_value | Personality value/PID},
@@ -6726,7 +6724,7 @@ export class EnemyPokemon extends Pokemon {
    */
   // TODO: split this up and move it elsewhere
   getNextMove(): TurnMove {
-    if (doMoveLogging) {
+    if (LoggerTools.logMoveRNG) {
       console.log("Starting getNextMove() for " + this.name);
     }
 
@@ -6741,13 +6739,13 @@ export class EnemyPokemon extends Pokemon {
       if (isVirtual(queuedMove.useMode) || movesetMove?.isUsable(this, isIgnorePP(queuedMove.useMode), true)) {
         moveQueue.splice(0, i); // TODO: This should not be done here
 
-        if (doMoveLogging) {
+        if (LoggerTools.logMoveRNG) {
           console.log("  Move was already selected");
         }
         return queuedMove;
       }
 
-      if (doMoveLogging) {
+      if (LoggerTools.logMoveRNG) {
         console.log("  Selected move cannot be used");
       }
     }
@@ -6761,7 +6759,7 @@ export class EnemyPokemon extends Pokemon {
     if (movePool.length > 0) {
       // If there's only 1 move in the move pool, use it.
       if (movePool.length === 1) {
-        if (doMoveLogging) {
+        if (LoggerTools.logMoveRNG) {
           console.log("  Only one move to select");
         }
 
@@ -6779,7 +6777,7 @@ export class EnemyPokemon extends Pokemon {
         if (encoreMove) {
           this.flyout.setText(this.getMoveset().indexOf(encoreMove));
 
-          if (doMoveLogging) {
+          if (LoggerTools.logMoveRNG) {
             console.log("  Locked into Encore");
           }
 
@@ -6877,7 +6875,7 @@ export class EnemyPokemon extends Pokemon {
                 + move.getTargetBenefitScore(this, target, move)
                   * (mt < BattlerIndex.ENEMY === this.isPlayer() ? 1 : -1);
               if (Number.isNaN(targetScore)) {
-                if (doMoveLogging) {
+                if (LoggerTools.logMoveRNG) {
                   console.error(`Move ${move.name} returned score of NaN`);
                 }
 
@@ -6928,7 +6926,7 @@ export class EnemyPokemon extends Pokemon {
             moveScores[moveIndex] = moveScore;
           });
 
-          if (doMoveLogging) {
+          if (LoggerTools.logMoveRNG) {
             console.log(moveScores);
           }
 
@@ -6997,7 +6995,7 @@ export class EnemyPokemon extends Pokemon {
    * @returns The indexes of the Pokemon the given move would target
    */
   getNextTargets(moveId: MoveId): BattlerIndex[] {
-    if (doMoveLogging) {
+    if (LoggerTools.logMoveRNG) {
       console.log("Starting getNextTargets() for " + this.name + " with move " + getEnumKeys(MoveId)[moveId]);
     }
 
@@ -7005,7 +7003,7 @@ export class EnemyPokemon extends Pokemon {
     const targets = globalScene.getField(true).filter(p => moveTargets.targets.indexOf(p.getBattlerIndex()) > -1);
     // If the move is multi-target, return all targets' indexes
     if (moveTargets.multiple) {
-      if (doMoveLogging) {
+      if (LoggerTools.logMoveRNG) {
         console.log("  Multi-target move");
       }
 
@@ -7034,14 +7032,14 @@ export class EnemyPokemon extends Pokemon {
       // Set target to BattlerIndex.ATTACKER when using a counter move
       // This is the same as when the player does so
       if (move.hasAttr("CounterDamageAttr")) {
-        if (doMoveLogging) {
+        if (LoggerTools.logMoveRNG) {
           console.log("  Counter move");
         }
 
         return [BattlerIndex.ATTACKER];
       }
 
-      if (doMoveLogging) {
+      if (LoggerTools.logMoveRNG) {
         console.log("  No targets available");
       }
 
@@ -7090,11 +7088,11 @@ export class EnemyPokemon extends Pokemon {
       return false;
     });
 
-    if (doMoveLogging) {
+    if (LoggerTools.logMoveRNG) {
       console.log("Target selection thresholds", thresholds);
     }
     
-    if (doMoveLogging) {
+    if (LoggerTools.logMoveRNG) {
       console.log("  Randomly selected position " + sortedBenefitScores[targetIndex][0] + " as target");
     }
 

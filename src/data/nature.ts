@@ -40,6 +40,7 @@ export function getNatureName(
   return ret;
 }
 
+// Pathing Tool function
 export function getNatureIncrease(nature: Nature) {
   switch (nature) {
     case Nature.LONELY:
@@ -81,6 +82,8 @@ export function getNatureIncrease(nature: Nature) {
       return "";
   }
 }
+
+// Pathing Tool function
 export function getNatureDecrease(nature: Nature) {
   switch (nature) {
     case Nature.BOLD:

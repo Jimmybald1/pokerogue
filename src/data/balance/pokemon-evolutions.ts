@@ -71,9 +71,6 @@ export enum EvolutionItem {
   SCROLL_OF_DARKNESS,
   SCROLL_OF_WATERS,
   LEADERS_CREST,
-
-  SUPER_EVO_ITEM,
-  SUPER_EVO_ITEM_FUSION,
 }
 
 const tyrogueMoves = [MoveId.LOW_SWEEP, MoveId.MACH_PUNCH, MoveId.RAPID_SPIN] as const;

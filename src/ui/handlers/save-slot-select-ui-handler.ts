@@ -25,7 +25,7 @@ export enum SaveSlotUiMode {
   SAVE,
 }
 
-export type SaveSlotSelectCallback = (cursor: number, cursor2?: integer) => void;
+export type SaveSlotSelectCallback = (cursor: number) => void;
 
 export class SaveSlotSelectUiHandler extends MessageUiHandler {
   private saveSlotSelectContainer: Phaser.GameObjects.Container;
@@ -608,15 +608,6 @@ class SessionSlot extends Phaser.GameObjects.Container {
     const modifierIconsContainer = globalScene.add.container(148, 38);
     modifierIconsContainer.setScale(0.5);
     let visibleModifierIndex = 0;
-    let numberOfModifiers = 0;
-    const itemDisplayLimit = 9;
-    for (const m of data.modifiers) {
-      const modifier = m.toModifier(Modifier[m.className]);
-      if (modifier instanceof Modifier.PokemonHeldItemModifier) {
-        continue;
-      }
-      numberOfModifiers++;
-    }
     for (const m of data.modifiers) {
       const modifier = m.toModifier(Modifier[m.className]);
       if (modifier instanceof Modifier.PokemonHeldItemModifier) {
@@ -627,42 +618,11 @@ class SessionSlot extends Phaser.GameObjects.Container {
         icon.setPosition(24 * visibleModifierIndex, 0);
         modifierIconsContainer.add(icon);
       }
-      if (++visibleModifierIndex === (numberOfModifiers == itemDisplayLimit ? itemDisplayLimit : itemDisplayLimit - 1)) {
+      if (++visibleModifierIndex === 12) {
         break;
       }
     }
-    if (numberOfModifiers > itemDisplayLimit) {
-      const plusText = addTextObject(24 * visibleModifierIndex + 20, 4, `+${numberOfModifiers - visibleModifierIndex}`, TextStyle.PARTY, { fontSize: "80px", color: "#f8f8f8" });
-      plusText.setShadow(0, 0, undefined);
-      plusText.setStroke("#424242", 14);
-      plusText.setOrigin(1, 0);
-      modifierIconsContainer.add(plusText);
-    }
-    let spacing = 20;
-    if (data.enemyParty.length == 4) {
-      spacing = 17;
-    }
-    if (data.enemyParty.length == 5) {
-      spacing = 12;
-    }
-    if (data.enemyParty.length == 6) {
-      spacing = 10;
-    }
-    data.enemyParty.forEach((p, i) => {
-      const iconContainer = globalScene.add.container(24 * 9 + 1 + i * spacing, -1);
-      const pokemon = p.toPokemon();
-      const icon = globalScene.addPokemonIcon(pokemon, 0, 0, 0, 0);
-      iconContainer.add(icon);
-      pokemon.destroy();
-      modifierIconsContainer.add(iconContainer);
-    });
-    if (true) {
-      const vsLabel = addTextObject(24 * 9 + 20, 15, "vs", TextStyle.PARTY, { fontSize: "80px", color: "#f8f8f8" });
-      vsLabel.setShadow(0, 0, undefined);
-      vsLabel.setStroke("#424242", 14);
-      vsLabel.setOrigin(1, 0);
-      modifierIconsContainer.add(vsLabel);
-    }
+
     this.add(modifierIconsContainer);
   }
 

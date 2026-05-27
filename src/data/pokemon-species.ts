@@ -786,7 +786,6 @@ export class PokemonSpecies extends PokemonSpeciesForm implements Localizable {
   readonly genderDiffs: boolean;
   readonly canChangeForm: boolean;
   readonly forms: PokemonForm[];
-  public luckOverride: integer;
 
   constructor(
     id: SpeciesId,

@@ -7,7 +7,6 @@ import { PlayerPartyMemberPokemonPhase } from "#phases/player-party-member-pokem
 import { LevelAchv } from "#system/achv";
 import { NumberHolder } from "#utils/common";
 import i18next from "i18next";
-import * as LoggerTools from "../logger";
 
 export class LevelUpPhase extends PlayerPartyMemberPokemonPhase {
   public readonly phaseName = "LevelUpPhase";

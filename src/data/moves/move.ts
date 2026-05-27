@@ -5378,7 +5378,7 @@ export class CombinedPledgePowerAttr extends VariablePowerAttr {
     if (!(power instanceof NumberHolder)) {
       return false;
     }
-    const combinedPledgeMove = user?.turnData?.combiningPledge;
+    const combinedPledgeMove = user.turnData.combiningPledge;
 
     if (combinedPledgeMove && combinedPledgeMove !== move.id) {
       power.value *= 150 / 80;
