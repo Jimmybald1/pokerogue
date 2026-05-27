@@ -421,11 +421,6 @@ export class EncounterPhase extends BattlePhase {
     }
     if (globalScene.currentBattle.waveIndex == 1) {
       LoggerTools.logPlayerTeam();
-      if (globalScene.gameMode.modeId == GameModes.DAILY && globalScene.disableDailyShinies) {
-        globalScene.getPlayerParty().forEach(p => {
-          p.species.luckOverride = 0; // Disable shiny luck for party members
-        });
-      }
     }
     
     LoggerTools.resetWaveActions(undefined, true);

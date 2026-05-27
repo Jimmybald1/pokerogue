@@ -105,7 +105,6 @@ export enum SettingType {
   GENERAL,
   DISPLAY,
   AUDIO,
-  MOD,
 }
 
 type SettingOption = {
@@ -185,16 +184,10 @@ export const SettingKeys = {
   Hide_Username: "HIDE_USERNAME",
   Show_Missing_Ribbons: "SHOW_MISSING_RIBBONS",
   Move_Touch_Controls: "MOVE_TOUCH_CONTROLS",
-  Show_Pokemon_Teams: "SHOW_POKEMON_TEAMS",
-  Damage_Display: "DAMAGE_DISPLAY",
-  LazyReloads: "FLAG_EVERY_RESET_AS_RELOAD",
-  FancyBiome: "FANCY_BIOMES",
-  ShowAutosaves: "SHOW_AUTOSAVES",
-  TitleScreenContinueMode: "TITLE_SCREEN_QUICKLOAD",
-  BiomePanels: "BIOME_PANELS",
-  DailyShinyLuck: "DAILY_LUCK",
   Shop_Overlay_Opacity: "SHOP_OVERLAY_OPACITY",
   Prefer_Baton_Pass: "PREFER_BATON_PASS",
+  Show_Pokemon_Teams: "SHOW_POKEMON_TEAMS", // Pathing Tool
+  Damage_Display: "DAMAGE_DISPLAY", // Pathing Tool
 };
 
 export enum MusicPreference {
@@ -254,72 +247,6 @@ export const Setting: Setting[] = [
         value: "Percent",
       },
     ],
-    default: 0,
-    type: SettingType.GENERAL,
-  },
-  {
-    key: SettingKeys.FancyBiome,
-    label: "Fancy Title Screen",
-    options: [
-      {
-        label: "Off",
-        value: "Off",
-      },
-      {
-        label: "On",
-        value: "On",
-      },
-    ],
-    default: 0,
-    type: SettingType.GENERAL,
-  },
-  {
-    key: SettingKeys.DailyShinyLuck,
-    label: "Daily Shiny Luck",
-    options: OFF_ON,
-    default: 0,
-    type: SettingType.GENERAL,
-  },
-  {
-    key: SettingKeys.Damage_Display,
-    label: "Damage Display",
-    options: [
-      {
-        label: "Off",
-        value: "Off",
-      },
-      {
-        label: "Value",
-        value: "Value",
-      },
-      {
-        label: "Percent",
-        value: "Percent",
-      },
-    ],
-    default: 0,
-    type: SettingType.GENERAL,
-  },
-  {
-    key: SettingKeys.FancyBiome,
-    label: "Fancy Title Screen",
-    options: [
-      {
-        label: "Off",
-        value: "Off",
-      },
-      {
-        label: "On",
-        value: "On",
-      },
-    ],
-    default: 0,
-    type: SettingType.GENERAL,
-  },
-  {
-    key: SettingKeys.DailyShinyLuck,
-    label: "Daily Shiny Luck",
-    options: OFF_ON,
     default: 0,
     type: SettingType.GENERAL,
   },
@@ -646,26 +573,6 @@ export const Setting: Setting[] = [
     key: SettingKeys.Show_Moveset_Flyout,
     label: i18next.t("settings:showMovesetFlyout"),
     options: OFF_ON,
-    default: 1,
-    type: SettingType.DISPLAY,
-  },
-  {
-    key: SettingKeys.Show_Pokemon_Teams,
-    label: i18next.t("settings:showTeamTray"),
-    options: [
-      {
-        value: "Off",
-        label: i18next.t("settings:off"),
-      },
-      {
-        value: "Ball",
-        label: i18next.t("settings:simple"),
-      },
-      {
-        value: "Sprite",
-        label: i18next.t("settings:fancy"),
-      },
-    ],
     default: 1,
     type: SettingType.DISPLAY,
   },
@@ -1083,28 +990,10 @@ export function setSetting(setting: string, value: number): boolean {
     case SettingKeys.Shop_Overlay_Opacity:
       globalScene.updateShopOverlayOpacity(Number.parseInt(Setting[index].options[value].value) * 0.01);
       break;
-    case SettingKeys.Damage_Display:
+    case SettingKeys.Damage_Display: // Pathing Tool
       globalScene.damageDisplay = Setting[index].options[value].value;
       break;
-    case SettingKeys.LazyReloads:
-      globalScene.lazyReloads = Setting[index].options[value].value == "On";
-      break;
-    case SettingKeys.FancyBiome:
-      globalScene.menuChangesBiome = Setting[index].options[value].value == "On";
-      break;
-    case SettingKeys.ShowAutosaves:
-      globalScene.showAutosaves = Setting[index].options[value].value == "On";
-      break;
-    case SettingKeys.BiomePanels:
-      globalScene.doBiomePanels = Setting[index].options[value].value == "On";
-      break;
-    case SettingKeys.DailyShinyLuck:
-      globalScene.disableDailyShinies = Setting[index].options[value].value == "Off";
-      break;
-    case SettingKeys.TitleScreenContinueMode:
-      globalScene.quickloadDisplayMode = Setting[index].options[value].value;
-      break;
-    case SettingKeys.Show_Pokemon_Teams:
+    case SettingKeys.Show_Pokemon_Teams: // Pathing Tool
       globalScene.showTeams = Setting[index].options[value].value !== "Off";
       globalScene.showTeamSprites = Setting[index].options[value].value === "Sprite";
       break;

@@ -104,10 +104,6 @@ export class ArenaFlyout extends Phaser.GameObjects.Container {
   /** The {@linkcode Phaser.GameObjects.Text} used to indicate field effects */
   private flyoutTextField: Phaser.GameObjects.Text;
 
-  private shinyCharmIcon: Phaser.GameObjects.Sprite;
-  private shinyCharmLuckCount: Phaser.GameObjects.Text;
-  public shinyState: integer = 0;
-
   /** Container for all field effects observed by this object */
   private readonly fieldEffectInfo: ArenaEffectInfo[] = [];
 
@@ -228,47 +224,6 @@ export class ArenaFlyout extends Phaser.GameObjects.Container {
     // Subscribes to required events available on game start
     globalScene.eventTarget.addEventListener(BattleSceneEventType.NEW_ARENA, this.onNewArenaEvent);
     globalScene.eventTarget.addEventListener(BattleSceneEventType.TURN_END, this.onTurnEndEvent);
-
-    this.shinyCharmIcon = globalScene.add.sprite(this.flyoutWidth - 8, 8, "items", "shiny_charm");
-    this.shinyCharmIcon.setScale(0.4);
-    this.shinyCharmIcon.setInteractive(new Phaser.Geom.Rectangle(2, 2, 26, 27), Phaser.Geom.Rectangle.Contains);
-    this.shinyCharmIcon.setVisible(false);
-    this.flyoutContainer.add(this.shinyCharmIcon);
-
-    this.shinyCharmLuckCount = addTextObject(this.flyoutWidth - 9, 5, "?", TextStyle.BATTLE_INFO);
-    this.shinyCharmLuckCount.setLineSpacing(-1);
-    this.shinyCharmLuckCount.setFontSize(40);
-    this.shinyCharmLuckCount.setAlign("center");
-    this.shinyCharmLuckCount.setOrigin(0, 0);
-    this.flyoutContainer.add(this.shinyCharmLuckCount);
-  }
-
-  doShinyCharmTooltip() {
-    if (true || globalScene.currentBattle.waveIndex % 10 == 0) {
-      this.shinyCharmIcon.setVisible(false);
-      this.shinyCharmLuckCount.setVisible(false);
-      return;
-    }
-    this.shinyCharmIcon.setVisible(true);
-    this.shinyCharmLuckCount.setVisible(true);
-    if (true) { // this.shinyCharmIcon.visible
-      this.shinyCharmIcon.removeAllListeners();
-      if (!globalScene.waveShinyChecked) {
-        this.shinyCharmIcon.setVisible(false);
-        this.shinyCharmLuckCount.setVisible(false);
-        return;
-        //this.shinyCharmIcon.on("pointerover", () => globalScene.ui.showTooltip(null, `???`));
-      } else if (globalScene.waveShinyFlag) {
-        this.shinyCharmIcon.clearTint();
-        this.shinyCharmIcon.on("pointerover", () => globalScene.ui.showTooltip("", "Shinies are OK"));
-        this.shinyCharmLuckCount.setVisible(false);
-      } else {
-        this.shinyCharmIcon.setTintFill(0x000000);
-        this.shinyCharmIcon.on("pointerover", () => globalScene.ui.showTooltip("", `Shinies change shop with luck ${globalScene.waveShinyMinToBreak} or higher`));
-        this.shinyCharmLuckCount.text = getLuckString(globalScene.waveShinyMinToBreak);
-      }
-      this.shinyCharmIcon.on("pointerout", () => globalScene.ui.hideTooltip());
-    }
   }
 
   private onNewArena(_event: Event) {
@@ -291,7 +246,6 @@ export class ArenaFlyout extends Phaser.GameObjects.Container {
   }
 
   display1() {
-    this.doShinyCharmTooltip();
     this.flyoutTextPlayer.text = "";
     this.flyoutTextField.text = "";
     this.flyoutTextEnemy.text = "";
@@ -334,7 +288,6 @@ export class ArenaFlyout extends Phaser.GameObjects.Container {
   }
 
   display2() {
-    this.doShinyCharmTooltip();
     this.clearText();
     const poke = globalScene.getEnemyField();
     this.flyoutTextPlayer.text = "";
@@ -414,7 +367,6 @@ export class ArenaFlyout extends Phaser.GameObjects.Container {
         if (this.flyoutTextEnemy.width + this.flyoutTextPlayer.width > this.flyoutWidth * 6 - 120) {
           this.flyoutTextPlayer.text = regionTag + poke[i].name + formtext;
         }
-        //console.log(this.flyoutTextEnemy.width + this.flyoutTextPlayer.width, this.flyoutWidth * 6 - 120)
         this.flyoutTextPlayer.text = beforeText1 + this.flyoutTextPlayer.text + "\n";
         this.flyoutTextEnemy.text = beforeText2 + this.flyoutTextEnemy.text + "\n\n\n";
       }
@@ -431,7 +383,6 @@ export class ArenaFlyout extends Phaser.GameObjects.Container {
     if (poke.length < 1) {
       //this.flyoutTextEnemy.text += "\n\n"
     }
-    //this.flyoutTextEnemy.text += (globalScene.waveShinyChecked ? (globalScene.waveShinyFlag ? "Shiny Luck: OK" : "Shiny Pokemon will change this floor's shop!") : "Shiny Luck: Not checked")
   }
 
   public printIVs() {
@@ -440,7 +391,6 @@ export class ArenaFlyout extends Phaser.GameObjects.Container {
 
   /** Parses through all set Arena Effects and puts them into the proper {@linkcode Phaser.GameObjects.Text} object */
   public updateFieldText() {
-    this.doShinyCharmTooltip();
     this.clearText();
 
     this.fieldEffectInfo.sort((infoA, infoB) => infoA.duration - infoB.duration);

@@ -185,6 +185,13 @@ export interface InfoToggle {
  */
 // TODO: Breakup into multiple scenes if possible/practical
 export class BattleScene extends SceneBase {
+  // Pathing Tool parameters
+  public showTeams = true;
+  public showTeamSprites = false;
+  public damageDisplay = "Percent";
+  public tempWaveSeed: string;
+  // End pathing tool
+
   public inputController: InputsController;
   public uiInputs: UiInputs;
 
@@ -199,8 +206,6 @@ export class BattleScene extends SceneBase {
   public dexForDevs = false;
   public showMissingRibbons = false;
   public showMovesetFlyout = true;
-  public showTeams = true;
-  public showTeamSprites = false;
   public showArenaFlyout = true;
   public showTimeOfDayWidget = true;
   public timeOfDayAnimation: EaseType = EaseType.NONE;
@@ -208,18 +213,6 @@ export class BattleScene extends SceneBase {
   public enableTutorials: boolean = import.meta.env.VITE_BYPASS_TUTORIAL === "1";
   public enableMoveInfo = true;
   public enableRetries = false;
-  public damageDisplay = "Off";
-  public lazyReloads = false;
-  public menuChangesBiome = false;
-  public showAutosaves = false;
-  public doBiomePanels = false;
-  public disableDailyShinies = true; // Disables shiny luck in Daily Runs to prevent affecting RNG
-  public quickloadDisplayMode = "Dailies";
-  public waveShinyFlag = false;
-  public waveShinyMinToBreak: integer = 0;
-  public waveShinyChecked = false;
-  public tempWaveSeed: string;
-  public tempRngCounter: integer = 0;
   public hideIvs = false;
   public hideMoveSkipConfirm = false;
   // TODO: Remove all plain numbers in place of enums or `const object` equivalents for clarity
