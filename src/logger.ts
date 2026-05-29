@@ -1633,6 +1633,7 @@ export function predictDamage(user: Pokemon, target: Pokemon, move: PokemonMove,
       move: moveObj,
       isCritical: isGuaranteedCrit,
       simulated: true,
+      simulatedTarget: true,
     }
   ).damage * dmgRange;
   let dmgHigh = target.getAttackDamage(
@@ -1641,6 +1642,7 @@ export function predictDamage(user: Pokemon, target: Pokemon, move: PokemonMove,
       move: moveObj,
       isCritical: isGuaranteedCrit,
       simulated: true,
+      simulatedTarget: true,
     }
   ).damage;
   user.isTerastallized = isTera; // Revert to whatever the terastallize state was before

@@ -30,6 +30,8 @@ interface DamageParams {
   simulated?: boolean;
   /** If defined, used in place of calculated effectiveness values */
   effectiveness?: number;
+  /** Pathing tool value, force a certain target in case of random moves */
+  simulatedTarget?: boolean;
 }
 
 /**
