@@ -2743,17 +2743,18 @@ function GetGlobalItemSetups() {
 }
 
 function GetPartyCompositions() {
-  // Make sure the final 3 slots are always generic Mew. Those are selected to faint for the Revives tests.
+  // Make sure the final 3 slots are always generic BLISSEY. Those are selected to faint for the Revives tests.
+  // Adding one ZARUDE to make sure TMs and Tera Shards are working properly.
   return [
-    [SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY],
-    [SpeciesId.BULBASAUR, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY],
-    [SpeciesId.JIGGLYPUFF, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY],
-    [SpeciesId.POLIWHIRL, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY],
+    [SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.ZARUDE, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY],
+    [SpeciesId.BULBASAUR, SpeciesId.BLISSEY, SpeciesId.ZARUDE, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY],
+    [SpeciesId.JIGGLYPUFF, SpeciesId.BLISSEY, SpeciesId.ZARUDE, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY],
+    [SpeciesId.POLIWHIRL, SpeciesId.BLISSEY, SpeciesId.ZARUDE, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY],
     // Swellow for Guts tests:
-    // [ SpeciesId.BLISSEY, SpeciesId.SWELLOW, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY ],
-    // [ SpeciesId.BULBASAUR, SpeciesId.SWELLOW, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY ],
-    // [ SpeciesId.JIGGLYPUFF, SpeciesId.SWELLOW, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY ],
-    // [ SpeciesId.POLIWHIRL, SpeciesId.SWELLOW, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY ],
+    // [ SpeciesId.BLISSEY, SpeciesId.SWELLOW, SpeciesId.ZARUDE, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY ],
+    // [ SpeciesId.BULBASAUR, SpeciesId.SWELLOW, SpeciesId.ZARUDE, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY ],
+    // [ SpeciesId.JIGGLYPUFF, SpeciesId.SWELLOW, SpeciesId.ZARUDE, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY ],
+    // [ SpeciesId.POLIWHIRL, SpeciesId.SWELLOW, SpeciesId.ZARUDE, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY ],
   ];
 }
 
