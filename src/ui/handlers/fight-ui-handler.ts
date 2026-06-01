@@ -334,12 +334,12 @@ export class FightUiHandler extends UiHandler implements InfoToggle {
     );
     if (pokemonMove.getMove().category === MoveCategory.STATUS) {
       if (effectiveness === 0) {
-        return "0x";
+        return i18next.t("fightUiHandler:effectiveness000");
       }
-      return "1x";
+      return i18next.t("fightUiHandler:effectiveness100");
     }
     
-    let text = `${effectiveness}x`;
+    let text = i18next.t("fightUiHandler:effectivenessMultiplier", { effectiveness });
     if (LoggerTools.pathingToolUI) {
       text += ` - ${LoggerTools.predictDamage(pokemon, opponent, pokemonMove, this.fromCommand === Command.TERA)}`;
     }
