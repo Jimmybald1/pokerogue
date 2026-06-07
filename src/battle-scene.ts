@@ -1464,6 +1464,17 @@ export class BattleScene extends SceneBase {
   /* 
    * Pathing tool function
    */
+  InsertGoldenPokeBall() {
+    const modifier = modifierTypes
+      .GOLDEN_POKEBALL()
+      .withIdFromFunc(modifierTypes.GOLDEN_POKEBALL)
+      .newModifier() as ExtraModifierModifier;
+    this.addModifier(modifier, true, false, false, true);
+  }
+
+  /* 
+   * Pathing tool function
+   */
   RemoveModifiers() {
     const mods = this.modifiers.filter(
       m =>
