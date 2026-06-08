@@ -1426,11 +1426,9 @@ class AttackTypeBoosterModifierTypeGenerator extends ModifierTypeGenerator {
   constructor() {
     super((party: readonly Pokemon[], pregenArgs?: any[]) => {
       if (pregenArgs && pregenArgs.length === 1 && pregenArgs[0] in PokemonType) {
-        return new AttackTypeBoosterModifierType(pregenArgs[0] as PokemonType, TYPE_BOOST_ITEM_BOOST_PERCENT);
-      }
-      
-      if (doModifierLogging) {
-        console.log("Generating item: Attack Type Booster");
+        const item = new AttackTypeBoosterModifierType(pregenArgs[0] as PokemonType, TYPE_BOOST_ITEM_BOOST_PERCENT);
+        if (doModifierLogging) console.log(`Generating item: Attack Type Booster - ${item.name}`);
+        return item;
       }
 
       const attackMoveTypeWeights = new Map<PokemonType, number>();
@@ -1467,7 +1465,9 @@ class AttackTypeBoosterModifierTypeGenerator extends ModifierTypeGenerator {
 
       for (const [type, typeWeight] of attackMoveTypeWeights.entries()) {
         if (randInt < weight + typeWeight) {
-          return new AttackTypeBoosterModifierType(type, TYPE_BOOST_ITEM_BOOST_PERCENT);
+          const item = new AttackTypeBoosterModifierType(type, TYPE_BOOST_ITEM_BOOST_PERCENT);
+          if (doModifierLogging) console.log(`Generating item: Attack Type Booster - ${item.name}`);
+          return item;
         }
         weight += typeWeight;
       }
@@ -1569,15 +1569,9 @@ class SpeciesStatBoosterModifierTypeGenerator extends ModifierTypeGenerator {
     super((party: readonly Pokemon[], pregenArgs?: any[]) => {
       const items = SpeciesStatBoosterModifierTypeGenerator.items;
       if (pregenArgs && pregenArgs.length === 1 && pregenArgs[0] in items) {
-        return new SpeciesStatBoosterModifierType(pregenArgs[0] as SpeciesStatBoosterItem);
-      }
-
-      if (doModifierLogging) {
-        console.log("Generating item: Species Booster");
-      }
-
-      if (doModifierLogging) {
-        console.log("Generating item: Species Booster");
+        const item = new SpeciesStatBoosterModifierType(pregenArgs[0] as SpeciesStatBoosterItem);
+        if (doModifierLogging) console.log(`Generating item: Species Booster - ${item.name}`);
+        return item;
       }
 
       // Get a pool of items based on the rarity.
@@ -1646,7 +1640,9 @@ class SpeciesStatBoosterModifierTypeGenerator extends ModifierTypeGenerator {
           if (weights[i] !== 0) {
             const curWeight = weight + weights[i];
             if (randInt <= weight + weights[i]) {
-              return new SpeciesStatBoosterModifierType(keys[i] as SpeciesStatBoosterItem);
+              const item = new SpeciesStatBoosterModifierType(keys[i] as SpeciesStatBoosterItem);
+              if (doModifierLogging) console.log(`Generating item: Species Booster - ${item.name}`);
+              return item;
             }
             weight = curWeight;
           }
@@ -1662,11 +1658,9 @@ class TmModifierTypeGenerator extends ModifierTypeGenerator {
   constructor(tier: ModifierTier) {
     super((party: readonly Pokemon[], pregenArgs?: any[]) => {
       if (pregenArgs && pregenArgs.length === 1 && pregenArgs[0] in MoveId) {
-        return new TmModifierType(pregenArgs[0] as MoveId);
-      }
-
-      if (doModifierLogging) {
-        console.log("Generating item: TM (Tier: " + getEnumKeys(ModifierTier)[tier].toLowerCase() + ")");
+        const item = new TmModifierType(pregenArgs[0] as MoveId);
+        if (doModifierLogging) console.log(`Generating item: TM (Tier: ${ModifierTier[tier].toLowerCase()}) - ${item.name}`);
+        return item;
       }
 
       const partyMemberCompatibleTms = party.map(p => {
@@ -1685,7 +1679,10 @@ class TmModifierTypeGenerator extends ModifierTypeGenerator {
       }
       // TODO: should this use `randSeedItem`?
       const randTmIndex = randSeedInt(tierUniqueCompatibleTms.length, undefined, doModifierLogging ? "Choosing a TM to give" : "%HIDE");
-      return new TmModifierType(tierUniqueCompatibleTms[randTmIndex]);
+
+      const item = new TmModifierType(tierUniqueCompatibleTms[randTmIndex]);
+      if (doModifierLogging) console.log(`Generating item: TM (Tier: ${ModifierTier[tier].toLowerCase()}) - ${item.name}`);
+      return item;
     });
   }
 }
@@ -1694,11 +1691,9 @@ class EvolutionItemModifierTypeGenerator extends ModifierTypeGenerator {
   constructor(rare: boolean) {
     super((party: readonly Pokemon[], pregenArgs?: any[]) => {
       if (pregenArgs && pregenArgs.length === 1 && pregenArgs[0] in EvolutionItem) {
-        return new EvolutionItemModifierType(pregenArgs[0] as EvolutionItem);
-      }
-
-      if (doModifierLogging) {
-        console.log("Generating item: Evolution Item");
+        const item = new EvolutionItemModifierType(pregenArgs[0] as EvolutionItem);
+        if (doModifierLogging) console.log(`Generating item: Evolution Item - ${item.name}`);
+        return item;
       }
 
       const evolutionItemPool = [
@@ -1742,7 +1737,9 @@ class EvolutionItemModifierTypeGenerator extends ModifierTypeGenerator {
       }
 
       // TODO: should this use `randSeedItem`?
-      return new EvolutionItemModifierType(evolutionItemPool[randSeedInt(evolutionItemPool.length, undefined, doModifierLogging ? "Choosing an evolution item" : "%HIDE")]!); // TODO: is the bang correct?
+      const item = new EvolutionItemModifierType(evolutionItemPool[randSeedInt(evolutionItemPool.length, undefined, doModifierLogging ? "Choosing an evolution item" : "%HIDE")]!); // TODO: is the bang correct?
+      if (doModifierLogging) console.log(`Generating item: Evolution Item - ${item.name}`);
+      return item;
     });
   }
 }
@@ -1751,11 +1748,9 @@ export class FormChangeItemModifierTypeGenerator extends ModifierTypeGenerator {
   constructor(isRareFormChangeItem: boolean) {
     super((party: readonly Pokemon[], pregenArgs?: any[]) => {
       if (pregenArgs && pregenArgs.length === 1 && pregenArgs[0] in FormChangeItem) {
-        return new FormChangeItemModifierType(pregenArgs[0] as FormChangeItem);
-      }
-
-      if (doModifierLogging) {
-        console.log("Generating item: Form Change Item");
+        const item = new FormChangeItemModifierType(pregenArgs[0] as FormChangeItem);
+        if (doModifierLogging) console.log(`Generating item: Form Change Item - ${item.name}`);
+        return item;
       }
 
       const formChangeItemPool = [
@@ -1832,7 +1827,9 @@ export class FormChangeItemModifierTypeGenerator extends ModifierTypeGenerator {
       }
 
       // TODO: should this use `randSeedItem`?
-      return new FormChangeItemModifierType(formChangeItemPool[randSeedInt(formChangeItemPool.length, undefined, doModifierLogging ? "Choosing a form change item" : "%HIDE")]);
+      const item = new FormChangeItemModifierType(formChangeItemPool[randSeedInt(formChangeItemPool.length, undefined, doModifierLogging ? "Choosing a form change item" : "%HIDE")]);
+      if (doModifierLogging) console.log(`Generating item: Form Change Item - ${item.name}`);
+      return item;
     });
   }
 }
@@ -2535,6 +2532,8 @@ export function regenerateModifierPoolThresholds(
   poolType: ModifierPoolType,
   rerollCount = 0,
 ) {
+  if (doModifierLogging) console.log("--- Setup Modifier Weights")
+
   const pool = getModifierPoolForType(poolType);
   itemPoolChecks.forEach((_v, k) => {
     itemPoolChecks.set(k, false);
@@ -2679,6 +2678,8 @@ export function getPlayerModifierTypeOptions(
   modifierTiers?: ModifierTier[],
   customModifierSettings?: CustomModifierSettings,
 ): ModifierTypeOption[] {
+  if (doModifierLogging) console.log("----- Start Modifier Row");
+
   const options: ModifierTypeOption[] = [];
   const retryCount = Math.min(count * 5, 50);
   if (customModifierSettings) {
@@ -3052,9 +3053,7 @@ function getNewModifierTypeOption(
       }
       return getNewModifierTypeOption(party, poolType, tier, upgradeCount, ++retryCount, allowLuckUpgrades);
     } else {
-      if (doModifierLogging) {
-        console.log("Generated type", modifierType);
-      }
+      if (doModifierLogging) console.log("Generated type", modifierType.name);
     }
   }
 
