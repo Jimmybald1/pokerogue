@@ -2236,7 +2236,7 @@ function CreateLog(pot = 0, suppot = 0, hyppot = 0, maxpot = 0, revive = 0, eth 
     items.push("nothing");
   }
 
-  items.push(`Highest lvl: ${level - 19}-${level}`);
+  items.push(`Highest lvl: ${level - 18}-${level+1}`);
 
   return items.join(" + ");
 }
