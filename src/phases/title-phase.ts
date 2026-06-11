@@ -25,6 +25,7 @@ import { isLocalServerConnected } from "#utils/common";
 import { getPokemonSpecies } from "#utils/pokemon-utils";
 import i18next from "i18next";
 import * as LoggerTools from "../logger";
+import { ItemType } from "../logger";
 
 const NO_SAVE_SLOT = -1;
 
@@ -174,42 +175,42 @@ export class TitlePhase extends Phase {
             {
               label: "Ability no evo",
               handler: () => {
-                LoggerTools.InitShopScouting(0, LoggerTools.ItemType.ABILITY);
+                LoggerTools.InitShopScouting(0, ItemType.ABILITY);
                 return true;
               }
             },
             {
               label: "Ability 2x item evo",
               handler: () => {
-                LoggerTools.InitShopScouting(3, LoggerTools.ItemType.ABILITY);
+                LoggerTools.InitShopScouting(3, ItemType.ABILITY);
                 return true;
               }
             },
             {
               label: "Shiny no evo",
               handler: () => {
-                LoggerTools.InitShopScouting(0, LoggerTools.ItemType.SHINY);
+                LoggerTools.InitShopScouting(0, ItemType.SHINY);
                 return true;
               }
             },
             {
               label: "Shiny 2x item evo",
               handler: () => {
-                LoggerTools.InitShopScouting(3, LoggerTools.ItemType.SHINY);
+                LoggerTools.InitShopScouting(3, ItemType.SHINY);
                 return true;
               }
             },
             {
               label: "Shiny solo mon",
               handler: () => {
-                LoggerTools.InitShopScouting(0, LoggerTools.ItemType.SHINY, true);
+                LoggerTools.InitShopScouting(0, ItemType.SHINY, true);
                 return true;
               }
             },
             {
               label: "Shiny solo mon & move",
               handler: () => {
-                LoggerTools.InitShopScouting(0, LoggerTools.ItemType.SHINY, true, true);
+                LoggerTools.InitShopScouting(0, ItemType.SHINY, true, true);
                 return true;
               }
             },
