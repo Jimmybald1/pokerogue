@@ -172,23 +172,44 @@ export class TitlePhase extends Phase {
           const shopOptions: OptionSelectItem[] = [];
           shopOptions.push(
             {
-              label: "Shop no evo",
+              label: "Ability no evo",
               handler: () => {
-                LoggerTools.InitShopScouting(0);
+                LoggerTools.InitShopScouting(0, LoggerTools.ItemType.ABILITY);
                 return true;
               }
             },
             {
-              label: "Shop 2x item evo",
+              label: "Ability 2x item evo",
               handler: () => {
-                LoggerTools.InitShopScouting(3);
+                LoggerTools.InitShopScouting(3, LoggerTools.ItemType.ABILITY);
                 return true;
               }
             },
             {
-              label: "Shop solo mon",
+              label: "Shiny no evo",
               handler: () => {
-                LoggerTools.InitShopScouting(0, true);
+                LoggerTools.InitShopScouting(0, LoggerTools.ItemType.SHINY);
+                return true;
+              }
+            },
+            {
+              label: "Shiny 2x item evo",
+              handler: () => {
+                LoggerTools.InitShopScouting(3, LoggerTools.ItemType.SHINY);
+                return true;
+              }
+            },
+            {
+              label: "Shiny solo mon",
+              handler: () => {
+                LoggerTools.InitShopScouting(0, LoggerTools.ItemType.SHINY, true);
+                return true;
+              }
+            },
+            {
+              label: "Shiny solo mon & move",
+              handler: () => {
+                LoggerTools.InitShopScouting(0, LoggerTools.ItemType.SHINY, true, true);
                 return true;
               }
             },

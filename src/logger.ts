@@ -1826,7 +1826,7 @@ function ScoutingWithoutUI(charms: number) {
   });
 
   ClearParty(party);
-  FillParty(party, [SpeciesId.VENUSAUR], 20);
+  FillParty(party, [SpeciesId.VENUSAUR], 20, false);
 
   var output: string[][] = [];
   const date = new Date();
@@ -2100,11 +2100,16 @@ export function TestAllAbilityCharms(baseChance: number, abilityHidden: AbilityI
 // #endregion
 
 // #region 16 Shop Scouting
-export function InitShopScouting(method, isSolo = false) {
+export enum ItemType {
+  ABILITY = "ABILITY_CHARM",
+  SHINY = "SHINY_CHARM",
+}
+
+export function InitShopScouting(method, itemType: ItemType, isSolo = false, isSoloMove = false) {
   globalScene.sessionSlotId = 0;
   globalScene.gameData.loadSession(globalScene.sessionSlotId).then(() => {
     console.time('Shop Scouting');
-    ShopScouting(method, isSolo);
+    ShopScouting(method, itemType, isSolo, isSoloMove);
     console.timeEnd('Shop Scouting');
   }).catch(err => {
     console.error(err);
@@ -2113,7 +2118,7 @@ export function InitShopScouting(method, isSolo = false) {
 }
 
 const charmList: string[] = [];
-function ShopScouting(method: number, isSolo) {
+function ShopScouting(method: number, itemType: ItemType, isSolo: boolean, isSoloMove: boolean) {
   // Remove any lures or charms
   globalScene.RemoveModifiers();
   console.log(`Starting shop scouting ${new Date().toLocaleTimeString()}`);
@@ -2128,12 +2133,13 @@ function ShopScouting(method: number, isSolo) {
   console.error("Starters:", party[0]?.name, party[1]?.name, party[2]?.name, party[3]?.name, party[4]?.name, party[5]?.name);
 
   const globals = GetGlobalItemSetups();
-  const mushroom = GetMushroomSetups(party, comp);
+  const mushroom = GetMushroomSetups(party, comp, isSoloMove);
   const lures = GetLureSetups();
   const ethers = GetEtherSetups(party);
   const revives = GetReviveSetups(party);
   const potions = GetPotionSetups(party);
 
+  // Quick single setup test
   // ClearParty(party);
   // overrides.MOVESET_OVERRIDE = [Moves.TACKLE, Moves.SPLASH, Moves.SPLASH, Moves.SPLASH];
   // FillParty(party, comps[0], 39);
@@ -2146,11 +2152,11 @@ function ShopScouting(method: number, isSolo) {
   globals.forEach(g => {
     globalScene.RemoveModifiers();
 
-    // globalScene.InsertDynamaxBand();
-    // globalScene.InsertMegaBracelet();
-    // globalScene.InsertLockCapsule();
-    // globalScene.InsertTeraOrb();
-    // globalScene.InsertIVScanner();
+    // globalScene.InsertDynamaxBand(); // Careful with GMax able mons
+    // globalScene.InsertMegaBracelet(); // Careful with Mega able mons
+    // globalScene.InsertLockCapsule(); // Lock rerolls are not supported
+    // globalScene.InsertTeraOrb(); // Careful with full Mono shard teams, those shards are removed from the pool
+    // globalScene.InsertIVScanner(); // Typically doesnt change anything
 
     const rogueItem = g();
     mushroom.forEach(m => {
@@ -2191,7 +2197,7 @@ function ShopScouting(method: number, isSolo) {
 
               if (p) {
                 const comptext = CreateLog(p.pot, p.suppot, p.hyppot, p.maxpot, r, e, text, mu.level, rogueItem);
-                GenerateShop(party, comptext, mu.start, mu.end);
+                GenerateShop(party, comptext, mu.start, mu.end, itemType);
               }
             });
           });
@@ -2247,7 +2253,7 @@ function CreateLog(pot = 0, suppot = 0, hyppot = 0, maxpot = 0, revive = 0, eth 
 // LOCK_CAPSULE
 // MEGA_BRACELET
 // DYNAMAX_BAND
-function GenerateShop(party: PlayerPokemon[], comptext: string, start: integer, end: integer) {
+function GenerateShop(party: PlayerPokemon[], comptext: string, start: integer, end: integer, itemType: ItemType) {
   for (var w = start; w < end; w++) {
     if (w % 10 == 0) {
       continue;
@@ -2258,7 +2264,7 @@ function GenerateShop(party: PlayerPokemon[], comptext: string, start: integer, 
       for (let i = 0; i < 4; i++) {
         regenerateModifierPoolThresholds(party, ModifierPoolType.PLAYER, i);
         const typeOptions: ModifierTypeOption[] = getPlayerModifierTypeOptions(Math.min(6, Math.max(3, 3 + Math.floor((w / 10) - 1))), party);
-        if (typeOptions.some(t => t.type.id == "ABILITY_CHARM")) {
+        if (typeOptions.some(t => t.type.id == itemType)) {
           if (logRNG) console.log(w, i, comptext);
           charmList.push(`${w} ${i} ${comptext}`);
         }
@@ -2673,26 +2679,26 @@ function GetLureSetups() {
   ];
 }
 
-function GetMushroomSetups(party: PlayerPokemon[], comp: SpeciesId[]) {
+function GetMushroomSetups(party: PlayerPokemon[], comp: SpeciesId[], isSoloMove: any) {
   return [
     (mu: { start: integer, end: integer, level: integer }) => {
       ClearParty(party);
       mu.level = 39;
-      FillParty(party, comp, mu.level);
+      FillParty(party, comp, mu.level, isSoloMove);
       mu.start = 1;
       mu.end = 20;
     },
     (mu: { start: integer, end: integer, level: integer }) => {
       ClearParty(party);
       mu.level = 59;
-      FillParty(party, comp, mu.level);
+      FillParty(party, comp, mu.level, isSoloMove);
       mu.start = 15;
       mu.end = 40;
     },
     (mu: { start: integer, end: integer, level: integer }) => {
       ClearParty(party);
       mu.level = 79;
-      FillParty(party, comp, mu.level);
+      FillParty(party, comp, mu.level, isSoloMove);
       mu.start = 35;
       mu.end = 49;
     },
@@ -2767,16 +2773,21 @@ function ClearParty(party: PlayerPokemon[]) {
   while (party.length > 0);
 }
 
-function FillParty(party: PlayerPokemon[], comp: SpeciesId[], level: integer) {
+function FillParty(party: PlayerPokemon[], comp: SpeciesId[], level: integer, isSoloMove: any) {
   comp.forEach((s: SpeciesId) => {
-    AddPokemon(party, s, level);
+    AddPokemon(party, s, level, isSoloMove);
   });
 }
 
-function AddPokemon(party: PlayerPokemon[], speciesId: SpeciesId, level: integer) {
+function AddPokemon(party: PlayerPokemon[], speciesId: SpeciesId, level: integer, isSoloMove: any) {
   const pokemon = allSpecies.filter(sp => sp.speciesId == speciesId)[0];
   const playerPokemon = globalScene.addPlayerPokemon(pokemon, level);
-  playerPokemon.moveset = [new PokemonMove(MoveId.TACKLE), new PokemonMove(MoveId.SPLASH), new PokemonMove(MoveId.SPLASH), new PokemonMove(MoveId.SPLASH)];
+  if (!isSoloMove || party.length === 0) {
+    playerPokemon.moveset = [new PokemonMove(MoveId.TACKLE), new PokemonMove(MoveId.SPLASH), new PokemonMove(MoveId.SPLASH), new PokemonMove(MoveId.SPLASH)];
+  }
+  else {
+    playerPokemon.moveset = [new PokemonMove(MoveId.SPLASH), new PokemonMove(MoveId.SPLASH), new PokemonMove(MoveId.SPLASH), new PokemonMove(MoveId.SPLASH)];
+  }
   party.push(playerPokemon);
 }
 // #endregion
