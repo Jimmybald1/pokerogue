@@ -24,7 +24,7 @@ import { applyMoveAttrs } from "#moves/apply-attrs";
 import { MultiHitAttr } from "#types/move-types";
 import { MultiHitType } from "#enums/multi-hit-type";
 import { getPlayerModifierTypeOptions, ModifierTypeOption, PokemonMultiHitModifierType, regenerateModifierPoolThresholds } from "#modifiers/modifier-type";
-import { allAbilities, allBiomes, allSpecies } from "#data/data-lists";
+import { allAbilities, allBiomes } from "#data/data-lists";
 import { MoveId } from "#enums/move-id";
 import { ModifierPoolType } from "#enums/modifier-pool-type";
 import { getPokemonNameWithAffix } from "./messages";
@@ -41,6 +41,7 @@ import { EnemyCommandPhase } from "#phases/enemy-command-phase";
 import { BattlerIndex } from "#enums/battler-index";
 import { TrainerVariant } from "#enums/trainer-variant";
 import { Variant } from "#sprites/variant";
+import { speciesDataRegistry } from "./global-species-data-registry";
 
 /*
 SECTIONS
@@ -1806,7 +1807,6 @@ export function InitScouting(charms: number) {
     console.error(err);
     globalScene.ui.showText("something went wrong, see console error", null);
   });
-  throw new Error("Don't continue with regular phases");
 }
 
 let encounterList: string[] = [];
@@ -2780,7 +2780,7 @@ function FillParty(party: PlayerPokemon[], comp: SpeciesId[], level: integer, is
 }
 
 function AddPokemon(party: PlayerPokemon[], speciesId: SpeciesId, level: integer, isSoloMove: any) {
-  const pokemon = allSpecies.filter(sp => sp.speciesId == speciesId)[0];
+  const pokemon = speciesDataRegistry.getSpecies(speciesId);
   const playerPokemon = globalScene.addPlayerPokemon(pokemon, level);
   if (!isSoloMove || party.length === 0) {
     playerPokemon.moveset = [new PokemonMove(MoveId.TACKLE), new PokemonMove(MoveId.SPLASH), new PokemonMove(MoveId.SPLASH), new PokemonMove(MoveId.SPLASH)];

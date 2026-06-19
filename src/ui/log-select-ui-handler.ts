@@ -5,7 +5,6 @@ import * as LoggerTools from "../logger";
 import { globalScene } from "#app/global-scene";
 import { UiMode } from "#enums/ui-mode";
 import { fixedInt } from "#app/utils/common";
-import { allSpecies } from "#app/data/data-lists";
 import { SpeciesId } from "#enums/species-id";
 import { getPokemonSpecies } from "#app/utils/pokemon-utils";
 import { addTextObject } from "./text";
@@ -13,6 +12,7 @@ import { TextStyle } from "#enums/text-style";
 import { getEnumValues } from "#utils/enums";
 import { BattleScene } from "#app/battle-scene";
 import { MessageUiHandler } from "#ui/message-ui-handler";
+import { speciesDataRegistry } from "#app/global-species-data-registry";
 
 export type LogSelectCallback = (key?: string) => void;
 
@@ -263,7 +263,6 @@ class SessionSlot extends Phaser.GameObjects.Container {
     const waveLabel = addTextObject(185, 33, wavecount + " wv" + (wavecount == 1 ? "" : "s"), TextStyle.WINDOW);
     this.add(waveLabel);
     const fileSizeLabel = addTextObject(255, 33, LoggerTools.getSize(JSON.stringify(data)), TextStyle.WINDOW);
-    //fileSizeLabel.setAlign("right")
     this.add(fileSizeLabel);
 
     const pokemonIconsContainer = globalScene.add.container(144, 4);
@@ -275,20 +274,12 @@ class SessionSlot extends Phaser.GameObjects.Container {
         const iconContainer = globalScene.add.container(26 * i, 0);
         iconContainer.setScale(0.75);
 
-        //if (getEnumValues(Species)[p.id] == undefined)
-        //return;
-
-        //if (getPokemonSpecies(getEnumValues(Species)[p.id]) == undefined)
-        //return;
-
-        if (allSpecies[getEnumValues(SpeciesId).indexOf(p.id)] == undefined) {
+        if (getEnumValues(SpeciesId)[p.id] == undefined) {
           // Do nothing
-          //console.log(p.id)
-          const icon = globalScene.addPkIcon(getPokemonSpecies(getEnumValues(SpeciesId)[p.id]), 0, 0, 0, 0, 0);
+          const icon = globalScene.addPkIcon(speciesDataRegistry.getSpecies(p.id), 0, 0, 0, 0, 0);
           iconContainer.add(icon);
         } else {
-          const icon = globalScene.addPkIcon(getPokemonSpecies(getEnumValues(SpeciesId)[p.id]), 0, 0, 0, 0, 0);
-          //const icon = globalScene.addPkIcon(getPokemonSpecies(getEnumValues(Species)[allSpecies[getEnumValues(Species).indexOf(p.id)].speciesId]), 0, 0, 0, 0, 0);
+          const icon = globalScene.addPkIcon(speciesDataRegistry.getSpecies(p.id), 0, 0, 0, 0, 0);
           iconContainer.add(icon);
         }
 
