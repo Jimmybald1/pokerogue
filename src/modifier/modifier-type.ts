@@ -2756,7 +2756,11 @@ function getModifierTypeOptionWithRetry(
   allowLuckUpgrades?: boolean,
 ): ModifierTypeOption {
   allowLuckUpgrades = allowLuckUpgrades ?? true;
+  if (doModifierLogging) console.log("--- Modifier Option Attempt:", 0)
   let candidate = getNewModifierTypeOption(party, ModifierPoolType.PLAYER, tier, undefined, 0, allowLuckUpgrades);
+  if (doModifierLogging) console.log("Modifier Candidate:", candidate?.type.name);
+  if (doModifierLogging) console.log("Group:", candidate?.type.group);
+
   const candidateValidity = new BooleanHolder(true);
   applyChallenges(ChallengeType.WAVE_REWARD, candidate, candidateValidity);
   let r = 0;
@@ -2767,6 +2771,7 @@ function getModifierTypeOptionWithRetry(
         .length > 0)
     || !candidateValidity.value
   ) {
+    if (doModifierLogging) console.log("--- Modifier Option Attempt:", r)
     candidate = getNewModifierTypeOption(
       party,
       ModifierPoolType.PLAYER,
@@ -2775,6 +2780,8 @@ function getModifierTypeOptionWithRetry(
       0,
       allowLuckUpgrades,
     );
+    if (doModifierLogging) console.log("Modifier Candidate:", candidate?.type.name);
+    if (doModifierLogging) console.log("Group:", candidate?.type.group);
     applyChallenges(ChallengeType.WAVE_REWARD, candidate, candidateValidity);
   }
   return candidate!;
@@ -2967,9 +2974,7 @@ function getNewModifierTypeOption(
     case ModifierPoolType.DAILY_STARTER:
       thresholds = dailyStarterModifierPoolThresholds;
       break;
-  }
-  const alternateTiers: ModifierTier[] = [];
-  const alternateTierContents: string[] = [];
+  }  
   if (tier === undefined) {
     const tierValue = randSeedInt(1024, undefined, "Choosing a modifier tier");
     if (!upgradeCount) {
@@ -3025,6 +3030,8 @@ function getNewModifierTypeOption(
     tier--;
   }
 
+  if (doModifierLogging) console.log(ModifierTier[tier], retryCount);
+
   const tierThresholds = Object.keys(thresholds[tier]);
   const totalWeight = Number.parseInt(tierThresholds.at(-1)!);
   const value = randSeedInt(totalWeight, undefined, doModifierLogging ? "Weighted modifier selection (total " + totalWeight + ")" : "%HIDE");
@@ -3036,78 +3043,31 @@ function getNewModifierTypeOption(
       break;
     }
   }
-
+  
   if (index === undefined) {
     return null;
   }
 
-  if (player) {
-    //console.log(index, ignoredPoolIndexes[tier].filter(i => i <= index).length, ignoredPoolIndexes[tier].filter(i => i <= index).length)
-  }
+  // if (player) {
+  //   console.log(index, ignoredPoolIndexes[tier].filter(i => i <= index).length, ignoredPoolIndexes[tier]);
+  // }  
   let modifierType: ModifierType | null = pool[tier][index].modifierType;
+
+  if (doModifierLogging) console.log("Generated type", modifierType.id);
+
   if (modifierType instanceof ModifierTypeGenerator) {
     modifierType = (modifierType as ModifierTypeGenerator).generateType(party);
     if (modifierType === null) {
       if (player) {
-        //console.log(ModifierTier[tier], upgradeCount);
+        // console.log(ModifierTier[tier], upgradeCount);
       }
       return getNewModifierTypeOption(party, poolType, tier, upgradeCount, ++retryCount, allowLuckUpgrades);
-    } else {
-      if (doModifierLogging) console.log("Generated type", modifierType.name);
     }
   }
 
-  //console.log(modifierType, player ? "" : "(enemy)");
+  // console.log(modifierType, player ? "" : "(enemy)");
 
-  const Option = new ModifierTypeOption(modifierType as ModifierType, upgradeCount!);
-  if (alternateTiers.length > 0) {
-    //console.log(Option.type.name, alternateTiers)
-    Option.alternates = alternateTiers;
-  }
-  if (alternateTierContents.length > 0) {
-    //console.log(Option.type.name, alternateTiers)
-    Option.advancedAlternates = alternateTierContents;
-  }
-  return Option;
-}
-/**
- * Gets an item index to add to shop rewards. Used for reroll predictions.
- * @param thresholds The "loot table" for this floor
- * @param tier The rarity tier to pull from
- * @returns An index for use in {@linkcode getModifierTypeSimulated}
- */
-function getItemIndex(thresholds, tier) {
-  const tierThresholds = Object.keys(thresholds[tier]);
-  const totalWeight = parseInt(tierThresholds[tierThresholds.length - 1]);
-  const value = randSeedInt(totalWeight, undefined, "%HIDE");
-  let index: integer;
-  for (const t of tierThresholds) {
-    const threshold = parseInt(t);
-    if (value < threshold) {
-      index = thresholds[tier][threshold];
-      break;
-    }
-  }
-  return index!;
-}
-/**
- * Uses an index (generated from {@linkcode getItemIndex}) to get a reward item
- * @param pool The items to pull from, based on the PoolType specified in {@linkcode getNewModifierTypeOption}
- * @param tier The rarity tier to pull from
- * @param index The item index from the loot pool
- * @param party The player's party, used for generating some specific items
- * @returns An item name, or `[Failed to generate]` if a `ModifierTypeGenerator` was rolled, but no item was available to generate (It won't retry)
- */
-function getModifierTypeSimulated(pool, tier, index, party): string {
-  let modifierType: ModifierType = (pool[tier][index]).modifierType;
-  if (modifierType instanceof ModifierTypeGenerator) {
-    modifierType = (modifierType as ModifierTypeGenerator).generateType(party)!;
-    if (modifierType === null) {
-      return "[nothing generated]";
-      return ((pool[tier][index]).modifierType as ModifierType).name;
-    }
-  }
-  return modifierType.name;
+  return new ModifierTypeOption(modifierType as ModifierType, upgradeCount!); // TODO: is this bang correct?
 }
 
 export function getDefaultModifierTypeForTier(tier: ModifierTier): ModifierType {
