@@ -27317,14 +27317,14 @@
     "dexNum": 206,
     "id": "DUNSPARCE",
     "form": null,
-    "level": 31,
+    "level": 30,
     "move": "ENDURE"
   },
   {
     "dexNum": 206,
     "id": "DUNSPARCE",
     "form": null,
-    "level": 33,
+    "level": 32,
     "move": "HYPER_DRILL"
   },
   {
@@ -70871,6 +70871,13 @@
     "dexNum": 550,
     "id": "BASCULIN",
     "form": null,
+    "level": "RELEARN_MOVE",
+    "move": "UPROAR"
+  },
+  {
+    "dexNum": 550,
+    "id": "BASCULIN",
+    "form": null,
     "level": 1,
     "move": "TAIL_WHIP"
   },
@@ -70962,6 +70969,13 @@
     "dexNum": 550,
     "id": "BASCULIN",
     "form": null,
+    "level": 40,
+    "move": "FINAL_GAMBIT"
+  },
+  {
+    "dexNum": 550,
+    "id": "BASCULIN",
+    "form": null,
     "level": 44,
     "move": "WAVE_CRASH"
   },
@@ -70985,41 +70999,6 @@
     "form": null,
     "level": 56,
     "move": "HEAD_SMASH"
-  },
-  {
-    "dexNum": 550,
-    "id": "BASCULIN",
-    "form": "",
-    "level": "RELEARN_MOVE",
-    "move": "UPROAR"
-  },
-  {
-    "dexNum": 550,
-    "id": "BASCULIN",
-    "form": "",
-    "level": 40,
-    "move": "FINAL_GAMBIT"
-  },
-  {
-    "dexNum": 550,
-    "id": "BASCULIN",
-    "form": "blue-striped",
-    "level": "RELEARN_MOVE",
-    "move": "UPROAR"
-  },
-  {
-    "dexNum": 550,
-    "id": "BASCULIN",
-    "form": "blue-striped",
-    "level": 40,
-    "move": "FINAL_GAMBIT"
-  },
-  {
-    "dexNum": 550,
-    "id": "BASCULIN",
-    "form": "white-striped",
-    "level": 40,
-    "move": "UPROAR"
   },
   {
     "dexNum": 551,
@@ -73421,6 +73400,13 @@
     "form": null,
     "level": 42,
     "move": "EXPLOSION"
+  },
+  {
+    "dexNum": 569,
+    "id": "GARBODOR",
+    "form": null,
+    "level": "RELEARN_MOVE",
+    "move": "HARD_PRESS"
   },
   {
     "dexNum": 569,
@@ -88246,21 +88232,14 @@
     "id": "INKAY",
     "form": null,
     "level": 29,
+    "move": "TOPSY_TURVY"
+  },
+  {
+    "dexNum": 686,
+    "id": "INKAY",
+    "form": null,
+    "level": 31,
     "move": "PSYCHO_CUT"
-  },
-  {
-    "dexNum": 686,
-    "id": "INKAY",
-    "form": null,
-    "level": 31,
-    "move": "LIGHT_SCREEN"
-  },
-  {
-    "dexNum": 686,
-    "id": "INKAY",
-    "form": null,
-    "level": 31,
-    "move": "REFLECT"
   },
   {
     "dexNum": 686,
@@ -88281,7 +88260,14 @@
     "id": "INKAY",
     "form": null,
     "level": 39,
-    "move": "TOPSY_TURVY"
+    "move": "LIGHT_SCREEN"
+  },
+  {
+    "dexNum": 686,
+    "id": "INKAY",
+    "form": null,
+    "level": 39,
+    "move": "REFLECT"
   },
   {
     "dexNum": 686,
@@ -88289,6 +88275,13 @@
     "form": null,
     "level": 42,
     "move": "SUPERPOWER"
+  },
+  {
+    "dexNum": 687,
+    "id": "MALAMAR",
+    "form": null,
+    "level": 1,
+    "move": "REVERSAL"
   },
   {
     "dexNum": 687,
@@ -88310,13 +88303,6 @@
     "form": null,
     "level": 1,
     "move": "CONSTRICT"
-  },
-  {
-    "dexNum": 687,
-    "id": "MALAMAR",
-    "form": null,
-    "level": 1,
-    "move": "REVERSAL"
   },
   {
     "dexNum": 687,
@@ -88393,21 +88379,14 @@
     "id": "MALAMAR",
     "form": null,
     "level": 29,
+    "move": "TOPSY_TURVY"
+  },
+  {
+    "dexNum": 687,
+    "id": "MALAMAR",
+    "form": null,
+    "level": 31,
     "move": "PSYCHO_CUT"
-  },
-  {
-    "dexNum": 687,
-    "id": "MALAMAR",
-    "form": null,
-    "level": 31,
-    "move": "LIGHT_SCREEN"
-  },
-  {
-    "dexNum": 687,
-    "id": "MALAMAR",
-    "form": null,
-    "level": 31,
-    "move": "REFLECT"
   },
   {
     "dexNum": 687,
@@ -88428,7 +88407,14 @@
     "id": "MALAMAR",
     "form": null,
     "level": 42,
-    "move": "TOPSY_TURVY"
+    "move": "LIGHT_SCREEN"
+  },
+  {
+    "dexNum": 687,
+    "id": "MALAMAR",
+    "form": null,
+    "level": 42,
+    "move": "REFLECT"
   },
   {
     "dexNum": 687,
@@ -92447,6 +92433,13 @@
     "form": null,
     "level": 100,
     "move": "CORE_ENFORCER"
+  },
+  {
+    "dexNum": 718,
+    "id": "ZYGARDE",
+    "form": "mega",
+    "level": "EVOLVE_MOVE",
+    "move": "NIHIL_LIGHT"
   },
   {
     "dexNum": 719,
@@ -122230,14 +122223,14 @@
     "dexNum": 982,
     "id": "DUDUNSPARCE",
     "form": null,
-    "level": 31,
+    "level": 30,
     "move": "ENDURE"
   },
   {
     "dexNum": 982,
     "id": "DUDUNSPARCE",
     "form": null,
-    "level": 33,
+    "level": 32,
     "move": "HYPER_DRILL"
   },
   {
@@ -129899,6 +129892,188 @@
     "move": "FLARE_BLITZ"
   },
   {
+    "dexNum": 2658,
+    "id": "BATTLE_BOND_GRENINJA",
+    "form": null,
+    "level": "RELEARN_MOVE",
+    "move": "HAZE"
+  },
+  {
+    "dexNum": 2658,
+    "id": "BATTLE_BOND_GRENINJA",
+    "form": null,
+    "level": "RELEARN_MOVE",
+    "move": "NIGHT_SLASH"
+  },
+  {
+    "dexNum": 2658,
+    "id": "BATTLE_BOND_GRENINJA",
+    "form": null,
+    "level": "EVOLVE_MOVE",
+    "move": "WATER_SHURIKEN"
+  },
+  {
+    "dexNum": 2658,
+    "id": "BATTLE_BOND_GRENINJA",
+    "form": null,
+    "level": 1,
+    "move": "POUND"
+  },
+  {
+    "dexNum": 2658,
+    "id": "BATTLE_BOND_GRENINJA",
+    "form": null,
+    "level": 1,
+    "move": "GROWL"
+  },
+  {
+    "dexNum": 2658,
+    "id": "BATTLE_BOND_GRENINJA",
+    "form": null,
+    "level": 1,
+    "move": "ROLE_PLAY"
+  },
+  {
+    "dexNum": 2658,
+    "id": "BATTLE_BOND_GRENINJA",
+    "form": null,
+    "level": 1,
+    "move": "BOUNCE"
+  },
+  {
+    "dexNum": 2658,
+    "id": "BATTLE_BOND_GRENINJA",
+    "form": null,
+    "level": 1,
+    "move": "FLING"
+  },
+  {
+    "dexNum": 2658,
+    "id": "BATTLE_BOND_GRENINJA",
+    "form": null,
+    "level": 1,
+    "move": "SMACK_DOWN"
+  },
+  {
+    "dexNum": 2658,
+    "id": "BATTLE_BOND_GRENINJA",
+    "form": null,
+    "level": 1,
+    "move": "ROUND"
+  },
+  {
+    "dexNum": 2658,
+    "id": "BATTLE_BOND_GRENINJA",
+    "form": null,
+    "level": 1,
+    "move": "MAT_BLOCK"
+  },
+  {
+    "dexNum": 2658,
+    "id": "BATTLE_BOND_GRENINJA",
+    "form": null,
+    "level": 5,
+    "move": "BUBBLE"
+  },
+  {
+    "dexNum": 2658,
+    "id": "BATTLE_BOND_GRENINJA",
+    "form": null,
+    "level": 8,
+    "move": "QUICK_ATTACK"
+  },
+  {
+    "dexNum": 2658,
+    "id": "BATTLE_BOND_GRENINJA",
+    "form": null,
+    "level": 10,
+    "move": "LICK"
+  },
+  {
+    "dexNum": 2658,
+    "id": "BATTLE_BOND_GRENINJA",
+    "form": null,
+    "level": 14,
+    "move": "WATER_PULSE"
+  },
+  {
+    "dexNum": 2658,
+    "id": "BATTLE_BOND_GRENINJA",
+    "form": null,
+    "level": 19,
+    "move": "SMOKESCREEN"
+  },
+  {
+    "dexNum": 2658,
+    "id": "BATTLE_BOND_GRENINJA",
+    "form": null,
+    "level": 23,
+    "move": "SHADOW_SNEAK"
+  },
+  {
+    "dexNum": 2658,
+    "id": "BATTLE_BOND_GRENINJA",
+    "form": null,
+    "level": 28,
+    "move": "SPIKES"
+  },
+  {
+    "dexNum": 2658,
+    "id": "BATTLE_BOND_GRENINJA",
+    "form": null,
+    "level": 33,
+    "move": "AERIAL_ACE"
+  },
+  {
+    "dexNum": 2658,
+    "id": "BATTLE_BOND_GRENINJA",
+    "form": null,
+    "level": 38,
+    "move": "FEINT_ATTACK"
+  },
+  {
+    "dexNum": 2658,
+    "id": "BATTLE_BOND_GRENINJA",
+    "form": null,
+    "level": 42,
+    "move": "SUBSTITUTE"
+  },
+  {
+    "dexNum": 2658,
+    "id": "BATTLE_BOND_GRENINJA",
+    "form": null,
+    "level": 49,
+    "move": "EXTRASENSORY"
+  },
+  {
+    "dexNum": 2658,
+    "id": "BATTLE_BOND_GRENINJA",
+    "form": null,
+    "level": 56,
+    "move": "DOUBLE_TEAM"
+  },
+  {
+    "dexNum": 2658,
+    "id": "BATTLE_BOND_GRENINJA",
+    "form": null,
+    "level": 68,
+    "move": "HYDRO_PUMP"
+  },
+  {
+    "dexNum": 2658,
+    "id": "BATTLE_BOND_GRENINJA",
+    "form": null,
+    "level": 70,
+    "move": "HAZE"
+  },
+  {
+    "dexNum": 2658,
+    "id": "BATTLE_BOND_GRENINJA",
+    "form": null,
+    "level": 77,
+    "move": "NIGHT_SLASH"
+  },
+  {
     "dexNum": 2670,
     "id": "ETERNAL_FLOETTE",
     "form": null,
@@ -133931,6 +134106,132 @@
     "move": "AXE_KICK"
   },
   {
+    "dexNum": 6550,
+    "id": "HISUI_BASCULIN",
+    "form": null,
+    "level": 1,
+    "move": "TAIL_WHIP"
+  },
+  {
+    "dexNum": 6550,
+    "id": "HISUI_BASCULIN",
+    "form": null,
+    "level": 1,
+    "move": "WATER_GUN"
+  },
+  {
+    "dexNum": 6550,
+    "id": "HISUI_BASCULIN",
+    "form": null,
+    "level": 3,
+    "move": "TACKLE"
+  },
+  {
+    "dexNum": 6550,
+    "id": "HISUI_BASCULIN",
+    "form": null,
+    "level": 6,
+    "move": "FLAIL"
+  },
+  {
+    "dexNum": 6550,
+    "id": "HISUI_BASCULIN",
+    "form": null,
+    "level": 9,
+    "move": "HEADBUTT"
+  },
+  {
+    "dexNum": 6550,
+    "id": "HISUI_BASCULIN",
+    "form": null,
+    "level": 12,
+    "move": "AQUA_JET"
+  },
+  {
+    "dexNum": 6550,
+    "id": "HISUI_BASCULIN",
+    "form": null,
+    "level": 15,
+    "move": "BITE"
+  },
+  {
+    "dexNum": 6550,
+    "id": "HISUI_BASCULIN",
+    "form": null,
+    "level": 18,
+    "move": "CHIP_AWAY"
+  },
+  {
+    "dexNum": 6550,
+    "id": "HISUI_BASCULIN",
+    "form": null,
+    "level": 21,
+    "move": "SCARY_FACE"
+  },
+  {
+    "dexNum": 6550,
+    "id": "HISUI_BASCULIN",
+    "form": null,
+    "level": 24,
+    "move": "AQUA_TAIL"
+  },
+  {
+    "dexNum": 6550,
+    "id": "HISUI_BASCULIN",
+    "form": null,
+    "level": 28,
+    "move": "SOAK"
+  },
+  {
+    "dexNum": 6550,
+    "id": "HISUI_BASCULIN",
+    "form": null,
+    "level": 32,
+    "move": "CRUNCH"
+  },
+  {
+    "dexNum": 6550,
+    "id": "HISUI_BASCULIN",
+    "form": null,
+    "level": 36,
+    "move": "TAKE_DOWN"
+  },
+  {
+    "dexNum": 6550,
+    "id": "HISUI_BASCULIN",
+    "form": null,
+    "level": 40,
+    "move": "UPROAR"
+  },
+  {
+    "dexNum": 6550,
+    "id": "HISUI_BASCULIN",
+    "form": null,
+    "level": 44,
+    "move": "WAVE_CRASH"
+  },
+  {
+    "dexNum": 6550,
+    "id": "HISUI_BASCULIN",
+    "form": null,
+    "level": 48,
+    "move": "THRASH"
+  },
+  {
+    "dexNum": 6550,
+    "id": "HISUI_BASCULIN",
+    "form": null,
+    "level": 52,
+    "move": "DOUBLE_EDGE"
+  },
+  {
+    "dexNum": 6550,
+    "id": "HISUI_BASCULIN",
+    "form": null,
+    "level": 56,
+    "move": "HEAD_SMASH"
+  },
+  {
     "dexNum": 6570,
     "id": "HISUI_ZORUA",
     "form": null,
@@ -135181,14 +135482,21 @@
     "id": "BLOODMOON_URSALUNA",
     "form": null,
     "level": 1,
-    "move": "SCRATCH"
+    "move": "ROUND"
   },
   {
     "dexNum": 8901,
     "id": "BLOODMOON_URSALUNA",
     "form": null,
     "level": 1,
-    "move": "LEER"
+    "move": "MUD_SLAP"
+  },
+  {
+    "dexNum": 8901,
+    "id": "BLOODMOON_URSALUNA",
+    "form": null,
+    "level": 1,
+    "move": "SCRATCH"
   },
   {
     "dexNum": 8901,
@@ -135201,8 +135509,22 @@
     "dexNum": 8901,
     "id": "BLOODMOON_URSALUNA",
     "form": null,
+    "level": 1,
+    "move": "LEER"
+  },
+  {
+    "dexNum": 8901,
+    "id": "BLOODMOON_URSALUNA",
+    "form": null,
     "level": 8,
     "move": "FURY_SWIPES"
+  },
+  {
+    "dexNum": 8901,
+    "id": "BLOODMOON_URSALUNA",
+    "form": null,
+    "level": 11,
+    "move": "MUD_SHOT"
   },
   {
     "dexNum": 8901,
@@ -135244,7 +135566,7 @@
     "id": "BLOODMOON_URSALUNA",
     "form": null,
     "level": 29,
-    "move": "MOONBLAST"
+    "move": "PLAY_ROUGH"
   },
   {
     "dexNum": 8901,
@@ -135278,8 +135600,15 @@
     "dexNum": 8901,
     "id": "BLOODMOON_URSALUNA",
     "form": null,
-    "level": 56,
+    "level": 52,
     "move": "HEADLONG_RUSH"
+  },
+  {
+    "dexNum": 8901,
+    "id": "BLOODMOON_URSALUNA",
+    "form": null,
+    "level": 56,
+    "move": "MOONBLAST"
   },
   {
     "dexNum": 8901,
