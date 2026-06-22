@@ -309,7 +309,7 @@ export function getRandomRivalPartyMemberFunc(
       balanceWeaknesses,
     );
 
-    const choice = randSeedItem(choices);
+    const choice = randSeedItem(choices, "Random Rival Party Member");
     if (typeof choice === "number") {
       species = pool[choice] as SpeciesId;
       CHOSEN_RIVAL_ROLLS[slot] = [choice];

@@ -97,7 +97,7 @@ export function getDailyStartingBiome(): BiomeId {
     biomeThresholds.push(totalWeight);
   }
 
-  const randInt = randSeedInt(totalWeight);
+  const randInt = randSeedInt(totalWeight, undefined, "Daily Starting Biome");
 
   for (let i = 0; i < biomes.length; i++) {
     if (randInt < biomeThresholds[i]) {
@@ -105,7 +105,7 @@ export function getDailyStartingBiome(): BiomeId {
     }
   }
 
-  return randSeedItem(biomes);
+  return randSeedItem(biomes, "Fully Random Daily Starting Biome");
 }
 
 /**

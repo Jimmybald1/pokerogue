@@ -14,6 +14,11 @@ import { globalScene } from "#app/global-scene";
 import type { Mutable } from "#types/type-helpers";
 import { randSeedInt, randSeedItem, randSeedShuffle } from "#utils/common";
 
+/** If enabled, the mod will push Log messages to the console when an RNG roll is performed. */
+const doRNGLogging = false;
+/** If enabled, the mod will push Error messages to the console when an RNG roll is performed without being assigned a label. */
+const doUnlabeledRNGLogging = false;
+
 /**
  * Select a random element using an offset such that the chosen element is
  * guaranteed to be unique from the last `seedOffset` selections.
@@ -57,9 +62,17 @@ export function randSeedUniqueItem<T>(choices: readonly T[], seedOffset: number,
  * @param items - The mapping of item to weight
  * @returns a randomly picked item according to the weights
  */
-export function weightedPick<T>(items: Map<T, number>): T {
+export function weightedPick<T>(items: Map<T, number>, reason?: string): T {
   const totalWeight = [...items.values()].reduce((a: number, b: number) => a + b, 0);
   const randomNumber = randSeedInt(totalWeight);
+
+  if (reason != "%HIDE" && doRNGLogging) {
+    if (reason) {
+      console.log(reason, randomNumber, `${0} - ${totalWeight}`);
+    } else if (doUnlabeledRNGLogging) {
+      console.error("unlabeled weightedPick", randomNumber, `${0} - ${totalWeight}`);
+    }
+  }
 
   let totalWeightSoFar = 0;
   for (const [i, weight] of items) {

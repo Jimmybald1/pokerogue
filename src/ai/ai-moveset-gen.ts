@@ -507,7 +507,7 @@ function filterPool(
  * @returns Whether the coin flip was heads
  */
 function doSignatureCoinFlip() {
-  return randSeedInt(100) < FORCED_SIGNATURE_MOVE_CHANCE;
+  return randSeedInt(100, undefined, "Forced Signature Move") < FORCED_SIGNATURE_MOVE_CHANCE;
 }
 
 /**
@@ -581,7 +581,7 @@ function forceSignatureMove(
     if (availableSignatures.length === 0 || !doSignatureCoinFlip()) {
       return;
     }
-    forcedSignature = randSeedItem(availableSignatures);
+    forcedSignature = randSeedItem(availableSignatures, "Force Signature Move");
   }
 
   addToMoveset(forcedSignature, pokemon, pool, tmPool, eggPool, tmCount, eggMoveCount);

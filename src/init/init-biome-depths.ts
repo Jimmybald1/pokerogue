@@ -20,7 +20,7 @@ function traverseBiome(biomeId: BiomeId, depth: number): void {
   if (biomeId === BiomeId.END) {
     const biomeList = Object.values(BiomeId);
     biomeList.pop(); // Removes BiomeId.END from the list
-    const randIndex = randSeedInt(biomeList.length, 1); // Will never be BiomeId.TOWN
+    const randIndex = randSeedInt(biomeList.length, 1, "Fully Random biome"); // Will never be BiomeId.TOWN
     biomeId = biomeList[randIndex];
   }
 

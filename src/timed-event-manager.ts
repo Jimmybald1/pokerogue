@@ -269,7 +269,7 @@ export class TimedEventManager {
     }
     globalScene.executeWithSeedOffset(
       () => {
-        const shuffled = randSeedShuffle([...allPairs]);
+        const shuffled = randSeedShuffle([...allPairs], "Fill Random Pokemon Sprite Replacements");
         for (let i = 0; i < allPairs.length; i++) {
           const sourceKey = allPairs[i].speciesId * 100_000 + allPairs[i].formIndex;
           this.cachedReplacementMap!.set(sourceKey, shuffled[i]);

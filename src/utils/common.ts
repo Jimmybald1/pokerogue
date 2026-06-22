@@ -54,7 +54,7 @@ export function shiftCharCodes(str: string, shiftCount: number) {
   return newStr;
 }
 
-export function randGauss(stdev: number, mean = 0, reason?: string): number {
+export function randGauss(stdev: number, mean = 0): number {
   if (!stdev) {
     return 0;
   }
@@ -399,7 +399,6 @@ export function hasAllLocalizedSprites(lang?: string): boolean {
     case "zh-Hans":
     case "zh-Hant":
     case "pt-BR":
-    case "ro":
     case "th":
     case "tr":
     case "ko":
@@ -409,7 +408,6 @@ export function hasAllLocalizedSprites(lang?: string): boolean {
     case "id":
     case "hi":
     case "tl":
-    case "nb-NO":
     case "sv":
     case "uk":
     case "vi":

@@ -359,17 +359,6 @@ export class Arena {
     }
   }
 
-  /**
-   * @param attackType - The {@linkcode PokemonType} of the attack
-   * @returns The weather damage multiplier
-   */
-  public getWeatherDamageMultiplier(attackType: PokemonType): number {
-    if (this.weather && !this.weather.isEffectSuppressed()) {
-      return this.weather.getAttackTypeMultiplier(attackType);
-    }
-    return 1;
-  }
-
   /** Sets a random weather based on the time of day and the current biome */
   public setBiomeWeather(): void {
     let weatherPool = allBiomes.get(this.biomeId).weatherPool;
@@ -399,7 +388,7 @@ export class Arena {
       weatherMap.set(WeatherType.NONE, 1);
     }
 
-    const randomWeather = weightedPick(weatherMap);
+    const randomWeather = weightedPick(weatherMap, "Random Weather");
     this.trySetWeather(randomWeather);
   }
 
@@ -491,7 +480,7 @@ export class Arena {
       terrainMap.set(id, terrainPool[id] ?? 0);
     }
 
-    const randomTerrain = weightedPick(terrainMap);
+    const randomTerrain = weightedPick(terrainMap, "Random Terrain");
     this.trySetTerrain(randomTerrain);
   }
 
@@ -538,7 +527,7 @@ export class Arena {
       this.trainerPool[BiomePoolTier.BOSS].length > 0
       && (globalScene.gameMode.isTrainerBoss(waveIndex, this.biomeId, globalScene.offsetGym) || isBoss);
     if (LoggerTools.logRNG) console.log(isBoss, this.trainerPool);
-    const tierValue = randSeedInt(isTrainerBoss ? 64 : 512);
+    const tierValue = randSeedInt(isTrainerBoss ? 64 : 512, undefined, "Trainer tier");
     let tier = (isTrainerBoss ? this.generateBossBiomeTier : this.generateNonBossBiomeTier)(tierValue);
 
     if (LoggerTools.logRNG) console.log("Starting trainer pool tier:", BiomePoolTier[tier]);
