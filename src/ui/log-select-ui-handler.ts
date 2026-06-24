@@ -276,10 +276,10 @@ class SessionSlot extends Phaser.GameObjects.Container {
 
         if (getEnumValues(SpeciesId)[p.id] == undefined) {
           // Do nothing
-          const icon = globalScene.addPkIcon(speciesDataRegistry.getSpecies(p.id), 0, 0, 0, 0, 0);
+          const icon = globalScene.addPkIcon(speciesDataRegistry.getSpecies(p.id+1), 0, 0, 0, 0, 0);
           iconContainer.add(icon);
         } else {
-          const icon = globalScene.addPkIcon(speciesDataRegistry.getSpecies(p.id), 0, 0, 0, 0, 0);
+          const icon = globalScene.addPkIcon(speciesDataRegistry.getSpecies(p.id+1), 0, 0, 0, 0, 0);
           iconContainer.add(icon);
         }
 
