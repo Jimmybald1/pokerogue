@@ -49,4 +49,5 @@ export enum UiMode {
   ADMIN,
   MYSTERY_ENCOUNTER,
   CHANGE_PASSWORD_FORM,
+  ALERT_MODAL,
 }
