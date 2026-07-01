@@ -2133,6 +2133,7 @@ function ShopScouting(method: number, itemType: ItemType, isSolo: boolean, isSol
   console.error("Starters:", party[0]?.name, party[1]?.name, party[2]?.name, party[3]?.name, party[4]?.name, party[5]?.name);
 
   const globals = GetGlobalItemSetups();
+  ClearParty(party);
   FillParty(party, comp, isSoloMove);
   const lures = GetLureSetups();
   const ethers = GetEtherSetups(party);
