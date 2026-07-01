@@ -1826,7 +1826,7 @@ function ScoutingWithoutUI(charms: number) {
   });
 
   ClearParty(party);
-  FillParty(party, [SpeciesId.VENUSAUR], 20, false);
+  FillParty(party, [SpeciesId.VENUSAUR], false);
 
   var output: string[][] = [];
   const date = new Date();
@@ -2133,7 +2133,7 @@ function ShopScouting(method: number, itemType: ItemType, isSolo: boolean, isSol
   console.error("Starters:", party[0]?.name, party[1]?.name, party[2]?.name, party[3]?.name, party[4]?.name, party[5]?.name);
 
   const globals = GetGlobalItemSetups();
-  const mushroom = GetMushroomSetups(party, comp, isSoloMove);
+  FillParty(party, comp, isSoloMove);
   const lures = GetLureSetups();
   const ethers = GetEtherSetups(party);
   const revives = GetReviveSetups(party);
@@ -2159,47 +2159,38 @@ function ShopScouting(method: number, itemType: ItemType, isSolo: boolean, isSol
     // globalScene.InsertIVScanner(); // Typically doesnt change anything
 
     const rogueItem = g();
-    mushroom.forEach(m => {
-      const mu = {
-        start: 0,
-        end: 0,
-        level: 0
-      };
-      m(mu);
+    const partynames = party.map(p => p.name);
+    console.log(rogueItem, partynames, party);
 
-      const partynames = party.map(p => p.name);
-      console.log(rogueItem, mu.level, partynames, party);
+    lures.forEach(lure => {
+      const text = lure();
+      console.log("Setup:", text);
 
-      lures.forEach(lure => {
-        const text = lure();
-        console.log("Setup:", text);
+      ethers.forEach(ether => {
+        const e = ether();
 
-        ethers.forEach(ether => {
-          const e = ether();
+        if (isSolo && e > 1) {
+          return;
+        }
 
-          if (isSolo && e > 1) {
+        revives.forEach(revive => {
+          const r = revive();
+
+          if (isSolo && r > 0) {
             return;
           }
 
-          revives.forEach(revive => {
-            const r = revive();
+          potions.forEach(potion => {
+            const p = potion();
 
-            if (isSolo && r > 0) {
+            if (isSolo && p && (p.pot > 1 || p.suppot > 1 || p.hyppot > 1 || p.maxpot > 1)) {
               return;
             }
 
-            potions.forEach(potion => {
-              const p = potion();
-
-              if (isSolo && p && (p.pot > 1 || p.suppot > 1 || p.hyppot > 1 || p.maxpot > 1)) {
-                return;
-              }
-
-              if (p) {
-                const comptext = CreateLog(p.pot, p.suppot, p.hyppot, p.maxpot, r, e, text, mu.level, rogueItem);
-                GenerateShop(party, comptext, mu.start, mu.end, itemType);
-              }
-            });
+            if (p) {
+              const comptext = CreateLog(p.pot, p.suppot, p.hyppot, p.maxpot, r, e, text, rogueItem);
+              GenerateShop(party, comptext, itemType);
+            }
           });
         });
       });
@@ -2211,7 +2202,7 @@ function ShopScouting(method: number, itemType: ItemType, isSolo: boolean, isSol
   globalScene.ui.showText("DONE! Copy the list from the console and refresh the page.", null);
 }
 
-function CreateLog(pot = 0, suppot = 0, hyppot = 0, maxpot = 0, revive = 0, eth = 0, lure = "", level = 79, rogueItem = "") {
+function CreateLog(pot = 0, suppot = 0, hyppot = 0, maxpot = 0, revive = 0, eth = 0, lure = "", rogueItem = "") {
   const items: string[] = [];
   if (pot - suppot > 0) {
     items.push(`${pot - suppot}x <87.5% HP and 10+ dmg taken`);
@@ -2242,8 +2233,6 @@ function CreateLog(pot = 0, suppot = 0, hyppot = 0, maxpot = 0, revive = 0, eth 
     items.push("nothing");
   }
 
-  items.push(`Highest lvl: ${level - 18}-${level+1}`);
-
   return items.join(" + ");
 }
 
@@ -2253,8 +2242,8 @@ function CreateLog(pot = 0, suppot = 0, hyppot = 0, maxpot = 0, revive = 0, eth 
 // LOCK_CAPSULE
 // MEGA_BRACELET
 // DYNAMAX_BAND
-function GenerateShop(party: PlayerPokemon[], comptext: string, start: integer, end: integer, itemType: ItemType) {
-  for (var w = start; w < end; w++) {
+function GenerateShop(party: PlayerPokemon[], comptext: string, itemType: ItemType) {
+  for (var w = 1; w < 50; w++) {
     if (w % 10 == 0) {
       continue;
     }
@@ -2679,32 +2668,6 @@ function GetLureSetups() {
   ];
 }
 
-function GetMushroomSetups(party: PlayerPokemon[], comp: SpeciesId[], isSoloMove: any) {
-  return [
-    (mu: { start: integer, end: integer, level: integer }) => {
-      ClearParty(party);
-      mu.level = 39;
-      FillParty(party, comp, mu.level, isSoloMove);
-      mu.start = 1;
-      mu.end = 20;
-    },
-    (mu: { start: integer, end: integer, level: integer }) => {
-      ClearParty(party);
-      mu.level = 59;
-      FillParty(party, comp, mu.level, isSoloMove);
-      mu.start = 15;
-      mu.end = 40;
-    },
-    (mu: { start: integer, end: integer, level: integer }) => {
-      ClearParty(party);
-      mu.level = 79;
-      FillParty(party, comp, mu.level, isSoloMove);
-      mu.start = 35;
-      mu.end = 49;
-    },
-  ];
-}
-
 function GetGlobalItemSetups() {
   return [
     () => {
@@ -2773,15 +2736,15 @@ function ClearParty(party: PlayerPokemon[]) {
   while (party.length > 0);
 }
 
-function FillParty(party: PlayerPokemon[], comp: SpeciesId[], level: integer, isSoloMove: any) {
+function FillParty(party: PlayerPokemon[], comp: SpeciesId[], isSoloMove: any) {
   comp.forEach((s: SpeciesId) => {
-    AddPokemon(party, s, level, isSoloMove);
+    AddPokemon(party, s, isSoloMove);
   });
 }
 
-function AddPokemon(party: PlayerPokemon[], speciesId: SpeciesId, level: integer, isSoloMove: any) {
+function AddPokemon(party: PlayerPokemon[], speciesId: SpeciesId, isSoloMove: any) {
   const pokemon = speciesDataRegistry.getSpecies(speciesId);
-  const playerPokemon = globalScene.addPlayerPokemon(pokemon, level);
+  const playerPokemon = globalScene.addPlayerPokemon(pokemon, 999);
   if (!isSoloMove || party.length === 0) {
     playerPokemon.moveset = [new PokemonMove(MoveId.TACKLE), new PokemonMove(MoveId.SPLASH), new PokemonMove(MoveId.SPLASH), new PokemonMove(MoveId.SPLASH)];
   }
