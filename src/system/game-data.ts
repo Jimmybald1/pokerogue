@@ -74,7 +74,7 @@ import { RUN_HISTORY_LIMIT } from "#ui/run-history-ui-handler";
 import { applyChallenges } from "#utils/challenge-utils";
 import { fixedInt, NumberHolder, randInt, randSeedItem } from "#utils/common";
 import { decrypt, encrypt } from "#utils/data";
-import { getEnumKeys, getEnumValues } from "#utils/enums";
+import { getEnumKeys } from "#utils/enums";
 import { getPokemonSpecies } from "#utils/pokemon-utils";
 import { toCamelCase } from "#utils/strings";
 import { AES, enc } from "crypto-js";
@@ -224,8 +224,10 @@ export class GameData {
       return false;
     }
 
-    for (const speciesId of getEnumValues(SpeciesId)) {
-      if (!speciesDataRegistry.isStarter(speciesId) || defaultStarterSpecies.includes(speciesId)) {
+    let dataValidated = true;
+
+    for (const speciesId of speciesDataRegistry.getAllStarters()) {
+      if (defaultStarterSpecies.includes(speciesId)) {
         continue;
       }
 
@@ -236,15 +238,17 @@ export class GameData {
 
       if (starterEntry == null) {
         console.error("Missing starter data for %s (%d)!", species, speciesId);
-        return false;
+        dataValidated = false;
+        continue;
       }
       if (dexEntry == null) {
         console.error("Missing dex data for %s (%d)!", species, speciesId);
-        return false;
+        dataValidated = false;
+        continue;
       }
 
       const hasStarterData =
-        starterEntry.abilityAttr > 1
+        starterEntry.abilityAttr > 0
         || starterEntry.eggMoves > 0
         || starterEntry.moveset != null
         || starterEntry.passiveAttr > 0
@@ -253,15 +257,15 @@ export class GameData {
       const noDexData = dexEntry.caughtCount === 0 && dexEntry.hatchedCount === 0 && dexEntry.caughtAttr === 0n;
 
       if (hasStarterData && noDexData) {
-        console.error("Corrupt save data detected, save rejected!");
+        console.error("Corrupt save data detected!");
         console.warn("Species: %s (%d)", species, speciesId);
         console.warn(starterEntry);
         console.warn(dexEntry);
-        return false;
+        dataValidated = false;
       }
     }
 
-    return true;
+    return dataValidated;
   }
 
   private async showInvalidSaveModal<const T>(returnValue: T): Promise<T> {
