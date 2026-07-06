@@ -1843,29 +1843,26 @@ function ScoutingWithoutUI(charms: number) {
   // Keep track of encounters, Generate Biomes and encounters
   console.log(`Starting 0 lures and ${charms} charms ${new Date().toLocaleString()}`);
   encounterList = [];
-  GenerateBiomes(startingBiome, 0);
+  GenerateBiomes(startingBiome, 0, false);
   StoreEncounters(`0${charms}`);
 
   console.log(`Starting 1 lures and ${charms} charms ${new Date().toLocaleString()}`);
   encounterList = [];
   globalScene.InsertLure();
-  GenerateBiomes(startingBiome, 0);
+  GenerateBiomes(startingBiome, 0, false);
   StoreEncounters(`1${charms}`);
 
   console.log(`Starting 2 lures and ${charms} charms ${new Date().toLocaleString()}`);
   encounterList = [];
   globalScene.InsertSuperLure();
-  GenerateBiomes(startingBiome, 0);
+  GenerateBiomes(startingBiome, 0, false);
   StoreEncounters(`2${charms}`);
 
   // Only generate wave 10 for 3 lures.
   console.log(`Starting 3 lures and ${charms} charms ${new Date().toLocaleString()}`);
   encounterList = [];
   globalScene.InsertMaxLure();
-  globalScene.newArena(startingBiome);
-  globalScene.currentBattle.waveIndex = 9;
-  globalScene.arena.updatePoolsForTimeOfDay();
-  GenerateBattle();
+  GenerateBiomes(startingBiome, 0, true);
   StoreEncounters(`3${charms}`);
 
   var output = JSON.parse(localStorage.getItem("scouting")!) as string[][];
@@ -1889,7 +1886,7 @@ function GenerateBattle(nolog: boolean = false) {
   // Only generate new battle if its not the first wave from session
   // But do make sure to update wave index to 1
   let battle = globalScene.currentBattle;
-  if (globalScene.currentBattle.waveIndex === 0) {
+  if (!nolog && globalScene.currentBattle.waveIndex === 0) {
     globalScene.currentBattle.waveIndex++;
     wave1Enemies = wave1Enemies.length === 0 ? battle.enemyParty : wave1Enemies;
     if (wave1Enemies.length > 0) {
@@ -2018,14 +2015,30 @@ function SaveEncounter(battle: Battle, enemy: EnemyPokemon, variant: Variant, in
   }
 }
 
-function GenerateBiomes(biomeId: BiomeId, waveIndex: integer) {
+function GenerateBiomes(biomeId: BiomeId, waveIndex: integer, threeLures: boolean) {
   globalScene.newArena(biomeId);
   globalScene.currentBattle.waveIndex = waveIndex;
   globalScene.arena.updatePoolsForTimeOfDay();
 
   // Finish biome
   for (let i = 1; i <= 10; i++) {
-    GenerateBattle();
+    let nolog = false;
+    if (threeLures) {
+      nolog = true;
+    }
+
+    if (threeLures && globalScene.currentBattle.waveIndex === 9) {
+      nolog = false;
+    }
+
+    if ((globalScene.currentBattle.waveIndex + 1) % 10 === 0) {
+      const forcedWave = globalScene.gameMode.dailyConfig?.forcedWaves?.find(fw => fw.waveIndex === globalScene.currentBattle.waveIndex + 1);
+      if (forcedWave && forcedWave.speciesId) {
+        nolog = false;
+      }
+    }
+
+    GenerateBattle(nolog);
   }
 
   // Victory
@@ -2055,7 +2068,7 @@ function GenerateBiomes(biomeId: BiomeId, waveIndex: integer) {
       GenerateBattle(true);
     }
 
-    GenerateBiomes(b, waveIndex + 10);
+    GenerateBiomes(b, waveIndex + 10, threeLures);
   }
 }
 
