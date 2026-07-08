@@ -42,6 +42,7 @@ import { BattlerIndex } from "#enums/battler-index";
 import { TrainerVariant } from "#enums/trainer-variant";
 import { Variant } from "#sprites/variant";
 import { speciesDataRegistry } from "./global-species-data-registry";
+import { MysteryEncounterType } from "#enums/mystery-encounter-type";
 
 /*
 SECTIONS
@@ -1883,87 +1884,93 @@ let wave1Enemies: EnemyPokemon[] = []
 function GenerateBattle(nolog: boolean = false) {
   const timeOfDay = globalScene.arena.getTimeOfDay();
 
-  // Only generate new battle if its not the first wave from session
-  // But do make sure to update wave index to 1
-  let battle = globalScene.currentBattle;
-  if (!nolog && globalScene.currentBattle.waveIndex === 0) {
-    globalScene.currentBattle.waveIndex++;
-    wave1Enemies = wave1Enemies.length === 0 ? battle.enemyParty : wave1Enemies;
-    if (wave1Enemies.length > 0) {
-      wave1Enemies.forEach((w1e) => {
-        w1e.shiny = true;
-        const variant = w1e.generateShinyVariant();
-        w1e.shiny = false;
-        SaveEncounter(battle, w1e, variant, 0)
+  const mysteryEncounter = globalScene.gameMode.dailyConfig?.mysteryEncounters?.find(me => me.waveIndex == globalScene.currentBattle.waveIndex + 1);
+  if (mysteryEncounter) {
+    encounterList.push(`Wave: ${globalScene.currentBattle.waveIndex + 1} Biome: ${getBiomeEnumName(globalScene.arena.biomeId)} ${MysteryEncounterType[mysteryEncounter.type]}`);
+    globalScene.newBattle();
+  } else {
+    // Only generate new battle if its not the first wave from session
+    // But do make sure to update wave index to 1
+    let battle = globalScene.currentBattle;
+    if (!nolog && globalScene.currentBattle.waveIndex === 0) {
+      globalScene.currentBattle.waveIndex++;
+      wave1Enemies = wave1Enemies.length === 0 ? battle.enemyParty : wave1Enemies;
+      if (wave1Enemies.length > 0) {
+        wave1Enemies.forEach((w1e) => {
+          w1e.shiny = true;
+          const variant = w1e.generateShinyVariant();
+          w1e.shiny = false;
+          SaveEncounter(battle, w1e, variant, 0)
+        });
+      }
+    }
+    else {
+      battle = globalScene.newBattle() as Battle;
+
+      while (rarities.length > 0) {
+        rarities.pop();
+      }
+      rarityslot[0] = 0;
+      while (haChances.length > 0) {
+        haChances.pop();
+      }
+
+      if (!nolog && battle?.trainer != null) {
+        encounterList.push(`Wave: ${globalScene.currentBattle.waveIndex} Biome: ${getBiomeEnumName(globalScene.arena.biomeId)} Trainer: ${battle.trainer.config.name}`);
+      }
+
+      battle.enemyLevels?.forEach((level, e) => {
+        if (battle.battleType === BattleType.TRAINER) {
+          battle.enemyParty[e] = battle.trainer?.genPartyMember(e)!;
+        } else {
+          rarityslot[0] = e;
+          const enemySpecies = globalScene.randomSpecies(battle.waveIndex, level, true);
+          battle.enemyParty[e] = globalScene.addEnemyPokemon(
+            enemySpecies,
+            level,
+            TrainerSlot.NONE,
+            !!globalScene.getEncounterBossSegments(battle.waveIndex, level, enemySpecies),
+          );
+          globalScene
+            .getPlayerParty()
+            .slice(0, !battle.double ? 1 : 2)
+            .reverse()
+            .forEach(playerPokemon => {
+              applyAbAttrs("SyncEncounterNatureAbAttr", { pokemon: playerPokemon, target: battle.enemyParty[e] });
+            });
+        }
+
+        if (!nolog) {
+          const enemy = battle.enemyParty[e];
+          
+          if (enemy) {
+            enemy.shiny = true;
+            const variant = enemy.generateShinyVariant();
+            enemy.shiny = false;
+
+            SaveEncounter(battle, enemy, variant, e)
+          }
+        }
       });
     }
-  }
-  else {
-    battle = globalScene.newBattle() as Battle;
 
-    while (rarities.length > 0) {
-      rarities.pop();
-    }
-    rarityslot[0] = 0;
-    while (haChances.length > 0) {
-      haChances.pop();
-    }
+    // Do rest of rng steps + get weather only on wave x1
+    if (!nolog && globalScene.currentBattle.waveIndex % 10 === 1) {
+      regenerateModifierPoolThresholds(
+        globalScene.getEnemyField(),
+        battle.battleType === BattleType.TRAINER ? ModifierPoolType.TRAINER : ModifierPoolType.WILD,
+      );
+      globalScene.generateEnemyModifiers();
+      overrideModifiers(false);
 
-    if (!nolog && battle?.trainer != null) {
-      encounterList.push(`Wave: ${globalScene.currentBattle.waveIndex} Biome: ${getBiomeEnumName(globalScene.arena.biomeId)} Trainer: ${battle.trainer.config.name}`);
-    }
-
-    battle.enemyLevels?.forEach((level, e) => {
-      if (battle.battleType === BattleType.TRAINER) {
-        battle.enemyParty[e] = battle.trainer?.genPartyMember(e)!;
-      } else {
-        rarityslot[0] = e;
-        const enemySpecies = globalScene.randomSpecies(battle.waveIndex, level, true);
-        battle.enemyParty[e] = globalScene.addEnemyPokemon(
-          enemySpecies,
-          level,
-          TrainerSlot.NONE,
-          !!globalScene.getEncounterBossSegments(battle.waveIndex, level, enemySpecies),
-        );
-        globalScene
-          .getPlayerParty()
-          .slice(0, !battle.double ? 1 : 2)
-          .reverse()
-          .forEach(playerPokemon => {
-            applyAbAttrs("SyncEncounterNatureAbAttr", { pokemon: playerPokemon, target: battle.enemyParty[e] });
-          });
+      for (const enemy of globalScene.getEnemyField()) {
+        overrideHeldItems(enemy, false);
       }
-
-      if (!nolog) {
-        const enemy = battle.enemyParty[e];
-        
-        if (enemy) {
-          enemy.shiny = true;
-          const variant = enemy.generateShinyVariant();
-          enemy.shiny = false;
-
-          SaveEncounter(battle, enemy, variant, e)
-        }
-      }
-    });
-  }
-
-  // Do rest of rng steps + get weather only on wave x1
-  if (!nolog && globalScene.currentBattle.waveIndex % 10 === 1) {
-    regenerateModifierPoolThresholds(
-      globalScene.getEnemyField(),
-      battle.battleType === BattleType.TRAINER ? ModifierPoolType.TRAINER : ModifierPoolType.WILD,
-    );
-    globalScene.generateEnemyModifiers();
-    overrideModifiers(false);
-
-    for (const enemy of globalScene.getEnemyField()) {
-      overrideHeldItems(enemy, false);
+      
+      globalScene.arena.setBiomeWeather()
+      const weather = globalScene.arena.weather?.weatherType ?? WeatherType.NONE;
+      encounterList.push(`Wave: ${globalScene.currentBattle.waveIndex} Biome: ${getBiomeEnumName(globalScene.arena.biomeId)} TimeOfDay: ${TimeOfDay[timeOfDay]} Weather: ${WeatherType[weather]}`);
     }
-    
-    globalScene.arena.setBiomeWeather()
-    const weather = globalScene.arena.weather?.weatherType ?? WeatherType.NONE;
-    encounterList.push(`Wave: ${globalScene.currentBattle.waveIndex} Biome: ${getBiomeEnumName(globalScene.arena.biomeId)} TimeOfDay: ${TimeOfDay[timeOfDay]} Weather: ${WeatherType[weather]}`);
   }
 
   // Clean up memory and sprites, this will throw errors at the end of the scouting
