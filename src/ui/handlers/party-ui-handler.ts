@@ -342,6 +342,7 @@ export class PartyUiHandler extends MessageUiHandler {
     const ui = this.getUi();
     this.clearOptions();
     ui.playSelect();
+    LoggerTools.logActions(globalScene.currentBattle.waveIndex, (pokemon.pauseEvolutions ? "Unpause" : "Pause") + " Evolution" );
     pokemon.pauseEvolutions = !pokemon.pauseEvolutions;
     this.showText(
       i18next.t(pokemon.pauseEvolutions ? "partyUiHandler:pausedEvolutions" : "partyUiHandler:unpausedEvolutions", {
