@@ -77,7 +77,7 @@ export class AttemptCapturePhase extends PokemonPhase {
     const catchRate = pokemon.species.catchRate;
     const pokeballMultiplier = getPokeballCatchMultiplier(this.pokeballType);
     const statusMultiplier = pokemon.status ? getStatusEffectCatchRateMultiplier(pokemon.status.effect) : 1;
-    const shinyMultiplier = pokemon.isShiny() ? timedEventManager.getShinyCatchMultiplier() : 1;
+    const shinyMultiplier = 1; // pokemon.isShiny() ? timedEventManager.getShinyCatchMultiplier() : 1; // PATHING TOOL Disable shiny multiplier
     const modifiedCatchRate = Math.round(
       (((_3m - _2h) * catchRate * pokeballMultiplier) / _3m) * statusMultiplier * shinyMultiplier,
     );
