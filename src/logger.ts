@@ -2173,11 +2173,7 @@ function ShopScouting(method: number, itemType: ItemType, isSolo: boolean, isSol
   globals.forEach(g => {
     globalScene.RemoveModifiers();
 
-    // globalScene.InsertDynamaxBand(); // Careful with GMax able mons
-    // globalScene.InsertMegaBracelet(); // Careful with Mega able mons
-    // globalScene.InsertLockCapsule(); // Lock rerolls are not supported
-    // globalScene.InsertTeraOrb(); // Careful with full Mono shard teams, those shards are removed from the pool
-    // globalScene.InsertIVScanner(); // Typically doesnt change anything
+    AddModifiers();
 
     const rogueItem = g();
     const partynames = party.map(p => p.name);
@@ -2257,14 +2253,8 @@ function CreateLog(pot = 0, suppot = 0, hyppot = 0, maxpot = 0, revive = 0, eth 
   return items.join(" + ");
 }
 
-// ABILITY_CHARM
-// SHINY_CHARM
-// IV_SCANNER
-// LOCK_CAPSULE
-// MEGA_BRACELET
-// DYNAMAX_BAND
 function GenerateShop(party: PlayerPokemon[], comptext: string, itemType: ItemType) {
-  for (var w = 1; w < 50; w++) {
+  for (var w = STARTING_WAVE; w < ENDING_WAVE; w++) {
     if (w % 10 == 0) {
       continue;
     }
@@ -2274,7 +2264,7 @@ function GenerateShop(party: PlayerPokemon[], comptext: string, itemType: ItemTy
       for (let i = 0; i < 4; i++) {
         regenerateModifierPoolThresholds(party, ModifierPoolType.PLAYER, i);
         const typeOptions: ModifierTypeOption[] = getPlayerModifierTypeOptions(Math.min(6, Math.max(3, 3 + Math.floor((w / 10) - 1))), party);
-        if (typeOptions.some(t => t.type.id == itemType)) {
+        if (typeOptions.some(t => t.type.id == FIXED_SCOUTING_ITEM ? FIXED_SCOUTING_ITEM : itemType)) {
           if (logRNG) console.log(w, i, comptext);
           charmList.push(`${w} ${i} ${comptext}`);
         }
@@ -2734,22 +2724,6 @@ function GetGlobalItemSetups() {
   ];
 }
 
-function GetPartyCompositions() {
-  // Make sure the final 3 slots are always generic BLISSEY. Those are selected to faint for the Revives tests.
-  // Adding one ZARUDE to make sure TMs and Tera Shards are working properly.
-  return [
-    [SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.ZARUDE, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY],
-    [SpeciesId.BULBASAUR, SpeciesId.BLISSEY, SpeciesId.ZARUDE, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY],
-    [SpeciesId.JIGGLYPUFF, SpeciesId.BLISSEY, SpeciesId.ZARUDE, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY],
-    [SpeciesId.POLIWHIRL, SpeciesId.BLISSEY, SpeciesId.ZARUDE, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY],
-    // Swellow for Guts tests:
-    // [ SpeciesId.BLISSEY, SpeciesId.SWELLOW, SpeciesId.ZARUDE, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY ],
-    // [ SpeciesId.BULBASAUR, SpeciesId.SWELLOW, SpeciesId.ZARUDE, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY ],
-    // [ SpeciesId.JIGGLYPUFF, SpeciesId.SWELLOW, SpeciesId.ZARUDE, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY ],
-    // [ SpeciesId.POLIWHIRL, SpeciesId.SWELLOW, SpeciesId.ZARUDE, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY ],
-  ];
-}
-
 function ClearParty(party: PlayerPokemon[]) {
   do {
     globalScene.removePokemonFromPlayerParty(party[0], true);
@@ -2761,6 +2735,42 @@ function FillParty(party: PlayerPokemon[], comp: SpeciesId[], isSoloMove: any) {
   comp.forEach((s: SpeciesId) => {
     AddPokemon(party, s, isSoloMove);
   });
+}
+
+const FIXED_SCOUTING_ITEM = null;
+const STARTING_WAVE = 1;
+const ENDING_WAVE = 50;
+
+// "ABILITY_CHARM"
+// "SHINY_CHARM"
+// "IV_SCANNER"
+// "LOCK_CAPSULE"
+// "MEGA_BRACELET"
+// "DYNAMAX_BAND"
+// "TERA_ORB"
+// "RELIC_GOLD"
+// "SUPER_LURE"
+// "MAX_LURE"
+function AddModifiers() {
+  // globalScene.InsertDynamaxBand(); // Careful with GMax able mons
+  // globalScene.InsertMegaBracelet(); // Careful with Mega able mons
+  // globalScene.InsertLockCapsule(); // Lock rerolls are not supported
+  // globalScene.InsertTeraOrb(); // Careful with full Mono shard teams, those shards are removed from the pool
+  // globalScene.InsertIVScanner(); // Typically doesnt change anything
+}
+
+function GetPartyCompositions() {
+  // Make sure the final 3 slots are always generic BLISSEY. Those are selected to faint for the Revives tests.
+  // Adding one ZARUDE to make sure TMs and Tera Shards are working properly.
+  return [
+    [SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.ZARUDE, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY],
+    [SpeciesId.BULBASAUR, SpeciesId.BLISSEY, SpeciesId.ZARUDE, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY],
+    [SpeciesId.JIGGLYPUFF, SpeciesId.BLISSEY, SpeciesId.ZARUDE, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY],
+    [SpeciesId.POLIWHIRL, SpeciesId.BLISSEY, SpeciesId.ZARUDE, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY],
+    [SpeciesId.VENUSAUR, SpeciesId.BLISSEY, SpeciesId.ZARUDE, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY],
+    [SpeciesId.VENUSAUR, SpeciesId.POLIWHIRL, SpeciesId.ZARUDE, SpeciesId.BLISSEY, SpeciesId.BLISSEY, SpeciesId.BLISSEY],
+    // SWELLOW for Guts tests
+  ];
 }
 
 function AddPokemon(party: PlayerPokemon[], speciesId: SpeciesId, isSoloMove: any) {
