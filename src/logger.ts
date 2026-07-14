@@ -2264,7 +2264,7 @@ function GenerateShop(party: PlayerPokemon[], comptext: string, itemType: ItemTy
       for (let i = 0; i < 4; i++) {
         regenerateModifierPoolThresholds(party, ModifierPoolType.PLAYER, i);
         const typeOptions: ModifierTypeOption[] = getPlayerModifierTypeOptions(Math.min(6, Math.max(3, 3 + Math.floor((w / 10) - 1))), party);
-        if (typeOptions.some(t => t.type.id == FIXED_SCOUTING_ITEM ? FIXED_SCOUTING_ITEM : itemType)) {
+        if (typeOptions.some(t => t.type.id == (FIXED_SCOUTING_ITEM !== "" ? FIXED_SCOUTING_ITEM : itemType))) {
           if (logRNG) console.log(w, i, comptext);
           charmList.push(`${w} ${i} ${comptext}`);
         }
@@ -2737,7 +2737,7 @@ function FillParty(party: PlayerPokemon[], comp: SpeciesId[], isSoloMove: any) {
   });
 }
 
-const FIXED_SCOUTING_ITEM = null;
+const FIXED_SCOUTING_ITEM = "";
 const STARTING_WAVE = 1;
 const ENDING_WAVE = 50;
 
