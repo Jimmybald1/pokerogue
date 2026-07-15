@@ -2775,7 +2775,7 @@ function GetPartyCompositions() {
 
 function AddPokemon(party: PlayerPokemon[], speciesId: SpeciesId, isSoloMove: any) {
   const pokemon = speciesDataRegistry.getSpecies(speciesId);
-  const playerPokemon = globalScene.addPlayerPokemon(pokemon, 999);
+  const playerPokemon = globalScene.addPlayerPokemon(pokemon, 999, 0, 0);
   if (!isSoloMove || party.length === 0) {
     playerPokemon.moveset = [new PokemonMove(MoveId.TACKLE), new PokemonMove(MoveId.SPLASH), new PokemonMove(MoveId.SPLASH), new PokemonMove(MoveId.SPLASH)];
   }
