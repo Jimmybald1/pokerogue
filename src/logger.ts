@@ -1900,6 +1900,7 @@ function GenerateBattle(nolog: boolean = false) {
           w1e.shiny = true;
           const variant = w1e.generateShinyVariant();
           w1e.shiny = false;
+          w1e.abilityIndex === 2 ? haChances.push([0,0,0,0,0]) : haChances.push([-1,-1,-1,-1,-1]);
           SaveEncounter(battle, w1e, variant, 0)
         });
       }
