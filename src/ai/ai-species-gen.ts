@@ -6,7 +6,6 @@ import { EvoLevelThresholdKind } from "#enums/evo-level-threshold-kind";
 import { PartyMemberStrength } from "#enums/party-member-strength";
 import type { SpeciesId } from "#enums/species-id";
 import { randSeedIntRange, randSeedItem } from "#utils/common";
-import { getPokemonSpecies } from "#utils/pokemon-utils";
 import * as LoggerTools from "../logger";
 
 /**
@@ -173,7 +172,7 @@ export function determineEnemySpecies(
   // Pathing Tool log - End
   if (randomLevel <= level) {
     return determineEnemySpecies(
-      getPokemonSpecies(evoSpecies),
+      speciesDataRegistry.getSpecies(evoSpecies),
       level,
       true,
       forTrainer,
