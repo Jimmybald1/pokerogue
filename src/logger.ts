@@ -11,7 +11,6 @@ import { globalScene } from "./global-scene";
 import { UiMode } from "#enums/ui-mode";
 import { SpeciesId } from "#enums/species-id";
 import { GameModes } from "#enums/game-modes";
-import { getPokemonSpecies } from "./utils/pokemon-utils";
 import { AbilityId } from "#enums/ability-id";
 import { BooleanHolder, getBiomeName, NumberHolder, randSeedInt } from "#utils/common";
 import { PokemonData } from "#system/pokemon-data";
@@ -864,7 +863,7 @@ export function exportPokemon(pokemon: Pokemon, encounterRarity?: string): PokeD
  * @returns The Pokemon data.
  */
 export function exportPokemonFromData(pokemon: PokemonData, encounterRarity?: string): PokeData {
-  const P = getPokemonSpecies(pokemon.species);
+  const P = speciesDataRegistry.getSpecies(pokemon.species);
   return {
     id: pokemon.species,
     name: P.name,
