@@ -2259,6 +2259,7 @@ function GenerateShop(party: PlayerPokemon[], comptext: string, itemType: ItemTy
       continue;
     }
 
+    // party[0].pauseEvolutions = false;
     globalScene.executeWithSeedOffset(() => {
       globalScene.currentBattle.waveIndex = w;
       for (let i = 0; i < 4; i++) {
@@ -2268,6 +2269,8 @@ function GenerateShop(party: PlayerPokemon[], comptext: string, itemType: ItemTy
           if (logRNG) console.log(w, i, comptext);
           charmList.push(`${w} ${i} ${comptext}`);
         }
+
+        // if (i > 1) party[0].pauseEvolutions = true;
       }
     }, w);
   }
