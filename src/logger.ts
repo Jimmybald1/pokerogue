@@ -1818,11 +1818,16 @@ function ScoutingWithoutUI(charms: number) {
   console.error("Session Imported Date", sessionDate);
   console.error("Starters:", party[0]?.name, party[1]?.name, party[2]?.name, party[3]?.name, party[4]?.name, party[5]?.name);
 
-  party.forEach(p => {
-    starters.push(`Pokemon: ${getPokemonNameWithAffix(p)} ` +
-      `Form: ${p.getSpeciesForm().getSpriteAtlasPath(false, p.formIndex)} FormIndex: ${p.formIndex} Species ID: ${p.species.speciesId} Stats: ${p.stats} IVs: ${p.ivs} Ability: ${p.getAbility().name} ` +
-      `Passive Ability: ${p.getPassiveAbility().name} Nature: ${Nature[p.nature]} Gender: ${Gender[p.gender]} Rarity: undefined AbilityIndex: ${p.abilityIndex} ` +
-      `ID: ${p.id} Type: ${p.getTypes().map(t => PokemonType[t]).join(",")} Moves: ${p.getMoveset().map(m => MoveId[m?.moveId ?? 0]).join(",")} ShinyVariant: ${p.shiny ? p.variant : undefined}`);
+  const starterConfig = globalScene.gameMode.dailyConfig?.starters;
+  party.forEach((p, i) => {
+    haChances.push([-1,-1,-1,-1,-1]);
+    p.shiny = true;
+    const variant = p.generateShinyVariant();
+    p.shiny = false;
+    const atlaspath = p.getSpeciesForm().getSpriteAtlasPath(false, p.formIndex);
+    const biome = getBiomeEnumName(startingBiome);
+    const forcedVariant = starterConfig ? starterConfig[0].variant : undefined;
+    starters.push(LogFormat(p, 0, i, atlaspath, biome, variant, forcedVariant));
   });
 
   ClearParty(party);
@@ -1883,6 +1888,14 @@ let wave1Enemies: EnemyPokemon[] = []
 function GenerateBattle(nolog: boolean = false) {
   const timeOfDay = globalScene.arena.getTimeOfDay();
 
+  while (rarities.length > 0) {
+    rarities.pop();
+  }
+  rarityslot[0] = 0;
+  while (haChances.length > 0) {
+    haChances.pop();
+  }
+
   const mysteryEncounter = globalScene.gameMode.dailyConfig?.mysteryEncounters?.find(me => me.waveIndex == globalScene.currentBattle.waveIndex + 1);
   if (mysteryEncounter) {
     encounterList.push(`Wave: ${globalScene.currentBattle.waveIndex + 1} Biome: ${getBiomeEnumName(globalScene.arena.biomeId)} ${MysteryEncounterType[mysteryEncounter.type]}`);
@@ -1906,14 +1919,6 @@ function GenerateBattle(nolog: boolean = false) {
     }
     else {
       battle = globalScene.newBattle() as Battle;
-
-      while (rarities.length > 0) {
-        rarities.pop();
-      }
-      rarityslot[0] = 0;
-      while (haChances.length > 0) {
-        haChances.pop();
-      }
 
       if (!nolog && battle?.trainer != null) {
         encounterList.push(`Wave: ${globalScene.currentBattle.waveIndex} Biome: ${getBiomeEnumName(globalScene.arena.biomeId)} Trainer: ${battle.trainer.config.name}`);
@@ -2008,11 +2013,7 @@ function SaveEncounter(battle: Battle, enemy: EnemyPokemon, variant: Variant, in
   }
   
   // Store encounters in a list, basically CSV (uses regex in sheets), but readable as well
-  const text = `Wave: ${globalScene.currentBattle.waveIndex} Biome: ${biome} Pokemon: ${getPokemonNameWithAffix(enemy)} ` +
-    `Form: ${atlaspath} FormIndex: ${enemy.formIndex} Species ID: ${enemy.species.speciesId} Stats: ${enemy.stats} IVs: ${enemy.ivs} Ability: ${enemy.getAbility().name} ` +
-    `Passive Ability: ${enemy.getPassiveAbility().name} Nature: ${Nature[enemy.nature]} Gender: ${Gender[enemy.gender]} Rarity: ${rarities[index]} AbilityIndex: ${enemy.abilityIndex} ` +
-    `ID: ${enemy.id} Type: ${enemy.getTypes().map(t => PokemonType[t]).join(",")} Moves: ${enemy.getMoveset().map(m => MoveId[m?.moveId ?? 0]).join(",")} HARolls: ${haChances[index].join(",")} ` +
-    `Hidden Ability: ${allAbilities[enemy.getSpeciesForm().abilityHidden].name} ShinyVariant: ${variant} ForcedVariant: ${forcedVariant}`;
+  const text = LogFormat(enemy, globalScene.currentBattle.waveIndex, index, atlaspath, biome, variant, forcedVariant);
   encounterList.push(text);
   if (logRNG) console.log(text);
   if (battle.waveIndex == 50) {
@@ -2020,6 +2021,15 @@ function SaveEncounter(battle: Battle, enemy: EnemyPokemon, variant: Variant, in
     console.log(text);
     console.log(enemy.getMoveset().map(m => MoveId[m?.moveId ?? 0]));
   }
+}
+
+function LogFormat(enemy: Pokemon, waveIndex: number, fieldIndex: number, atlaspath: string, biome: string, variant: Variant, forcedVariant: Variant | undefined) {
+  const text = `Wave: ${waveIndex} Biome: ${biome} Pokemon: ${getPokemonNameWithAffix(enemy)} ` +
+    `Form: ${atlaspath} FormIndex: ${enemy.formIndex} Species ID: ${enemy.species.speciesId} Stats: ${enemy.stats} IVs: ${enemy.ivs} Ability: ${enemy.getAbility().name} ` +
+    `Passive Ability: ${enemy.getPassiveAbility().name} Nature: ${Nature[enemy.nature]} Gender: ${Gender[enemy.gender]} Rarity: ${rarities[fieldIndex]} AbilityIndex: ${enemy.abilityIndex} ` +
+    `ID: ${enemy.id} Type: ${enemy.getTypes().map(t => PokemonType[t]).join(",")} Moves: ${enemy.getMoveset().map(m => MoveId[m?.moveId ?? 0]).join(",")} HARolls: ${haChances[fieldIndex]?.join(",")} ` +
+    `Hidden Ability: ${allAbilities[enemy.getSpeciesForm().abilityHidden].name} ShinyVariant: ${variant} ForcedVariant: ${forcedVariant}`;
+  return text;
 }
 
 function GenerateBiomes(biomeId: BiomeId, waveIndex: integer, threeLures: boolean) {
