@@ -219,7 +219,7 @@ export function downloadLogByIDToCSV(i: number) {
       encounterList.push(convertPokemonToCSV(wave.id.toString(), wave.biome, wave.actions, pokemon2, true));
     }
   }
-  
+
   const encounters = encounterList.join("\n");
   const blob = new Blob([encounters], { type: "text/csv" });
   const link = document.createElement("a");
@@ -1461,7 +1461,7 @@ export function findBest(pokemon: EnemyPokemon) {
       if (logCatchRNG) console.log(output);
       return;
     }
-    
+
     if (
       rolls[0] < cr.ballChance
       && rolls[1] < cr.ballChance
@@ -1489,7 +1489,7 @@ class CatchRates {
   public ballChance: number;
   public critChance: number;
 
-  constructor (
+  constructor(
     ballType: BallNames,
     ballChance: number,
     critChance: number,
@@ -1815,13 +1815,13 @@ function ScoutingWithoutUI(charms: number) {
   const startingBiome = globalScene.arena.biomeId;
 
   const starters: string[] = [];
-  const party = globalScene.getPlayerParty();  
+  const party = globalScene.getPlayerParty();
   console.error("Session Imported Date", sessionDate);
   console.error("Starters:", party[0]?.name, party[1]?.name, party[2]?.name, party[3]?.name, party[4]?.name, party[5]?.name);
 
   const starterConfig = globalScene.gameMode.dailyConfig?.starters;
   party.forEach((p, i) => {
-    haChances.push([-1,-1,-1,-1,-1]);
+    haChances.push([-1, -1, -1, -1, -1]);
     p.shiny = true;
     const variant = p.generateShinyVariant();
     p.shiny = false;
@@ -1836,7 +1836,7 @@ function ScoutingWithoutUI(charms: number) {
 
   var output: string[][] = [];
   const date = new Date();
-  const formattedDate = `${date.getUTCDate()} ${date.getUTCMonth()+1} ${date.getUTCFullYear()} ${date.getUTCHours()}:${date.getUTCMinutes()}:${date.getUTCSeconds()}`
+  const formattedDate = `${date.getUTCDate()} ${date.getUTCMonth() + 1} ${date.getUTCFullYear()} ${date.getUTCHours()}:${date.getUTCMinutes()}:${date.getUTCSeconds()}`
   output.push([formattedDate]);
   output.push(["startstarters"]);
   output.push(starters);
@@ -1913,7 +1913,7 @@ function GenerateBattle(nolog: boolean = false) {
           w1e.shiny = true;
           const variant = w1e.generateShinyVariant();
           w1e.shiny = false;
-          w1e.abilityIndex === 2 ? haChances.push([0,0,0,0,0]) : haChances.push([-1,-1,-1,-1,-1]);
+          w1e.abilityIndex === 2 ? haChances.push([0, 0, 0, 0, 0]) : haChances.push([-1, -1, -1, -1, -1]);
           SaveEncounter(battle, w1e, variant, 0)
         });
       }
@@ -1948,7 +1948,7 @@ function GenerateBattle(nolog: boolean = false) {
 
         if (!nolog) {
           const enemy = battle.enemyParty[e];
-          
+
           if (enemy) {
             enemy.shiny = true;
             const variant = enemy.generateShinyVariant();
@@ -1972,7 +1972,7 @@ function GenerateBattle(nolog: boolean = false) {
       for (const enemy of globalScene.getEnemyField()) {
         overrideHeldItems(enemy, false);
       }
-      
+
       globalScene.arena.setBiomeWeather()
       const weather = globalScene.arena.weather?.weatherType ?? WeatherType.NONE;
       encounterList.push(`Wave: ${globalScene.currentBattle.waveIndex} Biome: ${getBiomeEnumName(globalScene.arena.biomeId)} TimeOfDay: ${TimeOfDay[timeOfDay]} Weather: ${WeatherType[weather]}`);
@@ -2012,7 +2012,7 @@ function SaveEncounter(battle: Battle, enemy: EnemyPokemon, variant: Variant, in
     biome = getBiomeEnumName(BiomeId.END);
     forcedVariant = globalScene.gameMode.dailyConfig?.boss?.variant
   }
-  
+
   // Store encounters in a list, basically CSV (uses regex in sheets), but readable as well
   const text = LogFormat(enemy, globalScene.currentBattle.waveIndex, index, atlaspath, biome, variant, forcedVariant);
   encounterList.push(text);
@@ -2096,7 +2096,7 @@ export const haChances: Number[][] = [];
 // Try out all ability charms without advancing the seed
 export function TestAllAbilityCharms(baseChance: number, abilityHidden: AbilityId) {
   if (abilityHidden
-    && globalScene.getEnemyParty().length === 0 
+    && globalScene.getEnemyParty().length === 0
     && globalScene.gameMode.dailyConfig?.forcedWaves?.some(fw => fw.hiddenAbility && fw.waveIndex === globalScene.currentBattle?.waveIndex)
   ) {
     haChances.push([0, 0, 0, 0, 0]);
@@ -2106,21 +2106,21 @@ export function TestAllAbilityCharms(baseChance: number, abilityHidden: AbilityI
     globalScene.executeWithoutSeedAdvancement(() => {
       haRolls.push(randSeedInt(baseChance, undefined, "Hidden Ability chance 0 charms"));
     });
-    
+
     globalScene.executeWithoutSeedAdvancement(() => {
-      haRolls.push(randSeedInt(baseChance/4, undefined, "Hidden Ability chance 1 charm")); // first charm is 4x
+      haRolls.push(randSeedInt(baseChance / 4, undefined, "Hidden Ability chance 1 charm")); // first charm is 4x
     });
-    
+
     globalScene.executeWithoutSeedAdvancement(() => {
-      haRolls.push(randSeedInt(baseChance/8, undefined, "Hidden Ability chance 2 charms"));
+      haRolls.push(randSeedInt(baseChance / 8, undefined, "Hidden Ability chance 2 charms"));
     });
-    
+
     globalScene.executeWithoutSeedAdvancement(() => {
-      haRolls.push(randSeedInt(baseChance/16, undefined, "Hidden Ability chance 3 charms"));
+      haRolls.push(randSeedInt(baseChance / 16, undefined, "Hidden Ability chance 3 charms"));
     });
-    
+
     globalScene.executeWithoutSeedAdvancement(() => {
-      haRolls.push(randSeedInt(baseChance/32, undefined, "Hidden Ability chance 4 charms"));
+      haRolls.push(randSeedInt(baseChance / 32, undefined, "Hidden Ability chance 4 charms"));
     });
     haChances.push(haRolls);
   }
@@ -2277,14 +2277,14 @@ function GenerateShop(party: PlayerPokemon[], comptext: string, itemType: ItemTy
       for (let i = 0; i < 4; i++) {
         regenerateModifierPoolThresholds(party, ModifierPoolType.PLAYER, i);
         const typeOptions: ModifierTypeOption[] = getPlayerModifierTypeOptions(
-          Math.min(6, Math.max(3, 3 + Math.floor((w / 10) - 1))), 
-          party, 
+          Math.min(6, Math.max(3, 3 + Math.floor((w / 10) - 1))),
+          party,
           globalScene.lockModifierTiers ? modifierTiers : undefined);
         if (typeOptions.some(t => t.type.id == (FIXED_SCOUTING_ITEM !== "" ? FIXED_SCOUTING_ITEM : itemType))) {
           if (logRNG) console.log(w, i, comptext);
           charmList.push(`${w} ${i} ${comptext}`);
         }
-        
+
         modifierTiers = typeOptions.map(to => to.type.tier);
         // if (i > 1) party[0].pauseEvolutions = true;
       }
