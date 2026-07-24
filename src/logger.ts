@@ -42,6 +42,7 @@ import { TrainerVariant } from "#enums/trainer-variant";
 import { Variant } from "#sprites/variant";
 import { speciesDataRegistry } from "./global-species-data-registry";
 import { MysteryEncounterType } from "#enums/mystery-encounter-type";
+import { ModifierTier } from "#enums/modifier-tier";
 
 /*
 SECTIONS
@@ -2272,14 +2273,19 @@ function GenerateShop(party: PlayerPokemon[], comptext: string, itemType: ItemTy
     // party[0].pauseEvolutions = false;
     globalScene.executeWithSeedOffset(() => {
       globalScene.currentBattle.waveIndex = w;
+      let modifierTiers: ModifierTier[] = [];
       for (let i = 0; i < 4; i++) {
         regenerateModifierPoolThresholds(party, ModifierPoolType.PLAYER, i);
-        const typeOptions: ModifierTypeOption[] = getPlayerModifierTypeOptions(Math.min(6, Math.max(3, 3 + Math.floor((w / 10) - 1))), party);
+        const typeOptions: ModifierTypeOption[] = getPlayerModifierTypeOptions(
+          Math.min(6, Math.max(3, 3 + Math.floor((w / 10) - 1))), 
+          party, 
+          globalScene.lockModifierTiers ? modifierTiers : undefined);
         if (typeOptions.some(t => t.type.id == (FIXED_SCOUTING_ITEM !== "" ? FIXED_SCOUTING_ITEM : itemType))) {
           if (logRNG) console.log(w, i, comptext);
           charmList.push(`${w} ${i} ${comptext}`);
         }
-
+        
+        modifierTiers = typeOptions.map(to => to.type.tier);
         // if (i > 1) party[0].pauseEvolutions = true;
       }
     }, w);
@@ -2765,6 +2771,7 @@ const ENDING_WAVE = 50;
 // "SUPER_LURE"
 // "MAX_LURE"
 function AddModifiers() {
+  // globalScene.lockModifierTiers = true;
   // globalScene.InsertDynamaxBand(); // Careful with GMax able mons
   // globalScene.InsertMegaBracelet(); // Careful with Mega able mons
   // globalScene.InsertLockCapsule(); // Lock rerolls are not supported
