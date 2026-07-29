@@ -2271,6 +2271,8 @@ function GenerateShop(party: PlayerPokemon[], comptext: string, itemType: ItemTy
     }
 
     // party[0].pauseEvolutions = false;
+    // removeDNASpliceFromShop = false;
+
     globalScene.executeWithSeedOffset(() => {
       globalScene.currentBattle.waveIndex = w;
       let modifierTiers: ModifierTier[] = [];
@@ -2286,7 +2288,8 @@ function GenerateShop(party: PlayerPokemon[], comptext: string, itemType: ItemTy
         }
 
         modifierTiers = typeOptions.map(to => to.type.tier);
-        // if (i > 1) party[0].pauseEvolutions = true;
+        // if (i >= 0) party[0].pauseEvolutions = true;
+        // if (i >= 0) removeDNASpliceFromShop = true;
       }
     }, w);
   }
