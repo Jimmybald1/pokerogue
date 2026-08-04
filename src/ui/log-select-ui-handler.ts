@@ -6,7 +6,6 @@ import { globalScene } from "#app/global-scene";
 import { UiMode } from "#enums/ui-mode";
 import { fixedInt } from "#app/utils/common";
 import { SpeciesId } from "#enums/species-id";
-import { getPokemonSpecies } from "#app/utils/pokemon-utils";
 import { addTextObject } from "./text";
 import { TextStyle } from "#enums/text-style";
 import { getEnumValues } from "#utils/enums";
@@ -274,14 +273,8 @@ class SessionSlot extends Phaser.GameObjects.Container {
         const iconContainer = globalScene.add.container(26 * i, 0);
         iconContainer.setScale(0.75);
 
-        if (getEnumValues(SpeciesId)[p.id] == undefined) {
-          // Do nothing
-          const icon = globalScene.addPkIcon(speciesDataRegistry.getSpecies(p.id+1), 0, 0, 0, 0, 0);
-          iconContainer.add(icon);
-        } else {
-          const icon = globalScene.addPkIcon(speciesDataRegistry.getSpecies(p.id+1), 0, 0, 0, 0, 0);
-          iconContainer.add(icon);
-        }
+        const icon = globalScene.addPkIcon(speciesDataRegistry.getSpecies(p.speciesId ?? p.id), 0, 0, 0, 0, 0);
+        iconContainer.add(icon);
 
         const text = addTextObject(32, 20, "", TextStyle.PARTY, { fontSize: "54px", color: "#f8f8f8" });
         text.setShadow(0, 0, undefined);

@@ -232,7 +232,7 @@ export function downloadLogByIDToCSV(i: number) {
 }
 
 function convertPokemonToCSV(id: string, biome: string, actions: string[], pokemon: PokeData, second: boolean): string {
-  return `${id}${second ? "d" : ""},${biome},${pokemon.id > 1025 ? SpeciesId[pokemon.formName] : SpeciesId[pokemon.id + 1]},${pokemon.id + 1},${pokemon.formName},${Object.values(pokemon.iv_raw).join(",")},${pokemon.ability},${pokemon.passiveAbility},${pokemon.nature.name},${pokemon.gender},${pokemon.captured},${second ? "" : actions.join(";")}`;
+  return `${id}${second ? "d" : ""},${biome},${pokemon.speciesId > 1025 ? SpeciesId[pokemon.formName] : SpeciesId[pokemon.speciesId]},${pokemon.speciesId},${pokemon.formName},${Object.values(pokemon.iv_raw).join(",")},${pokemon.ability},${pokemon.passiveAbility},${pokemon.nature.name},${pokemon.gender},${pokemon.captured},${second ? "" : actions.join(";")}`;
 }
 
 function convertTrainerToCSV(id: string, biome: string, actions: string[], trainer: LogTrainerData): string {
@@ -789,6 +789,8 @@ export function getWave(drpd: DRPD, floor: number): Wave {
 export interface PokeData {
   /** The party position of this Pokémon, as of the beginning of the battle. */
   id: number,
+  /** The SpeciesId of this pokemon. */
+  speciesId: SpeciesId,
   /** The name of this Pokémon as it would appear in the party list or in battle. */
   name: string,
   /** The Pokémon's primary ability. */
@@ -840,7 +842,8 @@ export interface PokeData {
  */
 export function exportPokemon(pokemon: Pokemon, encounterRarity?: string): PokeData {
   return {
-    id: getEnumValues(SpeciesId).indexOf(pokemon.species.speciesId),
+    id: pokemon.id,
+    speciesId: pokemon.species.speciesId,
     name: pokemon.species.getName(),
     ability: pokemon.getAbility().name,
     isHiddenAbility: pokemon.hasAbility(pokemon.species.abilityHidden),
@@ -864,12 +867,13 @@ export function exportPokemon(pokemon: Pokemon, encounterRarity?: string): PokeD
  * @returns The Pokemon data.
  */
 export function exportPokemonFromData(pokemon: PokemonData, encounterRarity?: string): PokeData {
-  const P = speciesDataRegistry.getSpecies(pokemon.species);
+  const p = speciesDataRegistry.getSpecies(pokemon.species);
   return {
-    id: pokemon.species,
-    name: P.name,
-    ability: getEnumKeys(AbilityId)[P.getAbility(pokemon.abilityIndex)],
-    isHiddenAbility: P.getAbility(pokemon.abilityIndex) === P.abilityHidden,
+    id: pokemon.id,
+    speciesId: pokemon.species,
+    name: p.name,
+    ability: getEnumKeys(AbilityId)[p.getAbility(pokemon.abilityIndex)],
+    isHiddenAbility: p.getAbility(pokemon.abilityIndex) === p.abilityHidden,
     passiveAbility: "Cannot pull Passive or Held Items from raw file data",
     nature: exportNature(pokemon.nature),
     gender: pokemon.gender == 0 ? "Male" : (pokemon.gender == 1 ? "Female" : "Genderless"),
@@ -895,6 +899,7 @@ export function exportPokemonFromData(pokemon: PokemonData, encounterRarity?: st
 function printPoke(inData: string, indent: string, pokemon: PokeData) {
   inData += indent + "{";
   inData += "\n" + indent + "  \"id\": " + pokemon.id;
+  inData += "\n" + indent + "  \"speciesId\": " + pokemon.speciesId;
   inData += ",\n" + indent + "  \"name\": \"" + pokemon.name + "\"";
   inData += ",\n" + indent + "  \"ability\": \"" + pokemon.ability + "\"";
   inData += ",\n" + indent + "  \"isHiddenAbility\": " + pokemon.isHiddenAbility;
