@@ -159,7 +159,7 @@ export class SelectModifierPhase extends BattlePhase {
           const isNugget = this.modifierPredictions[i][j].netprice == this.costTiers[i];
           const actualValue = new NumberHolder(this.costTiers[i] - this.modifierPredictions[i][j].netprice);
           const amuletCoin = globalScene.findModifier(m => m instanceof MoneyMultiplierModifier) as MoneyMultiplierModifier;
-          amuletCoin.apply(actualValue);
+          amuletCoin?.apply(actualValue);
           const netprofit = actualValue.value - this.costTiers[i];
           console.log(` ${tierIcon} ${this.modifierPredictions[i][j].type.name} ${isNugget ? "" : `- ₽${netprofit} (${actualValue.value})`}`);
         }
