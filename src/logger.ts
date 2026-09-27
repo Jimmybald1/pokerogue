@@ -2275,26 +2275,28 @@ function GenerateShop(party: PlayerPokemon[], comptext: string, itemType: ItemTy
       continue;
     }
 
-    // party[0].pauseEvolutions = false;
-    // removeDNASpliceFromShop = false;
+    PreShopModifiers(party);
 
     globalScene.executeWithSeedOffset(() => {
       globalScene.currentBattle.waveIndex = w;
-      let modifierTiers: ModifierTier[] = [];
+      let modifierTiers: ModifierTier[] | undefined = [];
       for (let i = 0; i < 4; i++) {
         regenerateModifierPoolThresholds(party, ModifierPoolType.PLAYER, i);
+        
+        modifierTiers = GetModifierTiers(modifierTiers, i);
+
         const typeOptions: ModifierTypeOption[] = getPlayerModifierTypeOptions(
           Math.min(6, Math.max(3, 3 + Math.floor((w / 10) - 1))),
           party,
-          globalScene.lockModifierTiers ? modifierTiers : undefined);
+          modifierTiers);
         if (typeOptions.some(t => t.type.id == (FIXED_SCOUTING_ITEM !== "" ? FIXED_SCOUTING_ITEM : itemType))) {
           if (logRNG) console.log(w, i, comptext);
           charmList.push(`${w} ${i} ${comptext}`);
         }
 
         modifierTiers = typeOptions.map(to => to.type.tier);
-        // if (i >= 0) party[0].pauseEvolutions = true;
-        // if (i >= 0) removeDNASpliceFromShop = true;
+
+        PostRollModifiers(party, i);
       }
     }, w);
   }
@@ -2779,12 +2781,32 @@ const ENDING_WAVE = 50;
 // "SUPER_LURE"
 // "MAX_LURE"
 function AddModifiers() {
-  // globalScene.lockModifierTiers = true;
   // globalScene.InsertDynamaxBand(); // Careful with GMax able mons
   // globalScene.InsertMegaBracelet(); // Careful with Mega able mons
   // globalScene.InsertLockCapsule(); // Lock rerolls are not supported
   // globalScene.InsertTeraOrb(); // Careful with full Mono shard teams, those shards are removed from the pool
   // globalScene.InsertIVScanner(); // Typically doesnt change anything
+}
+
+function PreShopModifiers(party: PlayerPokemon[]) {
+  // party[0].pauseEvolutions = false;
+  // removeDNASpliceFromShop = false;
+}
+
+function PostRollModifiers(party: PlayerPokemon[], rerollNumber: number) {
+  // if (rerollNumber >= 0) party[0].pauseEvolutions = true;
+  // if (rerollNumber >= 0) removeDNASpliceFromShop = true;
+}
+
+function GetModifierTiers(modifierTiers: ModifierTier[], rerollNumber: number): ModifierTier[] | undefined {
+  // globalScene.lockModifierTiers = true;
+
+  if (rerollNumber >= 0) 
+  {
+    return globalScene.lockModifierTiers ? modifierTiers : undefined;
+  }
+
+  return undefined;
 }
 
 function GetPartyCompositions() {
