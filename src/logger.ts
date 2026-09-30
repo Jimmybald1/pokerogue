@@ -43,6 +43,7 @@ import { Variant } from "#sprites/variant";
 import { speciesDataRegistry } from "./global-species-data-registry";
 import { MysteryEncounterType } from "#enums/mystery-encounter-type";
 import { ModifierTier } from "#enums/modifier-tier";
+import { getDailyRunStarters } from "#data/daily-seed/daily-run";
 
 /*
 SECTIONS
@@ -124,6 +125,8 @@ export const tiernames: string[] = [
   "Super Rare",
   "Ultra Rare",
 ];
+
+export let StarterIds: number[] = [];
 
 /** 
  * Gets the date from the session data when imported/loaded 
@@ -1806,6 +1809,7 @@ function rangemap(value: integer, min: integer, max: integer) {
 
 // #region 15 Scouting
 export function InitScouting(charms: number) {
+  StarterIds = [];
   globalScene.sessionSlotId = 0;
   globalScene.gameData.loadSession(globalScene.sessionSlotId).then(() => {
     ScoutingWithoutUI(charms);
@@ -1825,7 +1829,9 @@ function ScoutingWithoutUI(charms: number) {
   console.error("Starters:", party[0]?.name, party[1]?.name, party[2]?.name, party[3]?.name, party[4]?.name, party[5]?.name);
 
   const starterConfig = globalScene.gameMode.dailyConfig?.starters;
+  getDailyRunStarters(); // stores starter IDs in StarterIds
   party.forEach((p, i) => {
+    p.id = StarterIds[i];
     haChances.push([-1, -1, -1, -1, -1]);
     p.shiny = true;
     const variant = p.generateShinyVariant();

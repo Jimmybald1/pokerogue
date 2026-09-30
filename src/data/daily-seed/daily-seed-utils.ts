@@ -14,6 +14,7 @@ import { getEnumValues } from "#utils/enums";
 import { getPokemonSpeciesForm } from "#utils/pokemon-utils";
 import Ajv from "ajv";
 import customDailyRunSchema from "./schema.json";
+import * as LoggerTools from "../../logger";
 
 // TODO: move to a common utils file if or when needed elsewhere
 const ajv = new Ajv({
@@ -222,6 +223,8 @@ export function getDailyRunStarter(species: PokemonSpecies, config?: DailySeedSt
     undefined,
     config?.nature,
   );
+
+  LoggerTools.StarterIds.push(pokemon.id);
 
   const starter: Starter = {
     speciesId: species.speciesId,
