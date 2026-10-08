@@ -1832,7 +1832,7 @@ function ScoutingWithoutUI(charms: number) {
   getDailyRunStarters(); // stores starter IDs in StarterIds
   party.forEach((p, i) => {
     p.id = StarterIds[i];
-    haChances.push([-1, -1, -1, -1, -1]);
+    p.abilityIndex === 2 ? haChances.push([0, 0, 0, 0, 0, 0]) : haChances.push([-1, -1, -1, -1, -1]);
     p.shiny = true;
     const variant = p.generateShinyVariant();
     p.shiny = false;
@@ -1920,12 +1920,12 @@ function GenerateBattle(nolog: boolean = false) {
       globalScene.currentBattle.waveIndex++;
       wave1Enemies = wave1Enemies.length === 0 ? battle.enemyParty : wave1Enemies;
       if (wave1Enemies.length > 0) {
-        wave1Enemies.forEach((w1e) => {
+        wave1Enemies.forEach((w1e, i) => {
           w1e.shiny = true;
           const variant = w1e.generateShinyVariant();
           w1e.shiny = false;
           w1e.abilityIndex === 2 ? haChances.push([0, 0, 0, 0, 0]) : haChances.push([-1, -1, -1, -1, -1]);
-          SaveEncounter(battle, w1e, variant, 0)
+          SaveEncounter(battle, w1e, variant, i);
         });
       }
     }
