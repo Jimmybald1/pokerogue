@@ -7,7 +7,6 @@ import { getStatusEffectCatchRateMultiplier } from "./data/status-effect";
 import { Nature } from "./enums/nature";
 import { StatusEffect } from "./enums/status-effect";
 import { getCriticalCaptureChance } from "./data/pokeball";
-import { globalScene } from "./global-scene";
 import { UiMode } from "#enums/ui-mode";
 import { SpeciesId } from "#enums/species-id";
 import { GameModes } from "#enums/game-modes";
@@ -40,10 +39,11 @@ import { EnemyCommandPhase } from "#phases/enemy-command-phase";
 import { BattlerIndex } from "#enums/battler-index";
 import { TrainerVariant } from "#enums/trainer-variant";
 import { Variant } from "#sprites/variant";
-import { speciesDataRegistry } from "./global-species-data-registry";
 import { MysteryEncounterType } from "#enums/mystery-encounter-type";
 import { ModifierTier } from "#enums/modifier-tier";
 import { getDailyRunStarters } from "#data/daily-seed/daily-run";
+import { globalScene } from "#app/global-scene";
+import { speciesDataRegistry } from "#app/global-species-data-registry";
 
 /*
 SECTIONS

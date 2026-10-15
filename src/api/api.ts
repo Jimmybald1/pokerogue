@@ -3,6 +3,7 @@ import { PokerogueAdminApi } from "#api/admin-api";
 import { ApiBase } from "#api/api-base";
 import { PokerogueDailyApi } from "#api/daily-api";
 import { PokerogueSavedataApi } from "#api/savedata-api";
+import { bypassLogin } from "#constants/app-constants";
 import type { TitleStatsResponse } from "#types/api";
 import { isBeta, isDev } from "#constants/app-constants";
 
@@ -28,6 +29,9 @@ export class PokerogueApi extends ApiBase {
       return null;
     }
 
+    if (bypassLogin) {
+      return null;
+    }
     try {
       const response = await this.doGet("/game/titlestats");
       return (await response.json()) as TitleStatsResponse;

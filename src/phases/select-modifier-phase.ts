@@ -27,6 +27,7 @@ import {
   TmModifierType,
 } from "#modifiers/modifier-type";
 import { BattlePhase } from "#phases/battle-phase";
+import type { ConfirmModeConfig } from "#types/ui-types";
 import type { ModifierSelectUiHandler } from "#ui/modifier-select-ui-handler";
 import { SHOP_OPTIONS_ROW_LIMIT } from "#ui/modifier-select-ui-handler";
 import { PartyOption, PartyUiHandler } from "#ui/party-ui-handler";
@@ -38,10 +39,10 @@ export type ModifierSelectCallback = (rowCursor: number, cursor: number) => bool
 
 export class SelectModifierPhase extends BattlePhase {
   public readonly phaseName = "SelectModifierPhase";
-  private rerollCount: number;
-  private modifierTiers?: ModifierTier[] | undefined;
-  private customModifierSettings?: CustomModifierSettings | undefined;
-  private isCopy: boolean;
+  private readonly rerollCount: number;
+  private readonly modifierTiers?: ModifierTier[] | undefined;
+  public customModifierSettings?: CustomModifierSettings | undefined;
+  private readonly isCopy: boolean;
 
   private typeOptions: ModifierTypeOption[];
 
@@ -169,16 +170,16 @@ export class SelectModifierPhase extends BattlePhase {
     const modifierSelectCallback = (rowCursor: number, cursor: number) => {
       if (rowCursor < 0 || cursor < 0) {
         globalScene.ui.showText(i18next.t("battle:skipItemQuestion"), null, () => {
-          globalScene.ui.setOverlayMode(
-            UiMode.CONFIRM,
-            () => {
+          const skipRewardConfirmOptions: ConfirmModeConfig = {
+            yesHandler: () => {
               LoggerTools.logShop(globalScene.currentBattle.waveIndex, "Skip taking items");
               globalScene.ui.revertMode();
               globalScene.ui.setMode(UiMode.MESSAGE);
               super.end();
             },
-            () => this.resetModifierSelect(modifierSelectCallback),
-          );
+            noHandler: () => this.resetModifierSelect(modifierSelectCallback),
+          };
+          globalScene.ui.setOverlayMode(UiMode.CONFIRM, skipRewardConfirmOptions);
         });
         return false;
       }

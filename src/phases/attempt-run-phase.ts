@@ -35,6 +35,8 @@ export class AttemptRunPhase extends FieldPhase {
       LoggerTools.logActions(globalScene.currentBattle.waveIndex, "Fled");
       globalScene.phaseManager.queueMessage(i18next.t("battle:runAwaySuccess"), null, true, 500);
 
+      globalScene.currentBattle.successfulRun = true;
+
       globalScene.tweens.add({
         targets: [globalScene.arenaEnemy, enemyField].flat(),
         alpha: 0,
