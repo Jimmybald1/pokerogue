@@ -153,6 +153,8 @@ export function setBattleRngCounter(num: number, simulated: boolean = false) {
 
 /** Used for shop scouting as solo party */
 export let removeDNASpliceFromShop: boolean = false;
+export let shopIsSolo: boolean = false;
+export let shopIsSoloMove: boolean = false;
 
 // #endregion
 
@@ -1843,7 +1845,7 @@ function ScoutingWithoutUI(charms: number) {
   });
 
   ClearParty(party);
-  FillParty(party, [SpeciesId.VENUSAUR], false);
+  FillParty(party, [SpeciesId.VENUSAUR]);
 
   var output: string[][] = [];
   const date = new Date();
@@ -2148,10 +2150,13 @@ export enum ItemType {
 }
 
 export function InitShopScouting(method, itemType: ItemType, isSolo = false, isSoloMove = false) {
+  shopIsSolo = isSolo
+  shopIsSoloMove = isSoloMove
+
   globalScene.sessionSlotId = 0;
   globalScene.gameData.loadSession(globalScene.sessionSlotId).then(() => {
     console.time('Shop Scouting');
-    ShopScouting(method, itemType, isSolo, isSoloMove);
+    ShopScouting(method, itemType);
     console.timeEnd('Shop Scouting');
   }).catch(err => {
     console.error(err);
@@ -2160,12 +2165,12 @@ export function InitShopScouting(method, itemType: ItemType, isSolo = false, isS
 }
 
 const charmList: string[] = [];
-function ShopScouting(method: number, itemType: ItemType, isSolo: boolean, isSoloMove: boolean) {
+function ShopScouting(method: number, itemType: ItemType) {
   // Remove any lures or charms
   globalScene.RemoveModifiers();
   console.log(`Starting shop scouting ${new Date().toLocaleTimeString()}`);
 
-  removeDNASpliceFromShop = isSolo;
+  removeDNASpliceFromShop = shopIsSolo;
 
   const comps = GetPartyCompositions();
   const comp = comps[method];
@@ -2176,7 +2181,7 @@ function ShopScouting(method: number, itemType: ItemType, isSolo: boolean, isSol
 
   const globals = GetGlobalItemSetups();
   ClearParty(party);
-  FillParty(party, comp, isSoloMove);
+  FillParty(party, comp);
   const lures = GetLureSetups();
   const ethers = GetEtherSetups(party);
   const revives = GetReviveSetups(party);
@@ -2208,21 +2213,21 @@ function ShopScouting(method: number, itemType: ItemType, isSolo: boolean, isSol
       ethers.forEach(ether => {
         const e = ether();
 
-        if (isSolo && e > 1) {
+        if (shopIsSolo && e > 1) {
           return;
         }
 
         revives.forEach(revive => {
           const r = revive();
 
-          if (isSolo && r > 0) {
+          if (shopIsSolo && r > 0) {
             return;
           }
 
           potions.forEach(potion => {
             const p = potion();
 
-            if (isSolo && p && (p.pot > 1 || p.suppot > 1 || p.hyppot > 1 || p.maxpot > 1)) {
+            if (shopIsSolo && p && (p.pot > 1 || p.suppot > 1 || p.hyppot > 1 || p.maxpot > 1)) {
               return;
             }
 
@@ -2766,9 +2771,9 @@ function ClearParty(party: PlayerPokemon[]) {
   while (party.length > 0);
 }
 
-function FillParty(party: PlayerPokemon[], comp: SpeciesId[], isSoloMove: any) {
+function FillParty(party: PlayerPokemon[], comp: SpeciesId[]) {
   comp.forEach((s: SpeciesId) => {
-    AddPokemon(party, s, isSoloMove);
+    AddPokemon(party, s);
   });
 }
 
@@ -2797,18 +2802,23 @@ function AddModifiers() {
 function PreShopModifiers(party: PlayerPokemon[]) {
   // party[0].pauseEvolutions = false;
   // removeDNASpliceFromShop = false;
+  // shopIsSolo = false
+  // shopIsSoloMove = false
 }
 
 function PostRollModifiers(party: PlayerPokemon[], rerollNumber: number) {
   // if (rerollNumber >= 0) party[0].pauseEvolutions = true;
   // if (rerollNumber >= 0) removeDNASpliceFromShop = true;
+  // if (rerollNumber >= 0) shopIsSolo = true
+  // if (rerollNumber >= 0) shopIsSoloMove = true
 }
 
 function GetModifierTiers(modifierTiers: ModifierTier[], rerollNumber: number): ModifierTier[] | undefined {
-  // globalScene.lockModifierTiers = true;
+  // globalScene.lockModifierTiers = false;
 
-  if (rerollNumber >= 0) 
+  if (rerollNumber >= 1) 
   {
+    // globalScene.lockModifierTiers = true;
     return globalScene.lockModifierTiers ? modifierTiers : undefined;
   }
 
@@ -2829,10 +2839,10 @@ function GetPartyCompositions() {
   ];
 }
 
-function AddPokemon(party: PlayerPokemon[], speciesId: SpeciesId, isSoloMove: any) {
+function AddPokemon(party: PlayerPokemon[], speciesId: SpeciesId) {
   const pokemon = speciesDataRegistry.getSpecies(speciesId);
   const playerPokemon = globalScene.addPlayerPokemon(pokemon, 999, 0, 0);
-  if (!isSoloMove || party.length === 0) {
+  if (!shopIsSoloMove || party.length === 0) {
     playerPokemon.moveset = [new PokemonMove(MoveId.TACKLE), new PokemonMove(MoveId.SPLASH), new PokemonMove(MoveId.SPLASH), new PokemonMove(MoveId.SPLASH)];
   }
   else {
