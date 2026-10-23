@@ -15,6 +15,8 @@ import {
 } from "#modifiers/modifier";
 import type { CustomModifierSettings, ModifierType, ModifierTypeOption } from "#modifiers/modifier-type";
 import {
+  EvolutionItemModifierType,
+  FormChangeItemModifierType,
   FusePokemonModifierType,
   getPlayerModifierTypeOptions,
   getPlayerShopModifierTypeOptionsForWave,
@@ -436,6 +438,8 @@ export class SelectModifierPhase extends BattlePhase {
     const isMoveModifier = modifierType instanceof PokemonMoveModifierType;
     const isTmModifier = modifierType instanceof TmModifierType;
     const isRememberMoveModifier = modifierType instanceof RememberMoveModifierType;
+    const isEvolutionItemModifier = modifierType instanceof EvolutionItemModifierType;
+    const isFormChangeItemModifier = modifierType instanceof FormChangeItemModifierType;
     const isPpRestoreModifier =
       modifierType instanceof PokemonPpRestoreModifierType || modifierType instanceof PokemonPpUpModifierType;
     const partyUiMode = isMoveModifier
@@ -444,8 +448,17 @@ export class SelectModifierPhase extends BattlePhase {
         ? PartyUiMode.TM_MODIFIER
         : isRememberMoveModifier
           ? PartyUiMode.REMEMBER_MOVE_MODIFIER
-          : PartyUiMode.MODIFIER;
+          : isEvolutionItemModifier
+            ? PartyUiMode.EVOLUTION_ITEM_MODIFIER
+            : isFormChangeItemModifier
+              ? PartyUiMode.FORM_CHANGE_ITEM_MODIFIER
+              : PartyUiMode.MODIFIER;
     const tmMoveId = isTmModifier ? (modifierType as TmModifierType).moveId : undefined;
+    const modifierItemId = isEvolutionItemModifier
+      ? (modifierType as EvolutionItemModifierType).evolutionItem
+      : isFormChangeItemModifier
+        ? (modifierType as FormChangeItemModifierType).formChangeItem
+        : undefined;
     globalScene.ui.setModeWithoutClear(
       UiMode.PARTY,
       partyUiMode,
@@ -477,6 +490,7 @@ export class SelectModifierPhase extends BattlePhase {
         : undefined,
       tmMoveId,
       isPpRestoreModifier,
+      modifierItemId,
     );
   }
 
