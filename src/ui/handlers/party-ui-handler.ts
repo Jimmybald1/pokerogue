@@ -300,7 +300,6 @@ export class PartyUiHandler extends MessageUiHandler {
     this.tmMoveId = args.length > 5 && args[5] ? args[5] : MoveId.NONE;
     this.showMovePp = args.length > 6 && args[6];
     this.modifierItemId = args.length > 7 ? (args[7] as EvolutionItem | FormChangeItem | undefined) : undefined;
-    LoggerTools.setIncomingMon(args.length > 7 && args[7] ? args[7] : undefined);
 
     this.partyContainer.setVisible(true);
     if (this.isItemManageMode()) {

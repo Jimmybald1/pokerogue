@@ -380,6 +380,7 @@ export class AttemptCapturePhase extends PokemonPhase {
                 {
                   label: i18next.t("menu:yes"),
                   handler: () => {
+                    LoggerTools.setIncomingMon(pokemon.species.getName());
                     ui.setMode(
                       UiMode.PARTY,
                       PartyUiMode.RELEASE,
