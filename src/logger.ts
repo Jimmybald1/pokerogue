@@ -41,9 +41,11 @@ import { TrainerVariant } from "#enums/trainer-variant";
 import { Variant } from "#sprites/variant";
 import { MysteryEncounterType } from "#enums/mystery-encounter-type";
 import { ModifierTier } from "#enums/modifier-tier";
-import { getDailyRunStarters } from "#data/daily-seed/daily-run";
+import { getDailyForcedBiomes, getDailyRunStarters } from "#data/daily-seed/daily-run";
 import { globalScene } from "#app/global-scene";
 import { speciesDataRegistry } from "#app/global-species-data-registry";
+import { timedEventManager } from "#app/global-event-manager";
+import { BiomeLinks } from "#types/biomes";
 
 /*
 SECTIONS
@@ -2076,17 +2078,26 @@ function GenerateBiomes(biomeId: BiomeId, waveIndex: integer, threeLures: boolea
   if (globalScene.currentBattle.waveIndex >= 50) {
     return;
   }
-
-  const { biomeLinks } = allBiomes.get(biomeId);
+  
   let biomeChoices: BiomeId[] = [];
-  if (biomeLinks.length > 1) {
-    biomeChoices = biomeLinks
-      .filter(b => !Array.isArray(b) || !randSeedInt(b[1], undefined, "Choosing next biome"))
-      .map(b => (Array.isArray(b) ? b[0] : b));
+  const forcedBiomes = getDailyForcedBiomes();
+  if (forcedBiomes != null && forcedBiomes.length === 1) {
+    biomeChoices = [forcedBiomes[0] as BiomeId];
   }
+  else {
+    const { biomeLinks } = allBiomes.get(biomeId);
+    const eventBiomeLinks = timedEventManager.getEventBiomeLinks(biomeId);
+    const allBiomeLinks: BiomeLinks = [...biomeLinks, ...eventBiomeLinks];
+    if (allBiomeLinks.length > 1 || (forcedBiomes != null && forcedBiomes.length > 1)) {
+      const biomes: BiomeId[] =
+        biomeChoices = allBiomeLinks
+          .filter(b => !Array.isArray(b) || !randSeedInt(b[1], undefined, "Choosing next biome"))
+          .map(b => (Array.isArray(b) ? b[0] : b));
+    }
 
-  if (biomeLinks.length === 1) {
-    biomeChoices = [biomeLinks[0] as BiomeId]
+    if (biomeLinks.length === 1) {
+      biomeChoices = [biomeLinks[0] as BiomeId]
+    }
   }
 
   // Recursively generate next biomes
