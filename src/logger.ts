@@ -2089,14 +2089,13 @@ function GenerateBiomes(biomeId: BiomeId, waveIndex: integer, threeLures: boolea
     const eventBiomeLinks = timedEventManager.getEventBiomeLinks(biomeId);
     const allBiomeLinks: BiomeLinks = [...biomeLinks, ...eventBiomeLinks];
     if (allBiomeLinks.length > 1 || (forcedBiomes != null && forcedBiomes.length > 1)) {
-      const biomes: BiomeId[] =
-        biomeChoices = allBiomeLinks
-          .filter(b => !Array.isArray(b) || !randSeedInt(b[1], undefined, "Choosing next biome"))
-          .map(b => (Array.isArray(b) ? b[0] : b));
+      biomeChoices = allBiomeLinks
+        .filter(b => !Array.isArray(b) || !randSeedInt(b[1], undefined, "Choosing next biome"))
+        .map(b => (Array.isArray(b) ? b[0] : b));
     }
 
-    if (biomeLinks.length === 1) {
-      biomeChoices = [biomeLinks[0] as BiomeId]
+    if (allBiomeLinks.length === 1) {
+      biomeChoices = [allBiomeLinks[0] as BiomeId]
     }
   }
 
