@@ -43,16 +43,16 @@ const doUnlabeledRNGLogging = false;
  * assert(choice3 !== choice2);
  * ```
  */
-export function randSeedUniqueItem<T>(choices: readonly T[], seedOffset: number, scene = globalScene): T {
+export function randSeedUniqueItem<T>(choices: readonly T[], seedOffset: number, scene = globalScene, reason?: string): T {
   if (choices.length <= seedOffset) {
-    return randSeedItem(choices as Writable<typeof choices>);
+    return randSeedItem(choices as Writable<typeof choices>, reason);
   }
 
   // TODO: Refactor `excuteWithSeedOffset` and pull it into this module
   let choice: T;
 
   scene.executeWithSeedOffset(() => {
-    choice = randSeedShuffle(choices.slice())[seedOffset];
+    choice = randSeedShuffle(choices.slice(), reason)[seedOffset];
   }, 0);
   return choice!;
 }
@@ -74,9 +74,9 @@ export function weightedPick<T>(items: Map<T, number>, reason?: string): T {
     return items.keys().next().value!; // returns the first key in the map
   }
 
-  const randomNumber = randSeedInt(totalWeight);
+  const randomNumber = randSeedInt(totalWeight, undefined, reason);
 
-  if (reason != "%HIDE" && doRNGLogging) {
+  if (doRNGLogging) {
     if (reason) {
       console.log(reason, randomNumber, `${0} - ${totalWeight}`);
     } else if (doUnlabeledRNGLogging) {

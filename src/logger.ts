@@ -1,5 +1,5 @@
 //#region 00 Imports
-import type { PlayerPokemon, EnemyPokemon, Pokemon } from "./field/pokemon";
+import { PlayerPokemon, EnemyPokemon, Pokemon } from "./field/pokemon";
 import { getNatureDecrease, getNatureIncrease, getNatureName } from "./data/nature";
 import type { PokemonHeldItemModifier } from "./modifier/modifier";
 import { overrideHeldItems, overrideModifiers } from "./modifier/modifier";
@@ -21,7 +21,7 @@ import { MoveCategory } from "#enums/move-category";
 import { applyMoveAttrs } from "#moves/apply-attrs";
 import { MultiHitAttr } from "#types/move-types";
 import { MultiHitType } from "#enums/multi-hit-type";
-import { getPlayerModifierTypeOptions, ModifierTypeOption, PokemonMultiHitModifierType, regenerateModifierPoolThresholds } from "#modifiers/modifier-type";
+import { getPartyLuckValue, getPlayerModifierTypeOptions, ModifierTypeOption, PokemonMultiHitModifierType, regenerateModifierPoolThresholds } from "#modifiers/modifier-type";
 import { allAbilities, allBiomes } from "#data/data-lists";
 import { MoveId } from "#enums/move-id";
 import { ModifierPoolType } from "#enums/modifier-pool-type";
@@ -46,6 +46,7 @@ import { globalScene } from "#app/global-scene";
 import { speciesDataRegistry } from "#app/global-species-data-registry";
 import { timedEventManager } from "#app/global-event-manager";
 import { BiomeLinks } from "#types/biomes";
+import { getEncounterPokemonLevelForWave, STANDARD_ENCOUNTER_BOOSTED_LEVEL_MODIFIER } from "#mystery-encounters/encounter-pokemon-utils";
 
 /*
 SECTIONS
@@ -1329,7 +1330,7 @@ export function logCapture(floor: number = globalScene.currentBattle.waveIndex, 
   console.log(`Logging successful capture: ${target.name}`);
   const wv: Wave = getWave(drpd, floor);
   const pkslot = Math.max(0, target.fieldPosition - 1);
-  if (wv.id != -1) {
+  if (wv.id != -1 && wv.pokemon && wv.pokemon.length > 0) {
     wv.pokemon![pkslot].captured = true;
     console.log("--> ", drpd);
     localStorage.setItem(getLogID(), JSON.stringify(drpd));
@@ -1823,7 +1824,13 @@ export function InitScouting(charms: number) {
   });
 }
 
+export interface ScoutingTeleporter {
+  waveIndex: number;
+  biomeId: BiomeId;
+}
+
 let encounterList: string[] = [];
+let teleporterList: ScoutingTeleporter[] = [];
 function ScoutingWithoutUI(charms: number) {
   const startingBiome = globalScene.arena.biomeId;
 
@@ -1862,28 +1869,48 @@ function ScoutingWithoutUI(charms: number) {
   globalScene.RemoveModifiers();
 
   // Keep track of encounters, Generate Biomes and encounters
+  teleporterList = [];
   console.log(`Starting 0 lures and ${charms} charms ${new Date().toLocaleString()}`);
   encounterList = [];
-  GenerateBiomes(startingBiome, 0, false);
+  GenerateBiomes(startingBiome, 0);
+  teleporterList.forEach(tp => {
+    encounterList.push(`Wave: ${tp.waveIndex} Biome: ${getBiomeEnumName(tp.biomeId)} TimeOfDay: ${TimeOfDay[TimeOfDay.ALL]} Weather: ${WeatherType[WeatherType.NONE]}`);
+    GenerateBiomes(tp.biomeId, tp.waveIndex, false, false);
+  });
   StoreEncounters(`0${charms}`);
 
+  teleporterList = [];
   console.log(`Starting 1 lures and ${charms} charms ${new Date().toLocaleString()}`);
   encounterList = [];
   globalScene.InsertLure();
-  GenerateBiomes(startingBiome, 0, false);
+  GenerateBiomes(startingBiome, 0);
+  teleporterList.forEach(tp => {
+    encounterList.push(`Wave: ${tp.waveIndex} Biome: ${getBiomeEnumName(tp.biomeId)} TimeOfDay: ${TimeOfDay[TimeOfDay.ALL]} Weather: ${WeatherType[WeatherType.NONE]}`);
+    GenerateBiomes(tp.biomeId, tp.waveIndex, false, false);
+  });
   StoreEncounters(`1${charms}`);
 
+  teleporterList = [];
   console.log(`Starting 2 lures and ${charms} charms ${new Date().toLocaleString()}`);
   encounterList = [];
   globalScene.InsertSuperLure();
-  GenerateBiomes(startingBiome, 0, false);
+  GenerateBiomes(startingBiome, 0);
+  teleporterList.forEach(tp => {
+    encounterList.push(`Wave: ${tp.waveIndex} Biome: ${getBiomeEnumName(tp.biomeId)} TimeOfDay: ${TimeOfDay[TimeOfDay.ALL]} Weather: ${WeatherType[WeatherType.NONE]}`);
+    GenerateBiomes(tp.biomeId, tp.waveIndex, false, false);
+  });
   StoreEncounters(`2${charms}`);
 
   // Only generate wave 10 for 3 lures.
+  teleporterList = [];
   console.log(`Starting 3 lures and ${charms} charms ${new Date().toLocaleString()}`);
   encounterList = [];
   globalScene.InsertMaxLure();
   GenerateBiomes(startingBiome, 0, true);
+  teleporterList.forEach(tp => {
+    encounterList.push(`Wave: ${tp.waveIndex} Biome: ${getBiomeEnumName(tp.biomeId)} TimeOfDay: ${TimeOfDay[TimeOfDay.ALL]} Weather: ${WeatherType[WeatherType.NONE]}`);
+    GenerateBiomes(tp.biomeId, tp.waveIndex, true, false);
+  });
   StoreEncounters(`3${charms}`);
 
   var output = JSON.parse(localStorage.getItem("scouting")!) as string[][];
@@ -1901,7 +1928,7 @@ function StoreEncounters(lurecharm: string) {
 }
 
 let wave1Enemies: EnemyPokemon[] = []
-function GenerateBattle(nolog: boolean = false) {
+function GenerateBattle(nolog: boolean = false, trackTeleport: boolean = true) {
   const timeOfDay = globalScene.arena.getTimeOfDay();
 
   while (rarities.length > 0) {
@@ -1913,7 +1940,44 @@ function GenerateBattle(nolog: boolean = false) {
   }
 
   const mysteryEncounter = globalScene.gameMode.dailyConfig?.mysteryEncounters?.find(me => me.waveIndex == globalScene.currentBattle.waveIndex + 1);
-  if (mysteryEncounter) {
+  if (mysteryEncounter?.type === MysteryEncounterType.TELEPORTING_HIJINKS) {
+    globalScene.currentBattle.waveIndex++;
+    globalScene.resetSeed(globalScene.currentBattle.waveIndex);
+
+    const doTeleportEncounter = () => {      
+      const level = getEncounterPokemonLevelForWave(STANDARD_ENCOUNTER_BOOSTED_LEVEL_MODIFIER);
+      const bossSpecies = globalScene.arena.randomSpecies(
+        globalScene.currentBattle.waveIndex,
+        level,
+        0,
+        getPartyLuckValue(globalScene.getPlayerParty()),
+        true,
+      );
+      const enemy = new EnemyPokemon(bossSpecies, level, TrainerSlot.NONE, true);
+  
+      if (!nolog) {
+        if (enemy) {
+          enemy.shiny = true;
+          const variant = enemy.generateShinyVariant();
+          enemy.shiny = false;
+          
+          globalScene.currentBattle.waveIndex--;
+          const battle = globalScene.newBattle();
+          SaveEncounter(battle, enemy, variant, 0)
+        }
+      }
+    }
+
+    if (trackTeleport) {
+      // If tracking teleport = old biome => find seedoffset encounter
+      globalScene.executeWithSeedOffset(() => {
+        doTeleportEncounter();
+      }, (globalScene.currentBattle.waveIndex * 1000 + 512) * 500);
+    } else {
+      // If not tracking teleport = new biome => find regular encounter without offset
+      doTeleportEncounter();
+    }
+  } else if (mysteryEncounter) {
     encounterList.push(`Wave: ${globalScene.currentBattle.waveIndex + 1} Biome: ${getBiomeEnumName(globalScene.arena.biomeId)} ${MysteryEncounterType[mysteryEncounter.type]}`);
     globalScene.newBattle();
   } else {
@@ -2048,13 +2112,13 @@ function LogFormat(enemy: Pokemon, waveIndex: number, fieldIndex: number, atlasp
   return text;
 }
 
-function GenerateBiomes(biomeId: BiomeId, waveIndex: integer, threeLures: boolean) {
+function GenerateBiomes(biomeId: BiomeId, waveIndex: integer, threeLures: boolean = false, trackTeleport: boolean = true) {
   globalScene.newArena(biomeId);
   globalScene.currentBattle.waveIndex = waveIndex;
   globalScene.arena.updatePoolsForTimeOfDay();
 
   // Finish biome
-  for (let i = 1; i <= 10; i++) {
+  for (let i = 1; i <= 10 - (waveIndex % 10); i++) {
     let nolog = false;
     if (threeLures) {
       nolog = true;
@@ -2071,7 +2135,7 @@ function GenerateBiomes(biomeId: BiomeId, waveIndex: integer, threeLures: boolea
       }
     }
 
-    GenerateBattle(nolog);
+    GenerateBattle(nolog, trackTeleport);
   }
 
   // Victory
@@ -2099,6 +2163,9 @@ function GenerateBiomes(biomeId: BiomeId, waveIndex: integer, threeLures: boolea
     }
   }
 
+  // next biomes need to start at the normal point again
+  waveIndex = (Math.floor(waveIndex / 10) * 10);
+
   // Recursively generate next biomes
   for (const b of biomeChoices) {
     // If waveindex is not the same anymore, that means a different path ended and we continue with a new branch
@@ -2106,10 +2173,33 @@ function GenerateBiomes(biomeId: BiomeId, waveIndex: integer, threeLures: boolea
       // Back to x9 wave to generate the x0 wave again, that sets the correct rng
       globalScene.newArena(biomeId);
       globalScene.currentBattle.waveIndex = waveIndex + 9;
-      GenerateBattle(true);
+      GenerateBattle(true, trackTeleport);
     }
 
     GenerateBiomes(b, waveIndex + 10, threeLures);
+  }
+  
+  if (trackTeleport) {
+    const mysteryEncounter = globalScene.gameMode.dailyConfig?.mysteryEncounters?.find(me => me.waveIndex > waveIndex && me.waveIndex <= waveIndex + 10);
+    if (mysteryEncounter?.type === MysteryEncounterType.TELEPORTING_HIJINKS) {
+      // for (let i = 0; i < mysteryEncounter.waveIndex - waveIndex; i++) {
+      //   GenerateBattle(false); // generate until tp wave
+      // }
+      
+      // Calculate new biome (cannot be current biome)
+      globalScene.currentBattle.waveIndex = mysteryEncounter.waveIndex;
+      globalScene.resetSeed();
+      const filteredBiomes = [
+        BiomeId.SPACE,
+        BiomeId.FAIRY_CAVE,
+        BiomeId.LABORATORY,
+        BiomeId.ISLAND,
+        BiomeId.WASTELAND,
+        BiomeId.DOJO,
+      ].filter(b => biomeId !== b);
+      const newBiome = filteredBiomes[randSeedInt(filteredBiomes.length)];
+      teleporterList.push({waveIndex: mysteryEncounter.waveIndex - 1, biomeId: newBiome});
+    }
   }
 }
 

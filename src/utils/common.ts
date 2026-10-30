@@ -73,7 +73,7 @@ export function randSeedGauss(stdev: number, mean = 0, reason?: string): number 
   const v = randSeedFloat(reason);
   const z = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
   const result = z * stdev + mean;
-  if (reason != "%HIDE" && doRNGLogging) {
+  if (doRNGLogging) {
     if (reason) {
       console.log(reason, result, stdev, mean);
     } else if (doUnlabeledRNGLogging) {
@@ -108,7 +108,7 @@ export function randInt(range: number, min = 0, reason?: string): number {
     return min;
   }
   const V = Math.floor(Math.random() * range) + min;
-  if (reason != "%HIDE" && doRNGLogging && doUnseededRNGLogging) {
+  if (doRNGLogging && doUnseededRNGLogging) {
     console.log("[unseeded] " + (reason ? reason : "randInt"), V, range, min);
   }
   return V;
@@ -125,7 +125,7 @@ export function randSeedInt(range: number, min = 0, reason?: string): number {
     return min;
   }
   const V = Phaser.Math.RND.integerInRange(min, range - 1 + min);
-  if (reason != "%HIDE" && doRNGLogging) {
+  if (doRNGLogging) {
     if (reason) {
       console.log(reason, V, `${min} - ${range - 1 + min}`);
     } else if (doUnlabeledRNGLogging) {
@@ -161,7 +161,7 @@ export function randIntRange(min: number, max: number, reason?: string): number 
  */
 export function randSeedFloat(reason?: string): number {
   const V = Phaser.Math.RND.frac();
-  if (reason != "%HIDE" && doRNGLogging) {
+  if (doRNGLogging) {
     if (reason) {
       console.log(reason, V);
     } else if (doUnlabeledRNGLogging) {
