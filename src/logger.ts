@@ -2147,8 +2147,9 @@ function GenerateBiomes(biomeId: BiomeId, waveIndex: integer, threeLures: boolea
   const forcedBiomes = getDailyForcedBiomes();
   if (forcedBiomes != null && forcedBiomes.length === 1) {
     biomeChoices = [forcedBiomes[0] as BiomeId];
-  }
-  else {
+  } else if (forcedBiomes != null && forcedBiomes.length > 1) {
+    biomeChoices = forcedBiomes;
+  } else {
     const { biomeLinks } = allBiomes.get(biomeId);
     const eventBiomeLinks = timedEventManager.getEventBiomeLinks(biomeId);
     const allBiomeLinks: BiomeLinks = [...biomeLinks, ...eventBiomeLinks];
