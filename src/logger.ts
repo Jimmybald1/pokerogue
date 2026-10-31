@@ -1842,7 +1842,7 @@ function ScoutingWithoutUI(charms: number) {
   const starterConfig = globalScene.gameMode.dailyConfig?.starters;
   getDailyRunStarters(); // stores starter IDs in StarterIds
   party.forEach((p, i) => {
-    p.id = StarterIds[i];
+    p.id = StarterIds[i] ?? 123456789;
     p.abilityIndex === 2 ? haChances.push([0, 0, 0, 0, 0, 0]) : haChances.push([-1, -1, -1, -1, -1]);
     p.shiny = true;
     const variant = p.generateShinyVariant();
