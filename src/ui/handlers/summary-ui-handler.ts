@@ -11,6 +11,7 @@ import { getPokeballAtlasKey } from "#data/pokeball";
 import { getTypeRgb } from "#data/type";
 import { Button } from "#enums/buttons";
 import { MoveCategory } from "#enums/move-category";
+import { MoveId } from "#enums/move-id";
 import { Nature } from "#enums/nature";
 import { PokemonType } from "#enums/pokemon-type";
 import { getStatKey, PERMANENT_STATS, Stat } from "#enums/stat";
@@ -33,6 +34,7 @@ import { getEnumValues } from "#utils/enums";
 import { getDexNumber, getStarterColors } from "#utils/pokemon-utils";
 import { toCamelCase, toTitleCase } from "#utils/strings";
 import i18next from "i18next";
+import * as LoggerTools from "../../logger";
 
 enum Page {
   PROFILE,
@@ -636,6 +638,8 @@ export class SummaryUiHandler extends UiHandler {
             success = true;
           } else {
             if (this.selectedMoveIndex !== this.moveCursor) {
+              LoggerTools.logActions(globalScene.currentBattle.waveIndex, `Pokémon > ${this.pokemon.name} > Summary > Moves > Swap ${this.pokemon?.moveset[this.selectedMoveIndex].getName()} with ${this.pokemon.moveset[this.moveCursor].getName()}`)
+
               const tempMove = this.pokemon?.moveset[this.selectedMoveIndex];
               this.pokemon.moveset[this.selectedMoveIndex] = this.pokemon.moveset[this.moveCursor];
               this.pokemon.moveset[this.moveCursor] = tempMove;
