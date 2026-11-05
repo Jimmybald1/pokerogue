@@ -17,7 +17,7 @@ import * as LoggerTools from "../logger";
 export class SelectBiomePhase extends BattlePhase {
   public readonly phaseName = "SelectBiomePhase";
 
-  start() {
+  public override start(): void {
     super.start();
 
     globalScene.resetSeed();
@@ -36,7 +36,8 @@ export class SelectBiomePhase extends BattlePhase {
       return;
     }
 
-    const forcedBiomes = getDailyForcedBiomes();
+    // TODO: remove filter once same biome transitions are properly implemented
+    const forcedBiomes = getDailyForcedBiomes()?.filter(b => b !== currentBiome);
     if (forcedBiomes != null && forcedBiomes.length === 1) {
       this.setNextBiomeAndEnd(forcedBiomes[0]);
       return;
