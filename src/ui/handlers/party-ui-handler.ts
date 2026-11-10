@@ -1863,6 +1863,7 @@ export class PartyUiHandler extends MessageUiHandler {
       return;
     }
     const party = globalScene.getPlayerParty();
+    LoggerTools.logActions(globalScene.currentBattle.waveIndex, `Swap ${party[firstIndex].getName()} with ${party[secondIndex].getName()}`);
     [party[firstIndex], party[secondIndex]] = [party[secondIndex], party[firstIndex]];
     this.cursor = secondIndex;
     this.clearPartySlots();
