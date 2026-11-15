@@ -2905,6 +2905,7 @@ function PreShopModifiers(party: PlayerPokemon[]) {
   // removeDNASpliceFromShop = false;
   // shopIsSolo = false
   // shopIsSoloMove = false
+  // party[0].status = new Status(StatusEffect.PARALYSIS);
 }
 
 function PostRollModifiers(party: PlayerPokemon[], rerollNumber: number) {
